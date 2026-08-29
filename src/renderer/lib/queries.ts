@@ -1,4 +1,5 @@
 import {
+  useInfiniteQuery,
   useMutation,
   useQueries,
   useQuery,
@@ -13,11 +14,13 @@ import type {
   CommitDetail,
   ConflictFile,
   FileDiff,
+  LogFilter,
   Remote,
   Repo,
   RepoSettings,
   SshEnvironment,
   Stash,
+  Tag,
   WorkingTreeStatus,
 } from '@shared/types';
 
@@ -33,7 +36,8 @@ export const keys = {
   status: (id: string) => ['repo', id, 'status'] as const,
   branches: (id: string) => ['repo', id, 'branches'] as const,
   remotes: (id: string) => ['repo', id, 'remotes'] as const,
-  log: (id: string) => ['repo', id, 'log'] as const,
+  log: (id: string, filter?: LogFilter) => ['repo', id, 'log', filter ?? null] as const,
+  tags: (id: string) => ['repo', id, 'tags'] as const,
   repoSettings: (id: string) => ['repo', id, 'settings'] as const,
   stashes: (id: string) => ['repo', id, 'stashes'] as const,
   conflict: (id: string, path: string) => ['repo', id, 'conflict', path] as const,
@@ -109,12 +113,39 @@ export function useRemotes(repoId: string | null) {
   });
 }
 
-const LOG_PAGE_SIZE = 200;
+const LOG_PAGE_SIZE = 150;
 
-export function useLog(repoId: string | null) {
-  return useQuery<Commit[]>({
-    queryKey: keys.log(repoId ?? ''),
-    queryFn: () => invoke('git:log', { repoId: repoId as string, skip: 0, limit: LOG_PAGE_SIZE }),
+/**
+ * Geçmişi sayfa sayfa yükler.
+ *
+ * Büyük depolarda tüm geçmişi çekmek hem yavaş hem gereksiz: kullanıcı ilk
+ * ekranda son 150 commit'i görüyor, aşağı indikçe devamı geliyor. Filtre sorgu
+ * anahtarının parçası olduğu için filtre değişince liste baştan yükleniyor.
+ */
+export function useLog(repoId: string | null, filter?: LogFilter) {
+  return useInfiniteQuery({
+    queryKey: keys.log(repoId ?? '', filter),
+    queryFn: ({ pageParam }) =>
+      invoke('git:log', {
+        repoId: repoId as string,
+        skip: pageParam,
+        limit: LOG_PAGE_SIZE,
+        filter,
+      }),
+    initialPageParam: 0,
+    // Dolu sayfa geldiyse devamı olabilir; eksik sayfa geldiyse geçmiş bitti.
+    getNextPageParam: (lastPage: Commit[], allPages: Commit[][]) =>
+      lastPage.length < LOG_PAGE_SIZE
+        ? undefined
+        : allPages.reduce((total, page) => total + page.length, 0),
+    enabled: !!repoId,
+  });
+}
+
+export function useTags(repoId: string | null) {
+  return useQuery<Tag[]>({
+    queryKey: keys.tags(repoId ?? ''),
+    queryFn: () => invoke('git:tag-list', { repoId: repoId as string }),
     enabled: !!repoId,
   });
 }

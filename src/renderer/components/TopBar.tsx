@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { DropdownMenu } from 'radix-ui';
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  ChevronDown,
   KeyRound,
   RefreshCw,
   Settings,
+  Tag,
   Terminal,
   TriangleAlert,
 } from 'lucide-react';
@@ -23,6 +26,8 @@ import { AutoPullPopover } from './AutoPullPopover';
 import { StashMenu } from './StashMenu';
 import { SettingsDialog } from './dialogs/SettingsDialog';
 import { SshDialog } from './dialogs/SshDialog';
+import { TagDialog } from './dialogs/TagDialog';
+import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import type { Repo } from '@shared/types';
 
 const OPERATION_LABELS: Record<string, string> = {
@@ -43,6 +48,8 @@ export function TopBar({ repo }: { repo: Repo }) {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sshOpen, setSshOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const [forcePushOpen, setForcePushOpen] = useState(false);
 
   const fetchMutation = useMutation({
     mutationFn: () => invoke('git:fetch', { repoId: repo.id }),
@@ -77,13 +84,16 @@ export function TopBar({ repo }: { repo: Repo }) {
   });
 
   const pushMutation = useMutation({
-    mutationFn: () => invoke('git:push', { repoId: repo.id }),
+    mutationFn: (forceWithLease: boolean) =>
+      invoke('git:push', { repoId: repo.id, forceWithLease }),
     onSuccess: (result) => {
       invalidate(repo.id);
       toast({
         kind: result.ok ? 'success' : 'error',
         title: result.ok ? 'Push tamamlandı' : 'Push başarısız',
-        description: result.message,
+        description: result.ok
+          ? result.message
+          : `${result.message} Uzak dalda senin görmediğin commit’ler varsa önce fetch et.`,
       });
     },
     onError: (error) =>
@@ -148,19 +158,62 @@ export function TopBar({ repo }: { repo: Repo }) {
           Pull
           {behind > 0 && <span className="tabular-nums">{behind}</span>}
         </Button>
-        <Button
-          size="sm"
-          variant={ahead > 0 ? 'primary' : 'ghost'}
-          loading={pushMutation.isPending}
-          onClick={() => pushMutation.mutate()}
-        >
-          <ArrowUpFromLine className="size-3.5" />
-          Push
-          {ahead > 0 && <span className="tabular-nums">{ahead}</span>}
-        </Button>
+        <div className="flex items-center">
+          <Button
+            size="sm"
+            variant={ahead > 0 ? 'primary' : 'ghost'}
+            loading={pushMutation.isPending}
+            onClick={() => pushMutation.mutate(false)}
+            className="rounded-r-none"
+          >
+            <ArrowUpFromLine className="size-3.5" />
+            Push
+            {ahead > 0 && <span className="tabular-nums">{ahead}</span>}
+          </Button>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <Button
+                size="sm"
+                variant={ahead > 0 ? 'primary' : 'ghost'}
+                aria-label="Push seçenekleri"
+                className="rounded-l-none border-l border-white/20 px-1"
+              >
+                <ChevronDown className="size-3.5" />
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                align="end"
+                sideOffset={4}
+                className="z-50 min-w-72 rounded-md border border-line bg-surface p-1 shadow-lg"
+              >
+                <DropdownMenu.Item
+                  onSelect={() => setForcePushOpen(true)}
+                  className="cursor-pointer rounded px-2 py-1.5 outline-none data-[highlighted]:bg-surface-2"
+                >
+                  <span className="block text-[13px] text-ink">Zorlamalı push</span>
+                  <span className="block text-[11px] text-ink-3">
+                    Geçmişi yeniden yazdıysan gerekir
+                  </span>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+        </div>
       </div>
 
       <div className="mx-1 h-6 w-px bg-line" />
+
+      <Tooltip label="Etiketler">
+        <button
+          type="button"
+          aria-label="Etiketler"
+          onClick={() => setTagsOpen(true)}
+          className="rounded-md p-1.5 text-ink-2 hover:bg-surface-2 hover:text-ink"
+        >
+          <Tag className="size-4" />
+        </button>
+      </Tooltip>
 
       <Tooltip label="SSH kurulumu">
         <button
@@ -205,6 +258,28 @@ export function TopBar({ repo }: { repo: Repo }) {
         repoSettings={repoSettings ?? null}
       />
       <SshDialog open={sshOpen} onOpenChange={setSshOpen} />
+      <TagDialog repoId={repo.id} commit={null} open={tagsOpen} onOpenChange={setTagsOpen} />
+
+      <ConfirmDialog
+        open={forcePushOpen}
+        onOpenChange={setForcePushOpen}
+        title="Zorlamalı push"
+        confirmLabel="Zorlamalı gönder"
+        destructive
+        onConfirm={() => pushMutation.mutate(true)}
+      >
+        <div className="flex flex-col gap-2 text-[13px] text-ink-2">
+          <p>
+            Uzak daldaki commit’lerin üzerine yazılacak. Bu yalnızca geçmişi yeniden yazdıysan
+            (amend, rebase, reset) gerekir.
+          </p>
+          <p>
+            Gönderim <span className="font-mono text-ink">--force-with-lease</span> ile yapılıyor:
+            uzak dalda senin görmediğin bir commit varsa git işlemi reddeder. Yani başkasının
+            çalışmasını sessizce silme riski yok.
+          </p>
+        </div>
+      </ConfirmDialog>
     </header>
   );
 }

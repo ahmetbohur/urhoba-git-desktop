@@ -139,7 +139,7 @@ describe('parseLog', () => {
       'Ada Lovelace',
       'ada@example.com',
       '2026-08-30T10:00:00+03:00',
-      'HEAD -> refs/heads/main, refs/remotes/origin/main, refs/tags/v1.0',
+      'HEAD -> refs/heads/main, refs/remotes/origin/main, tag: refs/tags/v1.0, refs/tags/v0.9',
       'Girişi düzelt',
       'İlk satır\nİkinci satır',
     ].join(US);
@@ -150,11 +150,14 @@ describe('parseLog', () => {
     expect(commit.body).toBe('İlk satır\nİkinci satır');
     expect(commit.authorName).toBe('Ada Lovelace');
     expect(commit.parents).toEqual(['b'.repeat(40)]);
+    // Açıklamalı etiket `tag:` önekiyle, hafif etiket öneksiz geliyor; ikisi de
+    // aynı türde ref olarak çözülmeli.
     expect(commit.refs).toEqual([
       { name: 'HEAD', kind: 'head' },
       { name: 'main', kind: 'local' },
       { name: 'origin/main', kind: 'remote' },
       { name: 'v1.0', kind: 'tag' },
+      { name: 'v0.9', kind: 'tag' },
     ]);
   });
 

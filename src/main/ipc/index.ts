@@ -5,6 +5,8 @@ import * as branches from '../git/branches';
 import * as conflict from '../git/conflict';
 import * as history from '../git/history';
 import * as merge from '../git/merge';
+import * as rewrite from '../git/rewrite';
+import * as tags from '../git/tags';
 import * as remote from '../git/remote';
 import * as staging from '../git/staging';
 import * as stash from '../git/stash';
@@ -135,6 +137,34 @@ const handlers: Handlers = {
     return merge.continueOperation(repo.id, repo.path);
   },
 
+  // --- Geçmiş işlemleri ---
+  'git:revert': ({ repoId, sha }) => {
+    const repo = activateRepo(repoId);
+    return rewrite.revert(repo.id, repo.path, sha);
+  },
+  'git:reset': ({ repoId, sha, mode }) => {
+    const repo = activateRepo(repoId);
+    return rewrite.reset(repo.id, repo.path, sha, mode);
+  },
+
+  // --- Etiketler ---
+  'git:tag-list': ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    return tags.listTags(repo.id, repo.path);
+  },
+  'git:tag-create': ({ repoId, name, sha, message }) => {
+    const repo = activateRepo(repoId);
+    return tags.createTag(repo.id, repo.path, name, sha, message);
+  },
+  'git:tag-delete': ({ repoId, name, remote }) => {
+    const repo = activateRepo(repoId);
+    return tags.deleteTag(repo.id, repo.path, name, remote);
+  },
+  'git:tag-push': ({ repoId, name }) => {
+    const repo = activateRepo(repoId);
+    return tags.pushTag(repo.id, repo.path, name);
+  },
+
   // --- Stash ---
   'git:stash-list': ({ repoId }) => {
     const repo = activateRepo(repoId);
@@ -164,9 +194,9 @@ const handlers: Handlers = {
   },
 
   // --- Geçmiş ---
-  'git:log': ({ repoId, skip, limit, ref }) => {
+  'git:log': ({ repoId, skip, limit, ref, filter }) => {
     const repo = activateRepo(repoId);
-    return history.getLog(repo.id, repo.path, skip, limit, ref);
+    return history.getLog(repo.id, repo.path, skip, limit, ref, filter);
   },
   'git:commit-detail': ({ repoId, sha }) => {
     const repo = activateRepo(repoId);
@@ -195,9 +225,21 @@ const handlers: Handlers = {
       requireClean: false,
     });
   },
-  'git:push': ({ repoId, setUpstream }) => {
+  'git:push': ({ repoId, setUpstream, forceWithLease }) => {
     const repo = activateRepo(repoId);
-    return remote.push(repo.id, repo.path, setUpstream ?? false);
+    return remote.push(repo.id, repo.path, setUpstream ?? false, forceWithLease ?? false);
+  },
+  'git:remote-add': ({ repoId, name, url }) => {
+    const repo = activateRepo(repoId);
+    return remote.addRemote(repo.id, repo.path, name, url);
+  },
+  'git:remote-remove': ({ repoId, name }) => {
+    const repo = activateRepo(repoId);
+    return remote.removeRemote(repo.id, repo.path, name);
+  },
+  'git:remote-set-url': ({ repoId, name, url }) => {
+    const repo = activateRepo(repoId);
+    return remote.setRemoteUrl(repo.id, repo.path, name, url);
   },
 
   // --- Ayarlar ---

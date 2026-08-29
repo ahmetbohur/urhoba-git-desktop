@@ -155,6 +155,9 @@ function parseRefs(decoration: string): CommitRef[] {
       refs.push({ name: part.slice('refs/heads/'.length), kind: 'local' });
     } else if (part.startsWith('refs/remotes/')) {
       refs.push({ name: part.slice('refs/remotes/'.length), kind: 'remote' });
+    } else if (part.startsWith('tag: refs/tags/')) {
+      // Açıklamalı etiketler `tag:` önekiyle geliyor, hafif etiketler öneksiz.
+      refs.push({ name: part.slice('tag: refs/tags/'.length), kind: 'tag' });
     } else if (part.startsWith('refs/tags/')) {
       refs.push({ name: part.slice('refs/tags/'.length), kind: 'tag' });
     }

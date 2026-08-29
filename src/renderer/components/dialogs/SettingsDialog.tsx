@@ -4,6 +4,7 @@ import { cn } from '../../lib/cn';
 import { errorMessage, invoke } from '../../lib/ipc';
 import { keys, useMutation, useQueryClient, useSettings } from '../../lib/queries';
 import { useUi } from '../../stores/ui';
+import { RemoteSettings } from '../RemoteSettings';
 import { SectionLabel } from '../primitives';
 import { DialogShell } from './DialogShell';
 import type { AppSettings, RepoSettings, ThemePreference } from '@shared/types';
@@ -117,6 +118,8 @@ export function SettingsDialog({
               Bu deponun otomatik pull ayarları üst çubuktaki “Oto pull” düğmesinde.
             </p>
           </section>
+
+          <RemoteSettings repoId={repoId} />
 
           <section>
             <SectionLabel>Yeni depolar için varsayılan otomatik pull</SectionLabel>

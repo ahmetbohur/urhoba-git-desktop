@@ -33,11 +33,21 @@ kapısı.
 depo değiştir, dal değiştir, fetch/pull/push, stash. Kısayollar paletle aynı
 listeden geldiği için gösterilen tuş her zaman çalışan tuş.
 
-**Geçmiş** — Sanal kaydırmalı commit listesi, commit detayı, commit içindeki her
-dosyanın diff'i.
+**Geçmiş** — Dallanma çizgileriyle commit grafiği, sanal kaydırmalı ve sayfa
+sayfa yüklenen liste, commit detayı, commit içindeki her dosyanın diff'i.
+Yazara, mesaja, dosya yoluna ve tarih aralığına göre filtreleme.
+
+**Geçmişi değiştirme** — Commit'e sağ tıkla revert (geçmişi koruyan geri alma)
+veya reset (soft / mixed / hard, her birinin ne yaptığı yazılı). SHA kopyalama
+ve commit'i etiketleme aynı menüde.
+
+**Etiketler** — Açıklamalı ve hafif etiket oluşturma, listeleme, silme ve uzak
+sunucuya gönderme.
 
 **Uzak sunucular** — Fetch, pull, push; upstream yoksa push sırasında otomatik
-kurulum.
+kurulum. Remote ekleme, adres düzenleme ve kaldırma. Zorlamalı gönderim yalnızca
+`--force-with-lease` ile: uzak dalda görmediğin bir commit varsa git reddeder,
+yani başkasının çalışması sessizce silinmez.
 
 **Otomatik pull** — Depo bazlı, ayarlanabilir aralıkta arka planda çalışır.
 Varsayılanları bilinçli olarak temkinli: çalışma dizini kirliyken dokunmaz ve
@@ -100,6 +110,15 @@ kırılgan yeri olduğu için bu fonksiyonlar Electron'a hiç ihtiyaç duymadan 
 ediliyor; ayrıca `__tests__/integration.test.ts` her çalıştığında geçici depolar
 kurup komutları gerçekten çalıştırıyor.
 
+### Commit grafiği
+
+`renderer/lib/commit-graph.ts` şerit düzenini tek geçişte hesaplıyor: her an
+açık olan şeritleri "hangi commit'i bekliyor" bilgisiyle tutup, sıradaki commit'i
+bekleyen şeride oturtuyor. `git log --graph` çıktısını ayrıştırmak yerine bunu
+yazdık, çünkü o çıktı ASCII sanatı ve tıklanabilir bir arayüz için zaten satır
+satır koordinat gerekiyor. Her satır kendi SVG'sini çiziyor — liste
+sanallaştırıldığı için tek büyük SVG mümkün değil.
+
 ### Yama üretimi
 
 Satır bazlı hazırlama `main/git/patch.ts` içinde: seçilen satırlardan yeni bir
@@ -124,9 +143,9 @@ silme satırı bağlama dönüşür, seçilmeyen ekleme satırı yamadan tamamen
 
 ## Yol haritası
 
-Faz 0 (zemin), Faz 1 (MVP commit döngüsü) ve Faz 2 (günlük kullanım) tamamlandı;
-otomatik pull ile SSH yardımcısı da planın dışında eklendi. Sıradaki adımlar:
+Faz 0 (zemin), Faz 1 (MVP commit döngüsü), Faz 2 (günlük kullanım) ve Faz 3
+(geçmiş ve grafik) tamamlandı; otomatik pull ile SSH yardımcısı da planın dışında
+eklendi. Sıradaki adımlar:
 
-- **Faz 3** — commit grafiği, geçmiş filtreleme, revert/reset, etiketler
 - **Faz 4** — GitHub OAuth, PR listesi ve PR oluşturma
 - **Faz 5** — gömülü git (dugite), i18n, kod imzalama, otomatik güncelleme

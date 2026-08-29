@@ -165,6 +165,38 @@ export interface PushResult {
   upstreamSet: boolean;
 }
 
+export interface Tag {
+  name: string;
+  sha: string;
+  /** Açıklamalı (annotated) etiketlerde mesaj; hafif etiketlerde commit özeti. */
+  message: string;
+  isAnnotated: boolean;
+  taggedAt: string;
+}
+
+export type ResetMode = 'soft' | 'mixed' | 'hard';
+
+/**
+ * Geçmiş filtresi. Boş bırakılan alanlar git komutuna hiç eklenmiyor;
+ * "hepsi" ile "boş dize" arasındaki farkı korumak için tipler isteğe bağlı.
+ */
+export interface LogFilter {
+  author?: string;
+  message?: string;
+  path?: string;
+  /** ISO tarih (YYYY-MM-DD). */
+  since?: string;
+  until?: string;
+}
+
+export type RevertOutcome = 'reverted' | 'conflict' | 'error';
+
+export interface RevertResult {
+  outcome: RevertOutcome;
+  message: string;
+  conflictedPaths: string[];
+}
+
 /** Bir stash kaydı. `index` listedeki sırayı verir: 0 en son stash'lenen. */
 export interface Stash {
   index: number;

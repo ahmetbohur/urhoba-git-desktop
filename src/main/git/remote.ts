@@ -130,10 +130,33 @@ export async function pull(
   };
 }
 
+export async function addRemote(
+  repoId: string,
+  repoPath: string,
+  name: string,
+  url: string,
+): Promise<void> {
+  await run({ repoId, repoPath, args: ['remote', 'add', name, url] });
+}
+
+export async function removeRemote(repoId: string, repoPath: string, name: string): Promise<void> {
+  await run({ repoId, repoPath, args: ['remote', 'remove', name] });
+}
+
+export async function setRemoteUrl(
+  repoId: string,
+  repoPath: string,
+  name: string,
+  url: string,
+): Promise<void> {
+  await run({ repoId, repoPath, args: ['remote', 'set-url', name, url] });
+}
+
 export async function push(
   repoId: string,
   repoPath: string,
   setUpstream: boolean,
+  forceWithLease = false,
 ): Promise<PushResult> {
   const status = await getStatus(repoId, repoPath);
   if (!status.branch) {
@@ -144,6 +167,13 @@ export async function push(
   const args = needsUpstream
     ? ['push', '--set-upstream', 'origin', status.branch]
     : ['push'];
+  /*
+   * Zorlamalı gönderimde her zaman `--force-with-lease`: git, uzak dalın bizim
+   * en son gördüğümüz hâlde olduğunu doğruladıktan sonra yazıyor. Düz `--force`
+   * araya giren bir meslektaşın commit'lerini sessizce siler; o bayrak bu
+   * uygulamada hiç kullanılmıyor.
+   */
+  if (forceWithLease) args.push('--force-with-lease');
 
   const result = await run({ repoId, repoPath, args, allowFailure: true });
   if (!result.ok) {
@@ -153,7 +183,9 @@ export async function push(
     ok: true,
     message: needsUpstream
       ? `${status.branch} dalı origin'e gönderildi ve upstream olarak bağlandı.`
-      : 'Değişiklikler gönderildi.',
+      : forceWithLease
+        ? 'Uzak dal zorlamalı olarak güncellendi.'
+        : 'Değişiklikler gönderildi.',
     upstreamSet: needsUpstream,
   };
 }

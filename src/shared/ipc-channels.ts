@@ -40,6 +40,14 @@ export const IPC_CHANNELS = [
   'git:log',
   'git:commit-detail',
   'git:commit-file-diff',
+  // --- Geçmiş işlemleri ---
+  'git:revert',
+  'git:reset',
+  // --- Etiketler ---
+  'git:tag-list',
+  'git:tag-create',
+  'git:tag-delete',
+  'git:tag-push',
   // --- Stash ---
   'git:stash-list',
   'git:stash-create',
@@ -50,6 +58,9 @@ export const IPC_CHANNELS = [
   'git:conflict-resolve',
   // --- Uzak sunucular ---
   'git:remotes',
+  'git:remote-add',
+  'git:remote-remove',
+  'git:remote-set-url',
   'git:fetch',
   'git:pull',
   'git:push',

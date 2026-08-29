@@ -15,10 +15,12 @@ import type {
   Remote,
   Repo,
   RepoSettings,
+  RevertResult,
   SshEnvironment,
   SshKey,
   SshTestResult,
   Stash,
+  Tag,
   WorkingTreeStatus,
 } from './types';
 
@@ -93,9 +95,35 @@ export const inputSchemas = {
     skip: z.number().int().min(0),
     limit: z.number().int().min(1).max(1000),
     ref: z.string().optional(),
+    filter: z
+      .object({
+        author: z.string().optional(),
+        message: z.string().optional(),
+        path: z.string().optional(),
+        since: z.string().optional(),
+        until: z.string().optional(),
+      })
+      .optional(),
   }),
   'git:commit-detail': repoId.extend({ sha: z.string().min(1) }),
   'git:commit-file-diff': repoId.extend({ sha: z.string().min(1), path: z.string().min(1) }),
+
+  // --- Geçmiş işlemleri ---
+  'git:revert': repoId.extend({ sha: z.string().min(1) }),
+  'git:reset': repoId.extend({
+    sha: z.string().min(1),
+    mode: z.enum(['soft', 'mixed', 'hard']),
+  }),
+
+  // --- Etiketler ---
+  'git:tag-list': repoId,
+  'git:tag-create': repoId.extend({
+    name: z.string().min(1),
+    sha: z.string().optional(),
+    message: z.string().optional(),
+  }),
+  'git:tag-delete': repoId.extend({ name: z.string().min(1), remote: z.boolean() }),
+  'git:tag-push': repoId.extend({ name: z.string().min(1) }),
 
   // --- Stash ---
   'git:stash-list': repoId,
@@ -116,9 +144,20 @@ export const inputSchemas = {
 
   // --- Uzak sunucular ---
   'git:remotes': repoId,
+  'git:remote-add': repoId.extend({ name: z.string().min(1), url: z.string().min(1) }),
+  'git:remote-remove': repoId.extend({ name: z.string().min(1) }),
+  'git:remote-set-url': repoId.extend({ name: z.string().min(1), url: z.string().min(1) }),
   'git:fetch': repoId,
   'git:pull': repoId.extend({ fastForwardOnly: z.boolean().optional() }),
-  'git:push': repoId.extend({ setUpstream: z.boolean().optional() }),
+  'git:push': repoId.extend({
+    setUpstream: z.boolean().optional(),
+    /**
+     * Zorlamalı gönderim yalnızca `--force-with-lease` ile yapılır: uzak dalda
+     * bizim bilmediğimiz bir commit varsa git reddeder. Düz `--force` hiçbir
+     * yerde kullanılmıyor.
+     */
+    forceWithLease: z.boolean().optional(),
+  }),
 
   // --- Ayarlar ---
   'settings:get': z.undefined(),
@@ -206,6 +245,17 @@ export interface IpcOutputs {
   'git:commit-file-diff': FileDiff;
 
   'git:remotes': Remote[];
+  'git:remote-add': void;
+  'git:remote-remove': void;
+  'git:remote-set-url': void;
+
+  'git:revert': RevertResult;
+  'git:reset': void;
+
+  'git:tag-list': Tag[];
+  'git:tag-create': void;
+  'git:tag-delete': void;
+  'git:tag-push': void;
   'git:fetch': FetchResult;
   'git:pull': PullResult;
   'git:push': PushResult;
