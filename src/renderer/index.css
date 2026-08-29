@@ -1,0 +1,150 @@
+@import 'tailwindcss';
+
+/*
+ * Tema token'ları.
+ *
+ * Koyu/açık geçişini yalnızca `prefers-color-scheme` üzerinden yapıyoruz: ana
+ * süreç `nativeTheme.themeSource` ayarını değiştirdiğinde Chromium bu medya
+ * sorgusunu da güncelliyor, dolayısıyla "sistem / açık / koyu" seçeneğinin
+ * üçü de tek bir mekanizmayla çalışıyor. Renderer'da ayrı bir sınıf yönetmeye
+ * gerek kalmıyor.
+ */
+:root {
+  --ground: #f4f3f7;
+  --surface: #ffffff;
+  --surface-2: #eceaf3;
+  --surface-3: #e3e0ed;
+  --ink: #1b1a22;
+  --ink-2: #565368;
+  --ink-3: #8a8799;
+  --line: #dcdae6;
+  --line-soft: #e8e6ef;
+  --accent: #5b4ba8;
+  --accent-ink: #463a85;
+  --accent-tint: #edeaf9;
+  --ok: #2e7d4f;
+  --ok-tint: #e4f1e9;
+  --warn: #9c6712;
+  --warn-tint: #f6eedd;
+  --crit: #b93a2c;
+  --crit-tint: #fbeae7;
+  --diff-add: #e6f4ec;
+  --diff-add-ink: #17532f;
+  --diff-del: #fdecea;
+  --diff-del-ink: #7d241a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #131218;
+    --surface: #1b1a23;
+    --surface-2: #23212d;
+    --surface-3: #2c2938;
+    --ink: #ebe9f1;
+    --ink-2: #aba7ba;
+    --ink-3: #7c7891;
+    --line: #2e2c3a;
+    --line-soft: #262432;
+    --accent: #a99af5;
+    --accent-ink: #c3b8ff;
+    --accent-tint: #221d38;
+    --ok: #63c08c;
+    --ok-tint: #152a20;
+    --warn: #d6a54a;
+    --warn-tint: #2b2314;
+    --crit: #e4796b;
+    --crit-tint: #2e1a17;
+    --diff-add: #14291d;
+    --diff-add-ink: #8fd8ab;
+    --diff-del: #2e1a17;
+    --diff-del-ink: #f0a196;
+  }
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-tint: var(--accent-tint);
+  --color-ok: var(--ok);
+  --color-ok-tint: var(--ok-tint);
+  --color-warn: var(--warn);
+  --color-warn-tint: var(--warn-tint);
+  --color-crit: var(--crit);
+  --color-crit-tint: var(--crit-tint);
+  --color-diff-add: var(--diff-add);
+  --color-diff-add-ink: var(--diff-add-ink);
+  --color-diff-del: var(--diff-del);
+  --color-diff-del-ink: var(--diff-del-ink);
+
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    /* Masaüstü uygulaması: metin seçimi yalnızca içerik alanlarında anlamlı. */
+    user-select: none;
+    cursor: default;
+    overflow: hidden;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--ink-3);
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer utilities {
+  .selectable {
+    user-select: text;
+    cursor: text;
+  }
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+}

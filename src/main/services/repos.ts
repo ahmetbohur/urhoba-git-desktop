@@ -1,0 +1,162 @@
+import { dialog, shell } from 'electron';
+import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { simpleGit } from 'simple-git';
+import { childEnv, run } from '../git/client';
+import { emitAppEvent } from './events';
+import * as store from './store';
+import type { Repo } from '@shared/types';
+
+/**
+ * Depo kayıtları. Bir klasörün gerçekten git deposu olduğunu `rev-parse` ile
+ * doğruluyoruz; kullanıcı alt klasör seçtiyse depo köküne çıkıyoruz — insanlar
+ * çoğu zaman "src" klasörünü seçip depoyu eklemek ister.
+ */
+
+async function resolveRepoRoot(candidate: string): Promise<string> {
+  const result = await run({
+    repoId: null,
+    repoPath: candidate,
+    args: ['rev-parse', '--show-toplevel'],
+    skipQueue: true,
+    allowFailure: true,
+  });
+  if (!result.ok || result.stdout.trim().length === 0) {
+    throw new Error('Bu klasör bir git deposu değil.');
+  }
+  return path.resolve(result.stdout.trim());
+}
+
+export async function addRepo(candidatePath: string): Promise<Repo> {
+  if (!fs.existsSync(candidatePath)) {
+    throw new Error('Klasör bulunamadı.');
+  }
+  const root = await resolveRepoRoot(candidatePath);
+
+  const existing = store.findRepoByPath(root);
+  if (existing) {
+    store.touchRepo(existing.id);
+    return existing;
+  }
+
+  const now = new Date().toISOString();
+  return store.saveRepo({
+    id: randomUUID(),
+    name: path.basename(root),
+    path: root,
+    addedAt: now,
+    lastOpenedAt: now,
+  });
+}
+
+export async function addRepoViaDialog(): Promise<Repo | null> {
+  const result = await dialog.showOpenDialog({
+    title: 'Depo klasörünü seç',
+    buttonLabel: 'Depoyu ekle',
+    properties: ['openDirectory'],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return addRepo(result.filePaths[0]);
+}
+
+export async function pickDirectory(): Promise<string | null> {
+  const result = await dialog.showOpenDialog({
+    title: 'Klonlanacak konumu seç',
+    buttonLabel: 'Buraya klonla',
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0];
+}
+
+/** URL'nin son parçasından klasör adı türetir: git@github.com:a/b.git -> b */
+export function repoNameFromUrl(url: string): string {
+  const trimmed = url.replace(/\.git$/, '').replace(/\/$/, '');
+  const lastSegment = trimmed.split(/[/:]/).pop() ?? 'depo';
+  return lastSegment.length > 0 ? lastSegment : 'depo';
+}
+
+export async function cloneRepo(
+  url: string,
+  parentDir: string,
+  name: string | undefined,
+  taskId: string,
+): Promise<Repo> {
+  const folderName = name && name.trim().length > 0 ? name.trim() : repoNameFromUrl(url);
+  const target = path.join(parentDir, folderName);
+
+  if (fs.existsSync(target) && fs.readdirSync(target).length > 0) {
+    throw new Error(`"${folderName}" klasörü zaten var ve boş değil.`);
+  }
+
+  // Klonlamada simple-git'in kendi ilerleme geri çağrısını kullanıyoruz;
+  // bu bilgi `git clone --progress` çıktısından geliyor ve stderr'de akıyor.
+  const git = simpleGit({
+    baseDir: parentDir,
+    progress({ method, stage, progress }) {
+      emitAppEvent({
+        type: 'clone:progress',
+        progress: { taskId, phase: `${method}: ${stage}`, percent: progress },
+      });
+    },
+  });
+  git.env(childEnv());
+
+  await git.clone(url, target, ['--progress']);
+  return addRepo(target);
+}
+
+/**
+ * Bir yolu `.gitignore`'a ekler.
+ *
+ * Dosya yoksa oluşturulur, varsa sonuna eklenir. Aynı satır zaten varsa hiçbir
+ * şey yapmıyoruz — kullanıcı iki kez tıklarsa dosyada tekrar oluşmasın.
+ */
+export async function ignorePath(repoPath: string, relative: string): Promise<void> {
+  const gitignore = path.join(repoPath, '.gitignore');
+  const entry = relative.replace(/\\/g, '/');
+
+  let current = '';
+  try {
+    current = await fs.promises.readFile(gitignore, 'utf8');
+  } catch {
+    // Dosya yok; boş içerikle devam.
+  }
+
+  const lines = current.split('\n').map((line) => line.trim());
+  if (lines.includes(entry)) return;
+
+  const prefix = current.length === 0 || current.endsWith('\n') ? '' : '\n';
+  await fs.promises.appendFile(gitignore, `${prefix}${entry}\n`, 'utf8');
+}
+
+/** Dosyayı işletim sisteminin varsayılan uygulamasında açar. */
+export async function openInSystem(repoPath: string, relative: string): Promise<void> {
+  const absolute = path.resolve(repoPath, relative);
+  const root = path.resolve(repoPath);
+  if (absolute !== root && !absolute.startsWith(root + path.sep)) {
+    throw new Error('Depo dışındaki bir dosya açılamaz.');
+  }
+  const error = await shell.openPath(absolute);
+  if (error) throw new Error(error);
+}
+
+export function removeRepo(id: string): void {
+  store.removeRepo(id);
+}
+
+export function revealRepo(id: string): void {
+  const repo = store.findRepo(id);
+  if (repo) shell.openPath(repo.path);
+}
+
+/** IPC işleyicilerinin ortak ihtiyacı: id'den depo yolunu çöz, yoksa anlamlı hata ver. */
+export function requireRepo(id: string): Repo {
+  const repo = store.findRepo(id);
+  if (!repo) throw new Error('Depo listede bulunamadı; kaldırılmış olabilir.');
+  if (!fs.existsSync(repo.path)) {
+    throw new Error(`Depo klasörü bulunamadı: ${repo.path}`);
+  }
+  return repo;
+}

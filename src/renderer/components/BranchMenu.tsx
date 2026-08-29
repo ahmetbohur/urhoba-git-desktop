@@ -1,0 +1,328 @@
+import { useMemo, useState } from 'react';
+import { ContextMenu, DropdownMenu } from 'radix-ui';
+import { Check, GitBranch, GitMerge, Plus, Search, Trash2 } from 'lucide-react';
+import { cn } from '../lib/cn';
+import { errorMessage, invoke } from '../lib/ipc';
+import { useBranches, useInvalidateRepo, useMutation } from '../lib/queries';
+import { relativeTime } from '../lib/format';
+import { useUi } from '../stores/ui';
+import { Badge, SectionLabel } from './primitives';
+import { ConfirmDialog } from './dialogs/ConfirmDialog';
+import type { Branch } from '@shared/types';
+
+/**
+ * Dal seçici.
+ *
+ * Uzak dallar da listede: bir uzak dala tıklamak `git checkout` ile aynı adda
+ * yerel izleme dalı oluşturur — insanların beklediği davranış bu.
+ */
+export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentBranch: string | null }) {
+  const { data: branches } = useBranches(repoId);
+  const invalidate = useInvalidateRepo();
+  const toast = useUi((s) => s.toast);
+  const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState('');
+  // Kirli dizin yüzünden engellenen geçiş: kullanıcıya saklayıp geçmeyi öneriyoruz.
+  const [blocked, setBlocked] = useState<{ branch: string; paths: string[] } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Branch | null>(null);
+
+  const checkout = useMutation({
+    mutationFn: (name: string) => invoke('git:checkout', { repoId, name }),
+    onSuccess: (result, name) => {
+      invalidate(repoId);
+      if (result.outcome === 'switched') {
+        toast({ kind: 'success', title: result.message });
+        setOpen(false);
+        return;
+      }
+      if (result.outcome === 'blocked-dirty') {
+        setOpen(false);
+        setBlocked({ branch: name, paths: result.blockingPaths });
+        return;
+      }
+      toast({ kind: 'error', title: 'Dal değiştirilemedi', description: result.message });
+    },
+    onError: (error) =>
+      toast({ kind: 'error', title: 'Dal değiştirilemedi', description: errorMessage(error) }),
+  });
+
+  /** Engellenen geçişte: önce sakla, sonra tekrar dene. */
+  const stashAndCheckout = useMutation({
+    mutationFn: async (name: string) => {
+      await invoke('git:stash-create', {
+        repoId,
+        message: `${name} dalına geçmeden önce`,
+        includeUntracked: true,
+      });
+      return invoke('git:checkout', { repoId, name });
+    },
+    onSuccess: (result) => {
+      invalidate(repoId);
+      toast({
+        kind: result.outcome === 'switched' ? 'success' : 'error',
+        title: result.outcome === 'switched' ? 'Saklandı ve geçildi' : 'Geçiş yapılamadı',
+        description: result.message,
+      });
+      setBlocked(null);
+    },
+    onError: (error) =>
+      toast({ kind: 'error', title: 'Saklanamadı', description: errorMessage(error) }),
+  });
+
+  const mergeBranch = useMutation({
+    mutationFn: (name: string) => invoke('git:merge', { repoId, branch: name }),
+    onSuccess: (result) => {
+      invalidate(repoId);
+      toast({
+        kind:
+          result.outcome === 'conflict'
+            ? 'warning'
+            : result.outcome === 'error'
+              ? 'error'
+              : 'success',
+        title: 'Birleştirme',
+        description: result.message,
+      });
+      setOpen(false);
+    },
+    onError: (error) =>
+      toast({ kind: 'error', title: 'Birleştirilemedi', description: errorMessage(error) }),
+  });
+
+  const rebaseOnto = useMutation({
+    mutationFn: (name: string) => invoke('git:rebase', { repoId, branch: name }),
+    onSuccess: (result) => {
+      invalidate(repoId);
+      toast({
+        kind:
+          result.outcome === 'conflict'
+            ? 'warning'
+            : result.outcome === 'error'
+              ? 'error'
+              : 'success',
+        title: 'Rebase',
+        description: result.message,
+      });
+      setOpen(false);
+    },
+    onError: (error) =>
+      toast({ kind: 'error', title: 'Rebase yapılamadı', description: errorMessage(error) }),
+  });
+
+  const deleteBranch = useMutation({
+    mutationFn: ({ name, force }: { name: string; force: boolean }) =>
+      invoke('git:branch-delete', { repoId, name, force }),
+    onSuccess: (_result, variables) => {
+      invalidate(repoId);
+      toast({ kind: 'info', title: `${variables.name} dalı silindi` });
+      setDeleteTarget(null);
+    },
+    onError: (error) =>
+      toast({
+        kind: 'error',
+        title: 'Dal silinemedi',
+        description: `${errorMessage(error)} Birleştirilmemiş commit’ler varsa silmeyi zorlaman gerekir.`,
+      }),
+  });
+
+  const createBranch = useMutation({
+    mutationFn: (name: string) =>
+      invoke('git:branch-create', { repoId, name, checkout: true }),
+    onSuccess: (_result, name) => {
+      invalidate(repoId);
+      toast({ kind: 'success', title: `${name} dalı oluşturuldu` });
+      setOpen(false);
+      setFilter('');
+    },
+    onError: (error) =>
+      toast({ kind: 'error', title: 'Dal oluşturulamadı', description: errorMessage(error) }),
+  });
+
+  const needle = filter.trim().toLocaleLowerCase('tr');
+
+  const { local, remote } = useMemo(() => {
+    const match = (list: Branch[]) =>
+      needle.length === 0
+        ? list
+        : list.filter((branch) => branch.fullName.toLocaleLowerCase('tr').includes(needle));
+    return { local: match(branches?.local ?? []), remote: match(branches?.remote ?? []) };
+  }, [branches, needle]);
+
+  // Aranan ad hiçbir dalla birebir eşleşmiyorsa "bu adla dal oluştur" seçeneği çıkar.
+  const exactMatch = [...(branches?.local ?? []), ...(branches?.remote ?? [])].some(
+    (branch) => branch.fullName === filter.trim() || branch.name === filter.trim(),
+  );
+  const canCreate = filter.trim().length > 0 && !exactMatch;
+
+  const renderBranch = (branch: Branch) => (
+    <ContextMenu.Root key={branch.fullName}>
+      <ContextMenu.Trigger asChild>
+        <DropdownMenu.Item
+          onSelect={() => checkout.mutate(branch.isRemote ? branch.name : branch.fullName)}
+          className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 outline-none data-[highlighted]:bg-surface-2"
+        >
+          <Check
+            className={cn('size-3.5 shrink-0', branch.isCurrent ? 'text-accent-ink' : 'opacity-0')}
+          />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[13px] text-ink">{branch.fullName}</span>
+            <span className="block truncate text-[11px] text-ink-3">
+              {branch.lastCommitSubject || 'commit yok'} · {relativeTime(branch.lastCommitAt)}
+            </span>
+          </span>
+          {branch.ahead > 0 && <Badge tone="accent">↑{branch.ahead}</Badge>}
+          {branch.behind > 0 && <Badge tone="warn">↓{branch.behind}</Badge>}
+        </DropdownMenu.Item>
+      </ContextMenu.Trigger>
+
+      <ContextMenu.Portal>
+        <ContextMenu.Content className="z-[60] min-w-64 rounded-md border border-line bg-surface p-1 shadow-lg">
+          <ContextMenu.Item
+            disabled={branch.isCurrent}
+            onSelect={() => mergeBranch.mutate(branch.fullName)}
+            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-surface-2"
+          >
+            <GitMerge className="size-3.5" />
+            <span className="truncate">
+              <strong className="font-mono">{branch.fullName}</strong> dalını buraya birleştir
+            </span>
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            disabled={branch.isCurrent}
+            onSelect={() => rebaseOnto.mutate(branch.fullName)}
+            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-surface-2"
+          >
+            <GitBranch className="size-3.5" />
+            <span className="truncate">
+              Bu dalı <strong className="font-mono">{branch.fullName}</strong> üzerine diz
+            </span>
+          </ContextMenu.Item>
+          {!branch.isRemote && !branch.isCurrent && (
+            <>
+              <ContextMenu.Separator className="my-1 h-px bg-line-soft" />
+              <ContextMenu.Item
+                onSelect={() => setDeleteTarget(branch)}
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] text-crit outline-none data-[highlighted]:bg-crit-tint"
+              >
+                <Trash2 className="size-3.5" />
+                Dalı sil
+              </ContextMenu.Item>
+            </>
+          )}
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  );
+
+  return (
+    <>
+    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          className="flex h-8 max-w-56 items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[13px] font-medium text-ink hover:bg-surface-2"
+        >
+          <GitBranch className="size-3.5 shrink-0 text-ink-3" />
+          <span className="truncate">{currentBranch ?? 'ayrık HEAD'}</span>
+        </button>
+      </DropdownMenu.Trigger>
+
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="start"
+          sideOffset={4}
+          className="z-50 flex max-h-96 w-96 flex-col rounded-lg border border-line bg-surface p-1 shadow-xl"
+        >
+          <div className="relative p-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-ink-3" />
+            <input
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              placeholder="Dal ara veya yeni dal adı yaz"
+              aria-label="Dal ara"
+              // Radix aksi hâlde yazılan her harfi menü gezinme kısayolu sanıyor.
+              onKeyDown={(event) => event.stopPropagation()}
+              className="selectable h-7 w-full rounded border border-line bg-ground pr-2 pl-7 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
+            />
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {canCreate && (
+              <DropdownMenu.Item
+                onSelect={() => createBranch.mutate(filter.trim())}
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] text-accent-ink outline-none data-[highlighted]:bg-accent-tint"
+              >
+                <Plus className="size-3.5" />
+                <span className="truncate">
+                  <strong className="font-mono">{filter.trim()}</strong> dalını oluştur ve geç
+                </span>
+              </DropdownMenu.Item>
+            )}
+
+            {local.length > 0 && (
+              <>
+                <SectionLabel className="block px-2 pt-2 pb-1">Yerel</SectionLabel>
+                {local.map(renderBranch)}
+              </>
+            )}
+
+            {remote.length > 0 && (
+              <>
+                <SectionLabel className="block px-2 pt-2 pb-1">Uzak</SectionLabel>
+                {remote.map(renderBranch)}
+              </>
+            )}
+
+            {local.length === 0 && remote.length === 0 && !canCreate && (
+              <p className="px-2 py-6 text-center text-[12px] text-ink-3">Eşleşen dal yok.</p>
+            )}
+          </div>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+
+      <ConfirmDialog
+        open={blocked !== null}
+        onOpenChange={(next) => !next && setBlocked(null)}
+        title="Kaydedilmemiş değişiklikler engelliyor"
+        confirmLabel="Sakla ve geç"
+        onConfirm={() => blocked && stashAndCheckout.mutate(blocked.branch)}
+      >
+        <div className="flex flex-col gap-2 text-[13px] text-ink-2">
+          <p>
+            <span className="font-mono text-ink">{blocked?.branch}</span> dalına geçmek şu
+            dosyalardaki değişikliklerin üzerine yazardı:
+          </p>
+          <ul className="max-h-32 overflow-y-auto rounded-md bg-surface-2 p-2 font-mono text-[11px]">
+            {blocked?.paths.map((path) => (
+              <li key={path} className="truncate text-ink">
+                {path}
+              </li>
+            ))}
+          </ul>
+          <p>
+            Değişiklikleri stash’e alıp geçebilirim; sonra istediğin zaman geri
+            uygularsın.
+          </p>
+        </div>
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(next) => !next && setDeleteTarget(null)}
+        title="Dalı sil"
+        confirmLabel="Sil"
+        destructive
+        onConfirm={() =>
+          deleteTarget && deleteBranch.mutate({ name: deleteTarget.fullName, force: false })
+        }
+      >
+        <p className="text-[13px] text-ink-2">
+          <span className="font-mono text-ink">{deleteTarget?.fullName}</span> dalı silinecek.
+          Birleştirilmemiş commit’leri varsa git silmeyi reddeder; o durumda kaybı göze alıp
+          zorlaman gerekir.
+        </p>
+      </ConfirmDialog>
+    </>
+  );
+}
