@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { AutoPullResult, GitLogEntry } from '@shared/types';
 
-export type MainTab = 'changes' | 'history';
+export type MainTab = 'changes' | 'history' | 'pulls';
 
 export interface Toast {
   id: string;

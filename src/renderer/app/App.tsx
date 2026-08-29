@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Tooltip } from 'radix-ui';
-import { FolderGit2, GitCommitHorizontal, History } from 'lucide-react';
+import { FolderGit2, GitCommitHorizontal, GitPullRequest, History } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { matchesShortcut, useCommands, type Command } from '../lib/commands';
 import { onAppEvent } from '../lib/ipc';
@@ -12,6 +12,7 @@ import { CommandPalette } from '../components/CommandPalette';
 import { EmptyState } from '../components/primitives';
 import { HistoryView } from '../components/HistoryView';
 import { OperationBar } from '../components/OperationBar';
+import { PullRequestsView } from '../components/PullRequestsView';
 import { RepoSidebar } from '../components/RepoSidebar';
 import { Toasts } from '../components/Toasts';
 import { TopBar } from '../components/TopBar';
@@ -19,6 +20,7 @@ import { TopBar } from '../components/TopBar';
 const TABS: Array<{ id: MainTab; label: string; icon: typeof History }> = [
   { id: 'changes', label: 'Değişiklikler', icon: GitCommitHorizontal },
   { id: 'history', label: 'Geçmiş', icon: History },
+  { id: 'pulls', label: 'Pull request’ler', icon: GitPullRequest },
 ];
 
 /**
@@ -171,8 +173,10 @@ export function App() {
 
               {tab === 'changes' ? (
                 <ChangesView repoId={activeRepo.id} />
-              ) : (
+              ) : tab === 'history' ? (
                 <HistoryView repoId={activeRepo.id} />
+              ) : (
+                <PullRequestsView repoId={activeRepo.id} />
               )}
 
               <CommandLogPanel />

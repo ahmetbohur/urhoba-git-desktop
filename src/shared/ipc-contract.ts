@@ -7,13 +7,17 @@ import type {
   Commit,
   CommitDetail,
   ConflictFile,
+  GithubAuthStatus,
+  GithubRepo,
   MergeResult,
+  PullRequest,
   FetchResult,
   FileDiff,
   PullResult,
   PushResult,
   Remote,
   Repo,
+  RepoContext,
   RepoSettings,
   RevertResult,
   SshEnvironment,
@@ -191,6 +195,21 @@ export const inputSchemas = {
   // --- Otomatik pull ---
   'autopull:run-now': repoId,
 
+  // --- GitHub ---
+  'github:status': z.undefined(),
+  'github:sign-in': z.object({ token: z.string().min(1) }),
+  'github:sign-out': z.undefined(),
+  'github:repo-context': repoId,
+  'github:repos': z.object({ query: z.string().optional() }),
+  'github:pulls': repoId,
+  'github:pull-checkout': repoId.extend({ number: z.number().int().positive() }),
+  'github:pull-create': repoId.extend({
+    title: z.string().min(1),
+    body: z.string().optional(),
+    base: z.string().min(1),
+    draft: z.boolean(),
+  }),
+
   // --- SSH ---
   'ssh:environment': z.undefined(),
   'ssh:generate-key': z.object({
@@ -266,6 +285,15 @@ export interface IpcOutputs {
   'settings:repo-set': RepoSettings;
 
   'autopull:run-now': PullResult;
+
+  'github:status': GithubAuthStatus;
+  'github:sign-in': GithubAuthStatus;
+  'github:sign-out': void;
+  'github:repo-context': RepoContext | null;
+  'github:repos': GithubRepo[];
+  'github:pulls': PullRequest[];
+  'github:pull-checkout': CheckoutResult;
+  'github:pull-create': PullRequest;
 
   'ssh:environment': SshEnvironment;
   'ssh:generate-key': SshKey;

@@ -54,6 +54,10 @@ Varsayılanları bilinçli olarak temkinli: çalışma dizini kirliyken dokunmaz
 yalnızca fast-forward yapar, yani arka planda haberin olmadan merge commit'i
 üretmez.
 
+**GitHub** — Kişisel erişim jetonuyla bağlanma, açık pull request listesi, PR
+dalına geçme (fork'tan gelenler dahil), mevcut daldan PR açma ve GitHub
+depolarını arayıp klonlama.
+
 **SSH kurulumu** — Sistemdeki anahtarları listeler, ssh-agent durumunu gösterir,
 yeni ed25519 anahtarı üretir, public key'i panoya kopyalar ve GitHub bağlantısını
 sınar. Uygulama hiçbir özel anahtarı kendi saklamaz.
@@ -80,6 +84,7 @@ Gereksinim: Node.js 20+ ve sistemde kurulu `git`.
 src/
 ├── main/        Electron ana süreci — git komutları, dosya izleme, ayarlar
 │   ├── git/     git katmanı: client (süreç), parse ve patch (saf mantık), komutlar
+│   ├── github/  API istemcisi, jeton saklama, PR işlemleri, sağlayıcı sözleşmesi
 │   ├── ipc/     kanal işleyicileri
 │   └── services/depo kayıtları, otomatik pull, SSH, dosya izleyici
 ├── preload/     güven sınırı — contextBridge ile window.urhoba
@@ -110,6 +115,18 @@ kırılgan yeri olduğu için bu fonksiyonlar Electron'a hiç ihtiyaç duymadan 
 ediliyor; ayrıca `__tests__/integration.test.ts` her çalıştığında geçici depolar
 kurup komutları gerçekten çalıştırıyor.
 
+### GitHub jetonu
+
+Jeton yalnızca ana süreçte tutuluyor; arayüze hiçbir zaman gönderilmiyor ve
+bütün API çağrıları oradan çıkıyor — bu sayede renderer'ın `connect-src` politikası
+kapalı kalabiliyor. Diske yazarken Electron'un `safeStorage` API'si kullanılıyor,
+yani işletim sisteminin anahtarlığıyla şifreleniyor. Anahtarlık yoksa jeton düz
+metin olarak yazılmıyor: yalnızca o oturum boyunca bellekte tutuluyor ve durum
+kullanıcıya söyleniyor.
+
+OAuth cihaz akışı yerine kişisel erişim jetonu tercih edildi; cihaz akışı
+uygulamaya ait bir OAuth App kaydı gerektiriyor.
+
 ### Commit grafiği
 
 `renderer/lib/commit-graph.ts` şerit düzenini tek geçişte hesaplıyor: her an
@@ -133,7 +150,7 @@ silme satırı bağlama dönüşür, seçilmeyen ekleme satırı yamadan tamamen
 | Kısayol | Ne yapar |
 | --- | --- |
 | `Ctrl/Cmd + K` | Komut paleti |
-| `Ctrl/Cmd + 1` / `2` | Değişiklikler / Geçmiş |
+| `Ctrl/Cmd + 1` / `2` / `3` | Değişiklikler / Geçmiş / Pull request'ler |
 | `Ctrl/Cmd + Shift + F` | Fetch |
 | `Ctrl/Cmd + Shift + L` | Pull |
 | `Ctrl/Cmd + Shift + P` | Push |
@@ -143,9 +160,9 @@ silme satırı bağlama dönüşür, seçilmeyen ekleme satırı yamadan tamamen
 
 ## Yol haritası
 
-Faz 0 (zemin), Faz 1 (MVP commit döngüsü), Faz 2 (günlük kullanım) ve Faz 3
-(geçmiş ve grafik) tamamlandı; otomatik pull ile SSH yardımcısı da planın dışında
-eklendi. Sıradaki adımlar:
+Faz 0 (zemin), Faz 1 (MVP commit döngüsü), Faz 2 (günlük kullanım), Faz 3
+(geçmiş ve grafik) ve Faz 4 (GitHub) tamamlandı; otomatik pull ile SSH yardımcısı
+da planın dışında eklendi. Sıradaki adım:
 
-- **Faz 4** — GitHub OAuth, PR listesi ve PR oluşturma
-- **Faz 5** — gömülü git (dugite), i18n, kod imzalama, otomatik güncelleme
+- **Faz 5** — gömülü git (dugite), i18n, erişilebilirlik denetimi, uçtan uca
+  testler, kod imzalama ve otomatik güncelleme

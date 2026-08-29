@@ -165,6 +165,70 @@ export interface PushResult {
   upstreamSet: boolean;
 }
 
+export interface GithubUser {
+  login: string;
+  name: string | null;
+  avatarUrl: string;
+  htmlUrl: string;
+}
+
+export interface GithubAuthStatus {
+  authenticated: boolean;
+  user: GithubUser | null;
+  /** Token'ın sahip olduğu yetkiler; PR oluşturmak için `repo` gerekiyor. */
+  scopes: string[];
+  /**
+   * Token diske şifrelenerek yazılabildi mi. İşletim sisteminde anahtarlık yoksa
+   * token yalnızca bu oturum boyunca bellekte tutulur.
+   */
+  persisted: boolean;
+  message?: string;
+}
+
+export interface GithubRepo {
+  fullName: string;
+  owner: string;
+  name: string;
+  description: string | null;
+  isPrivate: boolean;
+  isFork: boolean;
+  defaultBranch: string;
+  sshUrl: string;
+  httpsUrl: string;
+  updatedAt: string;
+  stars: number;
+}
+
+export type PullRequestState = 'open' | 'closed' | 'merged';
+
+export interface PullRequest {
+  number: number;
+  title: string;
+  body: string;
+  state: PullRequestState;
+  isDraft: boolean;
+  authorLogin: string;
+  authorAvatarUrl: string;
+  /** PR'ın geldiği dal adı. */
+  headRef: string;
+  /** Fork'tan geliyorsa kaynak deponun tam adı; aynı depodansa null. */
+  headRepoFullName: string | null;
+  baseRef: string;
+  htmlUrl: string;
+  createdAt: string;
+  updatedAt: string;
+  commentCount: number;
+}
+
+/** Aktif deponun hangi GitHub deposuna karşılık geldiği. */
+export interface RepoContext {
+  host: string;
+  owner: string;
+  name: string;
+  isGithub: boolean;
+  remoteName: string;
+}
+
 export interface Tag {
   name: string;
   sha: string;

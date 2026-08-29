@@ -14,9 +14,13 @@ import type {
   CommitDetail,
   ConflictFile,
   FileDiff,
+  GithubAuthStatus,
+  GithubRepo,
   LogFilter,
+  PullRequest,
   Remote,
   Repo,
+  RepoContext,
   RepoSettings,
   SshEnvironment,
   Stash,
@@ -40,6 +44,9 @@ export const keys = {
   tags: (id: string) => ['repo', id, 'tags'] as const,
   repoSettings: (id: string) => ['repo', id, 'settings'] as const,
   stashes: (id: string) => ['repo', id, 'stashes'] as const,
+  github: ['github'] as const,
+  repoContext: (id: string) => ['repo', id, 'github-context'] as const,
+  pulls: (id: string) => ['repo', id, 'pulls'] as const,
   conflict: (id: string, path: string) => ['repo', id, 'conflict', path] as const,
   workingDiff: (id: string, path: string, staged: boolean) =>
     ['repo', id, 'diff', path, staged] as const,
@@ -196,6 +203,43 @@ export function useConflict(repoId: string | null, path: string | null) {
     enabled: !!repoId && !!path,
     // Çakışma dosyası diskte değişebilir; önbellekte tutmuyoruz.
     staleTime: 0,
+  });
+}
+
+export function useGithubStatus(options?: Partial<UseQueryOptions<GithubAuthStatus>>) {
+  return useQuery<GithubAuthStatus>({
+    queryKey: keys.github,
+    queryFn: () => invoke('github:status', undefined),
+    // Token doğrulaması bir ağ isteği; gereksiz yere tekrarlamıyoruz.
+    staleTime: 5 * 60_000,
+    retry: false,
+    ...options,
+  });
+}
+
+export function useRepoContext(repoId: string | null) {
+  return useQuery<RepoContext | null>({
+    queryKey: keys.repoContext(repoId ?? ''),
+    queryFn: () => invoke('github:repo-context', { repoId: repoId as string }),
+    enabled: !!repoId,
+  });
+}
+
+export function usePullRequests(repoId: string | null, enabled: boolean) {
+  return useQuery<PullRequest[]>({
+    queryKey: keys.pulls(repoId ?? ''),
+    queryFn: () => invoke('github:pulls', { repoId: repoId as string }),
+    enabled: !!repoId && enabled,
+    retry: false,
+  });
+}
+
+export function useGithubRepos(query: string, enabled: boolean) {
+  return useQuery<GithubRepo[]>({
+    queryKey: [...keys.github, 'repos', query],
+    queryFn: () => invoke('github:repos', { query: query || undefined }),
+    enabled,
+    retry: false,
   });
 }
 

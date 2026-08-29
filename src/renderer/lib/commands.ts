@@ -107,6 +107,13 @@ export function useCommands(activeRepo: Repo | null): Command[] {
         run: () => setTab('history'),
       },
       {
+        id: 'view.pulls',
+        label: 'Pull request’ler sekmesine geç',
+        group: 'Görünüm',
+        shortcut: 'mod+3',
+        run: () => setTab('pulls'),
+      },
+      {
         id: 'view.commandlog',
         label: 'Git komut günlüğünü aç/kapat',
         group: 'Görünüm',

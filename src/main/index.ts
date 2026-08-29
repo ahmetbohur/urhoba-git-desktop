@@ -17,13 +17,18 @@ const isDevelopment = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
  * İçerik güvenlik politikası.
  *
  * Geliştirmede Vite'ın HMR istemcisi satır içi script ve websocket kullanıyor,
- * bu yüzden politika orada gevşek. Paketlenmiş uygulamada dış kaynak yok:
- * script yalnızca uygulamanın kendisinden, ağ bağlantısı hiç yok.
+ * bu yüzden politika orada gevşek.
+ *
+ * Paketlenmiş uygulamada script yalnızca uygulamanın kendisinden geliyor ve
+ * arayüzün ağa çıkışı yok: GitHub API çağrılarının tamamı ana süreçte, dolayısıyla
+ * `connect-src` kapalı kalabiliyor. Tek istisna GitHub avatar sunucusu —
+ * profil resmini göstermek için gereken tek dış kaynak. Bu yalnızca resim
+ * indirmeye izin veriyor; oraya veri gönderilemiyor.
  */
 function applyContentSecurityPolicy(): void {
   const policy = isDevelopment
-    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: http://localhost:*"
-    : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'";
+    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' ws: http://localhost:*"
+    : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self'";
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({

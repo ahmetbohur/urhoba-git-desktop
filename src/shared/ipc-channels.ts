@@ -71,6 +71,15 @@ export const IPC_CHANNELS = [
   'settings:repo-set',
   // --- Otomatik pull ---
   'autopull:run-now',
+  // --- GitHub ---
+  'github:status',
+  'github:sign-in',
+  'github:sign-out',
+  'github:repo-context',
+  'github:repos',
+  'github:pulls',
+  'github:pull-checkout',
+  'github:pull-create',
   // --- SSH ---
   'ssh:environment',
   'ssh:generate-key',

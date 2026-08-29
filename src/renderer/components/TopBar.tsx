@@ -4,6 +4,7 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   ChevronDown,
+  CircleUser,
   KeyRound,
   RefreshCw,
   Settings,
@@ -26,6 +27,7 @@ import { AutoPullPopover } from './AutoPullPopover';
 import { StashMenu } from './StashMenu';
 import { SettingsDialog } from './dialogs/SettingsDialog';
 import { SshDialog } from './dialogs/SshDialog';
+import { GithubDialog } from './dialogs/GithubDialog';
 import { TagDialog } from './dialogs/TagDialog';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import type { Repo } from '@shared/types';
@@ -49,6 +51,7 @@ export function TopBar({ repo }: { repo: Repo }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sshOpen, setSshOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
+  const [githubOpen, setGithubOpen] = useState(false);
   const [forcePushOpen, setForcePushOpen] = useState(false);
 
   const fetchMutation = useMutation({
@@ -204,6 +207,17 @@ export function TopBar({ repo }: { repo: Repo }) {
 
       <div className="mx-1 h-6 w-px bg-line" />
 
+      <Tooltip label="GitHub bağlantısı">
+        <button
+          type="button"
+          aria-label="GitHub bağlantısı"
+          onClick={() => setGithubOpen(true)}
+          className="rounded-md p-1.5 text-ink-2 hover:bg-surface-2 hover:text-ink"
+        >
+          <CircleUser className="size-4" />
+        </button>
+      </Tooltip>
+
       <Tooltip label="Etiketler">
         <button
           type="button"
@@ -259,6 +273,7 @@ export function TopBar({ repo }: { repo: Repo }) {
       />
       <SshDialog open={sshOpen} onOpenChange={setSshOpen} />
       <TagDialog repoId={repo.id} commit={null} open={tagsOpen} onOpenChange={setTagsOpen} />
+      <GithubDialog open={githubOpen} onOpenChange={setGithubOpen} />
 
       <ConfirmDialog
         open={forcePushOpen}

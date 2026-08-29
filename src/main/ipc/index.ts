@@ -5,6 +5,7 @@ import * as branches from '../git/branches';
 import * as conflict from '../git/conflict';
 import * as history from '../git/history';
 import * as merge from '../git/merge';
+import * as github from '../github/provider';
 import * as rewrite from '../git/rewrite';
 import * as tags from '../git/tags';
 import * as remote from '../git/remote';
@@ -260,6 +261,62 @@ const handlers: Handlers = {
   'autopull:run-now': ({ repoId }) => {
     repos.requireRepo(repoId);
     return autopull.pullNow(repoId);
+  },
+
+  // --- GitHub ---
+  'github:status': () => github.getStatus(),
+  'github:sign-in': ({ token }) => github.signIn(token),
+  'github:sign-out': () => github.signOut(),
+  'github:repo-context': ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    return github.getRepoContext(repo.id, repo.path);
+  },
+  'github:repos': ({ query }) => github.listRepos(query),
+  'github:pulls': async ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    const context = await github.getRepoContext(repo.id, repo.path);
+    if (!context?.isGithub) return [];
+    return github.listPullRequests(context);
+  },
+  'github:pull-checkout': async ({ repoId, number }) => {
+    const repo = activateRepo(repoId);
+    const context = await github.getRepoContext(repo.id, repo.path);
+    if (!context?.isGithub) {
+      throw new Error('Bu depo bir GitHub deposuna bağlı değil.');
+    }
+    const pulls = await github.listPullRequests(context);
+    const pull = pulls.find((candidate) => candidate.number === number);
+    if (!pull) throw new Error(`#${number} numaralı PR bulunamadı ya da kapanmış.`);
+    return github.checkoutPullRequest(repo.id, repo.path, context, pull);
+  },
+  'github:pull-create': async ({ repoId, title, body, base, draft }) => {
+    const repo = activateRepo(repoId);
+    const context = await github.getRepoContext(repo.id, repo.path);
+    if (!context?.isGithub) {
+      throw new Error('Bu depo bir GitHub deposuna bağlı değil.');
+    }
+    const currentStatus = await status.getStatus(repo.id, repo.path);
+    if (!currentStatus.branch) {
+      throw new Error('Ayrık HEAD durumunda PR açılamaz.');
+    }
+    if (currentStatus.branch === base) {
+      throw new Error('Kaynak ve hedef dal aynı olamaz.');
+    }
+    // Uzakta olmayan bir daldan PR açılamaz; kullanıcıyı GitHub'ın anlaşılmaz
+    // hatasıyla baş başa bırakmak yerine önce push ediyoruz.
+    if (!currentStatus.upstream || currentStatus.ahead > 0) {
+      const pushed = await remote.push(repo.id, repo.path, !currentStatus.upstream);
+      if (!pushed.ok) {
+        throw new Error(`Dal gönderilemedi, PR açılamadı: ${pushed.message}`);
+      }
+    }
+    return github.createPullRequest(context, {
+      title,
+      body,
+      head: currentStatus.branch,
+      base,
+      draft,
+    });
   },
 
   // --- SSH ---
