@@ -73,6 +73,19 @@ test('arayüz görüntüleri', async () => {
   });
   await page.waitForTimeout(900);
   await page.screenshot({ path: `${SHOT_DIR}/07-hakkinda.png` });
+  // Hakkında penceresi açık kalırsa örtüsü sonraki tıklamayı engelliyor.
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
+  // Koyu tema
+  await page.getByLabel('Ayarlar').click();
+  await page.waitForTimeout(500);
+  await page.getByRole('button', { name: 'Koyu' }).click();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `${SHOT_DIR}/08-koyu-ayarlar.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${SHOT_DIR}/09-koyu-ana-ekran.png` });
 
   await app.close();
   fs.rmSync(userData, { recursive: true, force: true });

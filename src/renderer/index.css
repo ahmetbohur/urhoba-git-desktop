@@ -3,11 +3,17 @@
 /*
  * Tema token'ları.
  *
- * Koyu/açık geçişini yalnızca `prefers-color-scheme` üzerinden yapıyoruz: ana
- * süreç `nativeTheme.themeSource` ayarını değiştirdiğinde Chromium bu medya
- * sorgusunu da güncelliyor, dolayısıyla "sistem / açık / koyu" seçeneğinin
- * üçü de tek bir mekanizmayla çalışıyor. Renderer'da ayrı bir sınıf yönetmeye
- * gerek kalmıyor.
+ * Üç durum var ve üçü de karşılanmak zorunda:
+ *
+ * - `data-theme` yoksa: kullanıcı "sistem" demiş, karar `prefers-color-scheme`
+ *   medya sorgusunun.
+ * - `data-theme="dark"` / `"light"`: kullanıcı açıkça seçmiş, sistem ne derse
+ *   desin bu kazanır.
+ *
+ * Yalnızca medya sorgusuna güvenmek yetmiyordu: `nativeTheme.themeSource`
+ * Linux'ta bu sorguyu etkilemiyor, dolayısıyla ayardan tema değiştirmek diske
+ * yazılıyor ama ekranda hiçbir şey değişmiyordu. Tercihi kök öğeye açıkça
+ * yazmak üç platformda da aynı şekilde çalışıyor.
  */
 :root {
   --ground: #f4f3f7;
@@ -35,7 +41,8 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  /* Açık tema açıkça seçildiyse sistem koyu olsa bile açık kalmalı. */
+  :root:not([data-theme='light']) {
     --ground: #131218;
     --surface: #1b1a23;
     --surface-2: #23212d;
@@ -59,6 +66,31 @@
     --diff-del: #2e1a17;
     --diff-del-ink: #f0a196;
   }
+}
+
+:root[data-theme='dark'] {
+    --ground: #131218;
+    --surface: #1b1a23;
+    --surface-2: #23212d;
+    --surface-3: #2c2938;
+    --ink: #ebe9f1;
+    --ink-2: #aba7ba;
+    --ink-3: #7c7891;
+    --line: #2e2c3a;
+    --line-soft: #262432;
+    --accent: #a99af5;
+    --accent-ink: #c3b8ff;
+    --accent-tint: #221d38;
+    --ok: #63c08c;
+    --ok-tint: #152a20;
+    --warn: #d6a54a;
+    --warn-tint: #2b2314;
+    --crit: #e4796b;
+    --crit-tint: #2e1a17;
+    --diff-add: #14291d;
+    --diff-add-ink: #8fd8ab;
+    --diff-del: #2e1a17;
+    --diff-del-ink: #f0a196;
 }
 
 @theme inline {

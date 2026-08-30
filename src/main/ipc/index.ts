@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, nativeTheme } from 'electron';
 import { inputSchemas, type IpcChannel, type IpcInput, type IpcOutput } from '@shared/ipc-contract';
 import { toIpcError } from '../git/client';
 import * as branches from '../git/branches';
@@ -264,6 +264,14 @@ const handlers: Handlers = {
   'settings:get': () => store.getSettings(),
   'settings:set': (patch) => {
     const next = store.updateSettings(patch);
+    /*
+     * Tema tercihini Chromium'a bildirmek zorundayız: arayüzün renkleri
+     * `prefers-color-scheme` medya sorgusuna dayanıyor ve o sorgunun cevabını
+     * `nativeTheme.themeSource` belirliyor. Bu satır olmadan ayar diske
+     * yazılıyor ama ekranda hiçbir şey değişmiyordu; tema ancak uygulama
+     * yeniden başlatılınca uygulanıyordu.
+     */
+    if (patch.theme) nativeTheme.themeSource = patch.theme;
     autopull.reconcileSchedules();
     return next;
   },

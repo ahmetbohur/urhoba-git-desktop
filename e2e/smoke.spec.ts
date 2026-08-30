@@ -131,6 +131,39 @@ test('arayüz dili İngilizceye çevrilebiliyor', async () => {
   await expect(page.getByRole('tab', { name: 'Değişiklikler' })).toBeVisible({ timeout: 15_000 });
 });
 
+test('tema değişikliği anında renklere yansıyor', async () => {
+  /*
+   * Ayarın diske yazıldığını değil, ekrandaki rengin gerçekten değiştiğini
+   * ölçüyoruz. İlk hâlinde tema yalnızca `nativeTheme.themeSource` ile
+   * ayarlanıyordu ve Linux'ta hiçbir şey değişmiyordu; ayarı okuyan bir test
+   * bunu yakalayamazdı.
+   */
+  const background = () =>
+    page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+
+  // Ayar kanalını doğrudan çağırmak yerine gerçek yolu izliyoruz: kullanıcının
+  // tıkladığı düğme, ayarın kaydı ve arayüzün tazelenmesi zinciri birlikte
+  // çalışmazsa tema yine değişmez.
+  await page.getByLabel('Ayarlar').click();
+  await expect(page.getByText('Görünüm ve dil')).toBeVisible({ timeout: 10_000 });
+
+  await page.getByRole('button', { name: 'Koyu' }).click();
+  await expect.poll(background, { timeout: 8000 }).toBe('rgb(19, 18, 24)');
+
+  await page.getByRole('button', { name: 'Açık' }).click();
+  await expect.poll(background, { timeout: 8000 }).toBe('rgb(244, 243, 247)');
+
+  // Sistem seçilince öznitelik kalkmalı; karar yeniden medya sorgusuna döner.
+  await page.getByRole('button', { name: 'Sistem' }).click();
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.hasAttribute('data-theme')), {
+      timeout: 8000,
+    })
+    .toBe(false);
+
+  await page.keyboard.press('Escape');
+});
+
 test('git komut günlüğü çalışan komutları gösteriyor', async () => {
   await page.keyboard.press('Control+Shift+G');
   await expect(page.getByText('Git komutları')).toBeVisible();
