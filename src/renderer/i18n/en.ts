@@ -46,6 +46,13 @@ export const en: Record<string, string> = {
   'Depolar': 'Repositories',
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
+  'AI sağlayıcısı': 'AI provider',
+  'AI yardımı kapalı. Sağlayıcı ayarları açıldığında görünür.':
+    'AI assistance is off. Provider settings appear once it is on.',
+  'Bu depoda commit mesajı önerisi kullanılabilsin mi.':
+    'Whether commit message suggestions are available in this repository.',
+  'Sağlayıcı, model ve anahtar bütün depolar için ortak. AI’ın açık olması yukarıdaki bölümlerden ayarlanıyor.':
+    'Provider, model and key are shared by all repositories. Turning AI on is set in the sections above.',
   'Commit mesajı ve gruplama önerileri. Varsayılan olarak kapalı.':
     'Commit message and grouping suggestions. Off by default.',
   'Yerel — kod makineden çıkmaz': 'Local — code never leaves your machine',

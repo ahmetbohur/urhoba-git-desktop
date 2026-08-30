@@ -158,7 +158,7 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
   const [amend, setAmend] = useState(false);
   const invalidate = useInvalidateRepo();
   const toast = useUi((s) => s.toast);
-  const { data: aiStatus } = useAiStatus();
+  const { data: aiStatus } = useAiStatus(repoId);
 
   /*
    * Öneri doğrudan alanlara yazılıyor, commit'e dönüşmüyor: kullanıcı okuyup

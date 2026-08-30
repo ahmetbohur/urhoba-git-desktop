@@ -72,9 +72,9 @@ yalnızca fast-forward yapar, yani arka planda haberin olmadan merge commit'i
 dalına geçme (fork'tan gelenler dahil), mevcut daldan PR açma ve GitHub
 depolarını arayıp klonlama.
 
-**Genel ve depo bazlı ayarlar** — Arka planda fetch, otomatik pull ve bulut AI
-izni hem bütün depolar için hem tek bir depo için ayarlanabilir. Geçersiz
-kılınmayan ayar genel varsayılanı izlemeye devam eder.
+**Genel ve depo bazlı ayarlar** — Arka planda fetch, otomatik pull, AI yardımı
+ve bulut AI izni hem bütün depolar için hem tek bir depo için ayarlanabilir.
+Geçersiz kılınmayan ayar genel varsayılanı izlemeye devam eder.
 
 **AI yardımı (isteğe bağlı)** — Commit mesajı önerisi ve gruplama önerisi;
 Ollama (yerel), OpenAI veya Claude ile. Varsayılan olarak kapalı ve yerel.
@@ -175,10 +175,17 @@ depo ayarı üç durumlu: *Genel (açık/kapalı)*, *Açık*, *Kapalı*.
 AI varsayılan olarak kapalı; açılmadan hiçbir istek gitmez. Varsayılan sağlayıcı
 **Ollama**, yani model kullanıcının makinesinde çalışır ve kod dışarı çıkmaz.
 
-Bulut sağlayıcı (OpenAI, Claude) seçildiğinde commit mesajı önerisi için diff
-gönderilmesi gerekir; bu **depo bazlı izin** ister ve "bütün depolarda açık" diye
-bir seçenek bilinçli olarak yoktur. Gruplama önerisi yalnızca depo adlarını
-gönderir, kod göndermez — o yüzden aynı izni istemez.
+AI'ın açık olması ve buluta kod gönderilmesi ikisi de genel/depo ayarı: genel
+varsayılan bütün depolar için geçerli, bir depo ikisini de kendisi için
+değiştirebiliyor. Böylece AI çoğu depoda açıkken tek bir depoda kapatılabiliyor
+— müşteri kodu, özel depo, imzalı sözleşme.
+
+Sağlayıcı, model ve API anahtarı ise hesap düzeyinde. Depo başına ayrı model
+tutmak anahtar yönetimini de ikiye bölerdi; kullanıcı aynı anahtarı her depoda
+yeniden girerdi.
+
+Gruplama önerisi bütün depoları birden ilgilendirdiği için genel ayara bakar ve
+yalnızca depo adlarını gönderir; kod göndermediği için bulut izni aramaz.
 
 Büyük diff'ler katman katman daraltılır (`ai/diff-budget.ts`): tam diff, dosya
 başına ilk 100 satır, yalnızca değişen satırlar, dosya listesi. Ham diff'i sondan

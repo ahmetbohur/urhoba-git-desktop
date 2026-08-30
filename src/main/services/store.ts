@@ -30,12 +30,12 @@ const DEFAULT_SETTINGS: AppSettings = {
     // Bulut AI varsayılan olarak kapalı: kod dışarı çıkacaksa bu bilinçli bir
     // karar olmalı, sessiz bir varsayılan değil.
     allowCloudAi: false,
+    // AI varsayılan olarak kapalı: kullanıcı açıkça açmadan hiçbir istek gitmiyor.
+    aiEnabled: false,
   },
   autoFetchIntervalMinutes: 10,
   ai: {
-    // AI varsayılan olarak kapalı ve yerel: kullanıcı açıkça açmadan hiçbir
-    // istek gitmiyor, açtığında da kod makineden çıkmıyor.
-    enabled: false,
+    // Varsayılan sağlayıcı yerel: AI açıldığında da kod makineden çıkmıyor.
     provider: 'ollama',
     model: '',
     ollamaHost: 'http://127.0.0.1:11434',
@@ -86,6 +86,8 @@ function load(): StoreShape {
       /* yedekleme başarısız olsa da açılışı engellemeyelim */
     }
   }
+  const legacyAiEnabled = (parsed.settings?.ai as { enabled?: boolean } | undefined)?.enabled;
+
   cache = {
     settings: {
       ...DEFAULT_SETTINGS,
@@ -95,6 +97,9 @@ function load(): StoreShape {
       ai: { ...DEFAULT_SETTINGS.ai, ...(parsed.settings?.ai ?? {}) },
       defaults: {
         ...DEFAULT_SETTINGS.defaults,
+        // AI'ın açık olması eskiden `ai.enabled` idi; kullanıcı AI'ı açtıysa
+        // güncellemeden sonra kapanmış bulmasın.
+        ...(legacyAiEnabled === undefined ? {} : { aiEnabled: legacyAiEnabled }),
         ...(parsed.settings?.defaults ?? {}),
         autoPull: {
           ...DEFAULT_SETTINGS.defaults.autoPull,
@@ -244,10 +249,12 @@ export function getRepoSettings(id: string): RepoSettings {
     autoPull: { ...(own.autoPull ?? defaults.autoPull) },
     autoFetch: own.autoFetch ?? defaults.autoFetch,
     allowCloudAi: own.allowCloudAi ?? defaults.allowCloudAi,
+    aiEnabled: own.aiEnabled ?? defaults.aiEnabled,
     overrides: {
       autoPull: own.autoPull !== undefined,
       autoFetch: own.autoFetch !== undefined,
       allowCloudAi: own.allowCloudAi !== undefined,
+      aiEnabled: own.aiEnabled !== undefined,
     },
   };
 }
@@ -262,12 +269,13 @@ export function updateRepoSettings(
     autoPull?: AutoPullSettings | null;
     autoFetch?: boolean | null;
     allowCloudAi?: boolean | null;
+    aiEnabled?: boolean | null;
   },
 ): RepoSettings {
   const store = load();
   const own = { ...(store.repoSettings[id] ?? {}) };
 
-  for (const key of ['autoPull', 'autoFetch', 'allowCloudAi'] as const) {
+  for (const key of ['autoPull', 'autoFetch', 'allowCloudAi', 'aiEnabled'] as const) {
     const value = patch[key];
     if (value === undefined) continue;
     if (value === null) delete own[key];

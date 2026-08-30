@@ -330,7 +330,7 @@ const handlers: Handlers = {
   'app:open-logs': () => diagnostics.openLogFolder(),
 
   // --- AI ---
-  'ai:status': () => ai.getStatusSummary(),
+  'ai:status': (input) => ai.getStatusSummary(input.repoId),
   'ai:models': () => ai.listModels(),
   'ai:set-key': ({ provider, key }) => ai.setApiKey(provider, key),
   'ai:suggest-commit': ({ repoId }) => {

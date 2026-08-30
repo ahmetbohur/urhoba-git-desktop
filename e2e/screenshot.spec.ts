@@ -110,22 +110,23 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(600);
 
   // AI ayarları bölümü
-  await page.evaluate(() =>
-    window.urhoba.invoke('settings:set', {
+  await page.evaluate(async () => {
+    const settings = await window.urhoba.invoke('settings:get', undefined);
+    await window.urhoba.invoke('settings:set', {
       ai: {
-        enabled: true,
         provider: 'ollama',
         model: 'gemma4:26b-a4b-it-qat',
         ollamaHost: 'http://127.0.0.1:11434',
       },
-    }),
-  );
+      defaults: { ...settings.defaults, aiEnabled: true },
+    });
+  });
   await page.reload();
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1200);
   await page.getByLabel('Ayarlar').click();
   await page.waitForTimeout(1200);
-  await page.getByText('AI yardımı').scrollIntoViewIfNeeded();
+  await page.getByText('AI sağlayıcısı').scrollIntoViewIfNeeded();
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${SHOT_DIR}/11-ai-ayarlari.png` });
   await page.keyboard.press('Escape');

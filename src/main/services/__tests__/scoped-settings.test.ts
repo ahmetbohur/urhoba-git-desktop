@@ -34,6 +34,7 @@ describe('genel ve depo ayarları', () => {
       defaults: {
         autoFetch: false,
         allowCloudAi: true,
+        aiEnabled: true,
         autoPull: { enabled: true, intervalMinutes: 5, onlyWhenClean: false, fastForwardOnly: false },
       },
     });
@@ -43,10 +44,12 @@ describe('genel ve depo ayarları', () => {
     expect(settings.autoFetch).toBe(false);
     expect(settings.allowCloudAi).toBe(true);
     expect(settings.autoPull.intervalMinutes).toBe(5);
+    expect(settings.aiEnabled).toBe(true);
     expect(settings.overrides).toEqual({
       autoPull: false,
       autoFetch: false,
       allowCloudAi: false,
+      aiEnabled: false,
     });
   });
 
@@ -102,6 +105,7 @@ describe('genel ve depo ayarları', () => {
       autoPull: false,
       autoFetch: false,
       allowCloudAi: false,
+      aiEnabled: false,
     });
   });
 
@@ -111,5 +115,37 @@ describe('genel ve depo ayarları', () => {
     expect(store.getRepoSettings('depo-2').allowCloudAi).toBe(
       store.getSettings().defaults.allowCloudAi,
     );
+  });
+
+  it('AI bir depoda kapatılınca diğer depolar genel ayarı izlemeye devam eder', () => {
+    store.updateSettings({
+      defaults: {
+        autoFetch: true,
+        allowCloudAi: false,
+        aiEnabled: true,
+        autoPull: {
+          enabled: false,
+          intervalMinutes: 10,
+          onlyWhenClean: true,
+          fastForwardOnly: true,
+        },
+      },
+    });
+    store.updateRepoSettings('gizli-depo', { aiEnabled: false });
+
+    expect(store.getRepoSettings('gizli-depo').aiEnabled).toBe(false);
+    expect(store.getRepoSettings('gizli-depo').overrides.aiEnabled).toBe(true);
+    expect(store.getRepoSettings('baska-depo').aiEnabled).toBe(true);
+  });
+
+  it('depoya özel AI ayarı genelden geri alınabiliyor', () => {
+    store.updateRepoSettings('depo-1', { aiEnabled: true });
+    expect(store.getRepoSettings('depo-1').overrides.aiEnabled).toBe(true);
+
+    store.updateRepoSettings('depo-1', { aiEnabled: null });
+
+    const settings = store.getRepoSettings('depo-1');
+    expect(settings.overrides.aiEnabled).toBe(false);
+    expect(settings.aiEnabled).toBe(false);
   });
 });

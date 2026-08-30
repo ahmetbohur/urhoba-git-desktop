@@ -223,9 +223,12 @@ export interface PushResult {
 
 export type AiProviderId = 'ollama' | 'openai' | 'anthropic';
 
+/**
+ * Sağlayıcı, model ve adres hesap düzeyinde ayarlar — depo başına ayrı bir
+ * model tutmak anahtar yönetimini de ikiye bölerdi. AI'ın açık olup olmaması
+ * ise depoya göre değişebiliyor; o alan `ScopedSettings.aiEnabled` içinde.
+ */
 export interface AiSettings {
-  /** Varsayılan kapalı: açılmadan hiçbir istek gitmiyor. */
-  enabled: boolean;
   provider: AiProviderId;
   model: string;
   ollamaHost: string;
@@ -493,6 +496,8 @@ export interface ScopedSettings {
   autoFetch: boolean;
   /** Bu deponun kodu bulut AI sağlayıcısına gönderilebilir mi. */
   allowCloudAi: boolean;
+  /** AI yardımı açık mı — kapalıyken hiçbir istek gitmiyor. */
+  aiEnabled: boolean;
 }
 
 /** Bir depoda hangi alanların genel ayardan ayrıldığı. */
@@ -500,6 +505,7 @@ export interface SettingsOverrides {
   autoPull: boolean;
   autoFetch: boolean;
   allowCloudAi: boolean;
+  aiEnabled: boolean;
 }
 
 /** Bir depo için geçerli olan çözülmüş ayarlar ve hangilerinin özel olduğu. */

@@ -263,10 +263,15 @@ export function useGithubRepos(query: string, enabled: boolean) {
   });
 }
 
-export function useAiStatus() {
+/**
+ * `repoId` verilmezse genel varsayılan durum okunuyor — gruplama gibi tek bir
+ * depoya bağlı olmayan yerlerde gereken de o. Anahtar depoyu içeriyor; aksi
+ * hâlde bir depoda okunan durum diğerinde önbellekten dönerdi.
+ */
+export function useAiStatus(repoId: string | null = null) {
   return useQuery<AiStatus>({
-    queryKey: ['ai-status'],
-    queryFn: () => invoke('ai:status', undefined),
+    queryKey: ['ai-status', repoId],
+    queryFn: () => invoke('ai:status', { repoId }),
   });
 }
 

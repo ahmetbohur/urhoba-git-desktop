@@ -95,11 +95,16 @@ function clientFor(settings: AiSettings): AiClient {
   }
 }
 
-export function getStatusSummary(): AiStatus {
+/**
+ * AI'ın açık olup olmaması depoya göre değişebiliyor; sağlayıcı ve model ise
+ * hesap düzeyinde. Depo verilmediğinde (gruplama gibi tek bir depoya bağlı
+ * olmayan işlemler) genel varsayılan geçerli.
+ */
+export function getStatusSummary(repoId: string | null): AiStatus {
   const settings = store.getSettings().ai;
   const keys = loadKeys();
   return {
-    enabled: settings.enabled,
+    enabled: isEnabledFor(repoId),
     provider: settings.provider,
     model: settings.model,
     /** Bulut sağlayıcı seçiliyse anahtar var mı. */
@@ -131,8 +136,20 @@ function assertCloudAllowed(repoId: string, settings: AiSettings): void {
   );
 }
 
-function requireEnabled(settings: AiSettings): void {
-  if (!settings.enabled) throw new AiError('AI yardımı kapalı. Ayarlardan açabilirsin.');
+function isEnabledFor(repoId: string | null): boolean {
+  return repoId === null
+    ? store.getSettings().defaults.aiEnabled
+    : store.getRepoSettings(repoId).aiEnabled;
+}
+
+function requireEnabled(repoId: string | null, settings: AiSettings): void {
+  if (!isEnabledFor(repoId)) {
+    throw new AiError(
+      repoId === null
+        ? 'AI yardımı kapalı. Ayarlardan açabilirsin.'
+        : 'AI yardımı bu depo için kapalı. Ayarlardan açabilirsin.',
+    );
+  }
   if (!settings.model) throw new AiError('Model seçilmemiş. Ayarlardan bir model seç.');
 }
 
@@ -150,7 +167,7 @@ export async function suggestCommitMessage(
   repoPath: string,
 ): Promise<CommitSuggestion> {
   const settings = store.getSettings().ai;
-  requireEnabled(settings);
+  requireEnabled(repoId, settings);
   assertCloudAllowed(repoId, settings);
 
   const status = await getStatus(repoId, repoPath);
@@ -215,7 +232,9 @@ const GROUP_SYSTEM = [
 
 export async function suggestGroups(): Promise<GroupSuggestion[]> {
   const settings = store.getSettings().ai;
-  requireEnabled(settings);
+  // Gruplama bütün depoları birden ilgilendiriyor; tek bir deponun ayarına
+  // bakmak anlamsız olurdu, genel varsayılan geçerli.
+  requireEnabled(null, settings);
   // Gruplama yalnızca depo adlarını gönderiyor; kod gitmediği için depo bazlı
   // izin aranmıyor.
 

@@ -47,10 +47,16 @@ test('Ollama ile commit mesajı ve gruplama önerisi', async () => {
   await page.evaluate(
     (model) =>
       window.urhoba.invoke('settings:set', {
-        ai: { enabled: true, provider: 'ollama', model, ollamaHost: 'http://127.0.0.1:11434' },
+        ai: { provider: 'ollama', model, ollamaHost: 'http://127.0.0.1:11434' },
       }),
     MODEL,
   );
+  await page.evaluate(async () => {
+    const settings = await window.urhoba.invoke('settings:get', undefined);
+    await window.urhoba.invoke('settings:set', {
+      defaults: { ...settings.defaults, aiEnabled: true },
+    });
+  });
   await page.reload();
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1500);

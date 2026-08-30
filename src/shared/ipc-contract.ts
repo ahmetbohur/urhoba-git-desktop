@@ -202,7 +202,6 @@ export const inputSchemas = {
     language: z.enum(['tr', 'en']).optional(),
     ai: z
       .object({
-        enabled: z.boolean(),
         provider: z.enum(['ollama', 'openai', 'anthropic']),
         model: z.string(),
         ollamaHost: z.string().min(1),
@@ -221,6 +220,7 @@ export const inputSchemas = {
         }),
         autoFetch: z.boolean(),
         allowCloudAi: z.boolean(),
+        aiEnabled: z.boolean(),
       })
       .optional(),
   }),
@@ -232,6 +232,7 @@ export const inputSchemas = {
   'settings:repo-set': repoId.extend({
     autoFetch: z.boolean().nullable().optional(),
     allowCloudAi: z.boolean().nullable().optional(),
+    aiEnabled: z.boolean().nullable().optional(),
     autoPull: z
       .object({
         enabled: z.boolean(),
@@ -253,7 +254,9 @@ export const inputSchemas = {
   'app:open-logs': z.undefined(),
 
   // --- AI ---
-  'ai:status': z.undefined(),
+  // Depo verilmezse genel varsayılan durum dönüyor: gruplama gibi tek bir
+  // depoya bağlı olmayan işlemler için gereken de o.
+  'ai:status': z.object({ repoId: z.string().nullable() }),
   'ai:models': z.undefined(),
   'ai:set-key': z.object({
     provider: z.enum(['ollama', 'openai', 'anthropic']),

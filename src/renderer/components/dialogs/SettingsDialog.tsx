@@ -114,9 +114,15 @@ export function SettingsDialog({
     mutationFn: (patch: {
       autoFetch?: boolean | null;
       allowCloudAi?: boolean | null;
+      aiEnabled?: boolean | null;
       autoPull?: AutoPullSettings | null;
     }) => invoke('settings:repo-set', { repoId, ...patch }),
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.repoSettings(repoId) }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.repoSettings(repoId) });
+      // AI'ın bu depoda açık olup olmaması depo ayarına bağlı; durum sorgusu
+      // tazelenmezse commit ekranındaki öneri düğmesi eski hâlinde kalır.
+      void client.invalidateQueries({ queryKey: ['ai-status'] });
+    },
   });
 
   return (
@@ -257,6 +263,14 @@ export function SettingsDialog({
                 }
               />
               <PlainToggle
+                label={t('AI yardımı')}
+                hint={t('Commit mesajı ve gruplama önerileri. Varsayılan olarak kapalı.')}
+                checked={settings.defaults.aiEnabled}
+                onCheckedChange={(aiEnabled) =>
+                  saveApp.mutate({ defaults: { ...settings.defaults, aiEnabled } })
+                }
+              />
+              <PlainToggle
                 label={t('Bulut AI’ya kod gönderilebilsin')}
                 hint={t('Bütün depolar için geçerli olur. Kapalıyken commit mesajı önerisi yalnızca yerel modelle çalışır.')}
                 checked={settings.defaults.allowCloudAi}
@@ -298,6 +312,14 @@ export function SettingsDialog({
                   }
                 />
                 <ScopedToggle
+                  label={t('AI yardımı')}
+                  hint={t('Bu depoda commit mesajı önerisi kullanılabilsin mi.')}
+                  value={repoSettings.aiEnabled}
+                  inheritedValue={settings.defaults.aiEnabled}
+                  isOverridden={repoSettings.overrides.aiEnabled}
+                  onChange={(aiEnabled) => saveRepo.mutate({ aiEnabled })}
+                />
+                <ScopedToggle
                   label={t('Bulut AI’ya kod gönderilebilsin')}
                   hint={t('Commit mesajı önerisi için bu deponun diff’i buluta gönderilir.')}
                   value={repoSettings.allowCloudAi}
@@ -309,7 +331,10 @@ export function SettingsDialog({
             )}
           </section>
 
-          <AiSettingsSection repoSettings={repoSettings} />
+          <AiSettingsSection
+            repoSettings={repoSettings}
+            globallyEnabled={settings.defaults.aiEnabled}
+          />
 
           <RemoteSettings repoId={repoId} />
 

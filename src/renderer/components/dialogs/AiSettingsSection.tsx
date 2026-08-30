@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Switch } from 'radix-ui';
 import { Cloud, HardDrive, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { useT } from '../../i18n';
@@ -18,12 +17,15 @@ import { Field, TextInput } from './DialogShell';
 import type { AiProviderId, RepoSettings } from '@shared/types';
 
 /**
- * AI ayarları.
+ * AI sağlayıcı yapılandırması.
+ *
+ * Sağlayıcı, model ve anahtar hesap düzeyinde: depo başına ayrı model tutmak
+ * anahtar yönetimini de ikiye bölerdi ve kullanıcı aynı anahtarı her depoda
+ * yeniden girerdi. AI'ın açık olması ile buluta izin verilmesi ise depoya göre
+ * değişebiliyor; ikisi de yukarıdaki genel/depo bölümlerinde.
  *
  * Sağlayıcı seçiminde yerel ile bulut arasındaki fark gizlenmiyor, tam tersine
  * ilk görülen şey o: kod nereye gidiyor sorusunun cevabı kartın üstünde yazıyor.
- * Bulut seçildiğinde ayrıca depo bazlı bir izin gerekiyor ve o izin burada
- * değil, kullanıldığı depoda veriliyor.
  */
 
 const PROVIDERS: Array<{ id: AiProviderId; label: string; hint: string; local: boolean }> = [
@@ -32,7 +34,14 @@ const PROVIDERS: Array<{ id: AiProviderId; label: string; hint: string; local: b
   { id: 'anthropic', label: 'Claude', hint: 'Bulut — kod dışarı gider', local: false },
 ];
 
-export function AiSettingsSection({ repoSettings }: { repoSettings: RepoSettings | null }) {
+export function AiSettingsSection({
+  repoSettings,
+  globallyEnabled,
+}: {
+  repoSettings: RepoSettings | null;
+  /** Genel varsayılan; sağlayıcı ayarları bununla açılıp kapanıyor. */
+  globallyEnabled: boolean;
+}) {
   const t = useT();
   const { data: settings } = useSettings();
   const { data: status } = useAiStatus();
@@ -41,8 +50,14 @@ export function AiSettingsSection({ repoSettings }: { repoSettings: RepoSettings
   const [apiKey, setApiKey] = useState('');
 
   const ai = settings?.ai;
+  /*
+   * Model listesi yalnızca AI herhangi bir yerde açıkken çekiliyor: bu depoda
+   * kapalıyken bile sağlayıcıyı ayarlayabilmek gerekiyor, yoksa kullanıcı
+   * ayarı yapmak için önce açmak zorunda kalırdı.
+   */
+  const configuring = globallyEnabled || (repoSettings?.aiEnabled ?? false);
   const { data: models, isLoading: modelsLoading, error: modelsError } = useAiModels(
-    !!ai?.enabled && (status?.hasKey ?? false),
+    configuring && (status?.hasKey ?? false),
   );
 
   const refresh = () => {
@@ -81,23 +96,16 @@ export function AiSettingsSection({ repoSettings }: { repoSettings: RepoSettings
 
   return (
     <section>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <SectionLabel>{t('AI yardımı')}</SectionLabel>
-          <p className="mt-1 text-[11px] text-ink-2">
-            {t('Commit mesajı ve gruplama önerileri. Varsayılan olarak kapalı.')}
-          </p>
-        </div>
-        <Switch.Root
-          checked={ai.enabled}
-          onCheckedChange={(enabled) => saveAi.mutate({ enabled })}
-          className="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-surface-3 transition-colors data-[state=checked]:bg-accent"
-        >
-          <Switch.Thumb className="block size-4 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[18px]" />
-        </Switch.Root>
-      </div>
+      <SectionLabel>{t('AI sağlayıcısı')}</SectionLabel>
+      <p className="mt-1 text-[11px] text-ink-2">
+        {t('Sağlayıcı, model ve anahtar bütün depolar için ortak. AI’ın açık olması yukarıdaki bölümlerden ayarlanıyor.')}
+      </p>
 
-      {ai.enabled && (
+      {!configuring ? (
+        <p className="mt-2 text-[11px] text-ink-3">
+          {t('AI yardımı kapalı. Sağlayıcı ayarları açıldığında görünür.')}
+        </p>
+      ) : (
         <div className="mt-3 flex flex-col gap-3">
           <div className="grid gap-2 sm:grid-cols-3">
             {PROVIDERS.map((provider) => (
@@ -215,7 +223,12 @@ export function AiSettingsSection({ repoSettings }: { repoSettings: RepoSettings
             </p>
           )}
 
-          {status?.isLocal && <Badge tone="ok">{t('kod makineden çıkmıyor')}</Badge>}
+          {/* Sütun hizalamasında rozet satır boyunca uzamasın diye sarmalanıyor. */}
+          {status?.isLocal && (
+            <div>
+              <Badge tone="ok">{t('kod makineden çıkmıyor')}</Badge>
+            </div>
+          )}
         </div>
       )}
     </section>
