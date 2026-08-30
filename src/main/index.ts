@@ -84,8 +84,8 @@ const isDevelopment = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
  */
 function applyContentSecurityPolicy(): void {
   const policy = isDevelopment
-    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' ws: http://localhost:*"
-    : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self'";
+    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://avatars.githubusercontent.com; media-src 'self' blob:; font-src 'self' data: blob:; connect-src 'self' ws: http://localhost:*"
+    : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://avatars.githubusercontent.com; media-src 'self' blob:; font-src 'self' data: blob:; connect-src 'self'";
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({

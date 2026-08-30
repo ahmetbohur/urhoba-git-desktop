@@ -24,6 +24,7 @@ import type {
   PullRequest,
   FetchResult,
   FileDiff,
+  FilePreview,
   PullResult,
   PushResult,
   Remote,
@@ -88,6 +89,11 @@ export const inputSchemas = {
   'git:unstage': repoId.extend({ paths: z.array(z.string()).min(1) }),
   'git:discard': repoId.extend({ paths: z.array(z.string()).min(1) }),
   'git:diff': repoId.extend({ path: z.string().min(1), staged: z.boolean() }),
+  /** `ref` null ise çalışma dizinindeki hâli okunur, aksi hâlde git nesnesi. */
+  'git:file-preview': repoId.extend({
+    path: z.string().min(1),
+    ref: z.string().nullable(),
+  }),
   'git:commit': repoId.extend({
     subject: z.string().min(1),
     body: z.string().optional(),
@@ -334,6 +340,7 @@ export interface IpcOutputs {
   'git:unstage': void;
   'git:discard': void;
   'git:diff': FileDiff;
+  'git:file-preview': FilePreview | null;
   'git:commit': { sha: string };
   'git:last-commit-message': { subject: string; body: string };
   'git:stage-lines': void;

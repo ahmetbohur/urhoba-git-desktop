@@ -186,6 +186,23 @@ test('arayüz görüntüleri', async () => {
   await page.reload();
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1200);
+  /*
+   * İkili dosya önizlemesi: örnek depodaki bir PNG değiştirilip diff yerine
+   * görselin kendisinin gösterildiği doğrulanıyor.
+   */
+  fs.copyFileSync('assets/icon-256.png', path.join(samplePath, 'logo.png'));
+  sampleGit(['add', '-A']);
+  sampleGit(['commit', '-m', 'logo eklendi']);
+  fs.copyFileSync('assets/icon-64.png', path.join(samplePath, 'logo.png'));
+
+  await page.getByPlaceholder('Depolarda ara').fill('yayin-ornegi');
+  await page.waitForTimeout(500);
+  await page.getByText('urhoba-yayin-ornegi').first().click();
+  await page.waitForTimeout(1500);
+  await page.getByText('logo.png').first().click();
+  await page.waitForTimeout(2000);
+  await page.screenshot({ path: `${SHOT_DIR}/17-gorsel-onizleme.png` });
+
   await page.getByPlaceholder('Depolarda ara').fill('Urhoba-');
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${SHOT_DIR}/16-uzun-ad.png` });

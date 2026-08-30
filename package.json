@@ -25,8 +25,16 @@
     "desktop",
     "github"
   ],
-  "author": "urhoba",
+  "author": {
+    "name": "Urhoba",
+    "url": "https://urhoba.com"
+  },
+  "homepage": "https://urhoba.com",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ahmetbohur/urhoba-git-desktop"
+  },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.2",
     "@electron-forge/maker-deb": "^7.11.2",

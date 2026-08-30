@@ -15,6 +15,7 @@ import * as publish from '../github/publish';
 import * as rewrite from '../git/rewrite';
 import * as tags from '../git/tags';
 import * as remote from '../git/remote';
+import * as preview from '../git/preview';
 import * as staging from '../git/staging';
 import * as stash from '../git/stash';
 import * as status from '../git/status';
@@ -120,6 +121,10 @@ const handlers: Handlers = {
   'git:diff': ({ repoId, path, staged }) => {
     const repo = activateRepo(repoId);
     return status.getFileDiff(repo.id, repo.path, path, staged);
+  },
+  'git:file-preview': ({ repoId, path, ref }) => {
+    const repo = activateRepo(repoId);
+    return preview.getFilePreview(repo.path, path, ref);
   },
   'git:commit': ({ repoId, subject, body, amend }) => {
     const repo = activateRepo(repoId);

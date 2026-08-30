@@ -6,6 +6,7 @@ import { pairLinesForSideBySide } from '../lib/diff-layout';
 import { languageForPath, tokenizeLines, type HighlightToken } from '../lib/highlight';
 import { formatCount } from '../lib/format';
 import { Badge, Button, EmptyState, Spinner, Tooltip } from './primitives';
+import { FilePreviewView } from './FilePreviewView';
 import type { DiffHunk, DiffLine, FileDiff, HunkSelection, LineStageMode } from '@shared/types';
 
 /**
@@ -188,6 +189,12 @@ export interface DiffViewProps {
   onApplyLines?: (mode: LineStageMode, selections: HunkSelection[]) => void;
   /** Hazırlanmış diff'e bakılıyorsa eylem etiketleri tersine döner. */
   staged?: boolean;
+  /**
+   * Verildiğinde ikili dosyalarda diff yerine içerik önizlemesi gösterilir.
+   * Hangi iki sürümün karşılaştırılacağını çağıran biliyor: çalışma dizininde
+   * hazırlık alanı ile disk, geçmişte ise commit ile ondan önceki.
+   */
+  preview?: { repoId: string; beforeRef: string | null; afterRef: string | null };
 }
 
 export function DiffView({
@@ -199,6 +206,7 @@ export function DiffView({
   onToggleSideBySide,
   onApplyLines,
   staged = false,
+  preview,
 }: DiffViewProps) {
   const t = useT();
   const dark = useDarkMode();
@@ -384,11 +392,20 @@ export function DiffView({
 
       <div className="min-h-0 flex-1 overflow-auto bg-surface">
         {diff.isBinary ? (
-          <EmptyState
-            icon={<FileWarning className="size-5" />}
-            title={t('İkili dosya')}
-            description={t('Bu dosyanın içeriği metin olarak karşılaştırılamıyor.')}
-          />
+          preview ? (
+            <FilePreviewView
+              repoId={preview.repoId}
+              path={diff.path}
+              beforeRef={preview.beforeRef}
+              afterRef={preview.afterRef}
+            />
+          ) : (
+            <EmptyState
+              icon={<FileWarning className="size-5" />}
+              title={t('İkili dosya')}
+              description={t('Bu dosyanın içeriği metin olarak karşılaştırılamıyor.')}
+            />
+          )
         ) : diff.isTooLarge ? (
           <EmptyState
             icon={<FileWarning className="size-5" />}

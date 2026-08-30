@@ -533,6 +533,17 @@ export function ChangesView({ repoId }: { repoId: string }) {
             sideBySide={sideBySide}
             onToggleSideBySide={() => toggleSideBySide.mutate(!sideBySide)}
             staged={selectedStaged}
+            /*
+             * Hazırlanmış diff HEAD ile hazırlık alanını karşılaştırıyor,
+             * hazırlanmamış olan ise hazırlık alanı ile diski. Önizleme de aynı
+             * iki sürümü göstermeli, yoksa ekranda diff'in anlattığından başka
+             * bir değişiklik görünür.
+             */
+            preview={{
+              repoId,
+              beforeRef: selectedStaged ? 'HEAD' : ':0',
+              afterRef: selectedStaged ? ':0' : null,
+            }}
             onApplyLines={
               selectedPath
                 ? (mode, selections) =>

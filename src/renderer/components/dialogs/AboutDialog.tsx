@@ -1,4 +1,4 @@
-import { Code2, ExternalLink } from 'lucide-react';
+import { Code2, ExternalLink, Globe } from 'lucide-react';
 import { useT } from '../../i18n';
 import { invoke } from '../../lib/ipc';
 import { useQuery } from '../../lib/queries';
@@ -14,6 +14,11 @@ import logoUrl from '../../../../assets/icon.png';
  * izliyor, sürüm bilgisinin yanında hangi git'in kullanıldığını da gösteriyor —
  * bir sorun bildirilirken ilk sorulan şey bu.
  */
+const REPOSITORY_URL = 'https://github.com/ahmetbohur/urhoba-git-desktop';
+
+/** Geliştiricinin siteleri. İkisi de aynı yeri gösteriyor; ikisi de yazılı. */
+const DEVELOPER_SITES = ['urhoba.com', 'urhoba.net'] as const;
+
 export function AboutDialog({
   open,
   onOpenChange,
@@ -75,19 +80,29 @@ export function AboutDialog({
             <p className="text-[12px] text-ink-2">
               {t('Sorun bildirirken tanılama bilgisini paylaşman işi kolaylaştırır.')}
             </p>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => window.open('https://github.com/urhoba/urhoba-git-desktop', '_blank')}
-              >
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => window.open(REPOSITORY_URL, '_blank')}>
                 <Code2 className="size-3.5" />
                 {t('Kaynak kodu')}
                 <ExternalLink className="size-3" />
               </Button>
+              {DEVELOPER_SITES.map((site) => (
+                <Button
+                  key={site}
+                  variant="secondary"
+                  onClick={() => window.open(`https://${site}`, '_blank')}
+                >
+                  <Globe className="size-3.5" />
+                  {site}
+                  <ExternalLink className="size-3" />
+                </Button>
+              ))}
             </div>
           </div>
 
-          <p className="text-[11px] text-ink-3">{t('MIT lisansı ile dağıtılır.')}</p>
+          <p className="text-[11px] text-ink-3">
+            {t('MIT lisansı ile dağıtılır.')} {t('Geliştirici: Urhoba')}
+          </p>
         </div>
       )}
     </DialogShell>

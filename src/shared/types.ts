@@ -118,6 +118,17 @@ export interface FileDiff {
   deletions: number;
 }
 
+/** Diff yerine içeriğin kendisinin gösterilebildiği dosya türleri. */
+export type PreviewKind = 'image' | 'video' | 'audio' | 'font';
+
+export interface FilePreview {
+  kind: PreviewKind;
+  mime: string;
+  /** İçerik base64; arayüz bundan bir blob adresi üretiyor. */
+  base64: string;
+  bytes: number;
+}
+
 /** `git blame` çıktısındaki tek bir satır. */
 export interface BlameLine {
   sha: string;

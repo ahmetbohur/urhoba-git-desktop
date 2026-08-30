@@ -132,7 +132,7 @@ const config: ForgeConfig = {
           '256x256': 'assets/icon-256.png',
           '512x512': 'assets/icon.png',
         } as unknown as string,
-        homepage: 'https://github.com/urhoba/urhoba-git-desktop',
+        homepage: 'https://github.com/ahmetbohur/urhoba-git-desktop',
       },
     })] : []),
     new MakerDeb({
@@ -158,7 +158,7 @@ const config: ForgeConfig = {
           '256x256': 'assets/icon-256.png',
           '512x512': 'assets/icon.png',
         } as unknown as string,
-        homepage: 'https://github.com/urhoba/urhoba-git-desktop',
+        homepage: 'https://github.com/ahmetbohur/urhoba-git-desktop',
         // Gömülü git taşındığı için sistemde git kurulu olması gerekmiyor.
         depends: [],
       },

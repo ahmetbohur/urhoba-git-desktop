@@ -30,6 +30,7 @@ export const IPC_CHANNELS = [
   'git:unstage',
   'git:discard',
   'git:diff',
+  'git:file-preview',
   'git:commit',
   'git:last-commit-message',
   'git:stage-lines',

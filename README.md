@@ -18,6 +18,11 @@ başlığında o gruptaki kaydedilmemiş değişiklik sayısı görünür.
 renklendirmeli diff (tek sütun veya yan yana), tek tık veya toplu stage/unstage,
 onaylı geri alma (discard), commit ve son commit'i düzeltme (amend).
 
+**İkili dosya önizlemesi** — Görüntü, video, ses ve yazı tipi dosyalarında diff
+yerine içeriğin kendisi, eski ve yeni hâli yan yana gösterilir. Saydam
+görüntülerin arkasında damalı zemin, altında dosya boyutu. Geçmişte de aynı
+şekilde: commit ile bir öncesi karşılaştırılır.
+
 **Satır bazlı hazırlama** — Diff üzerinde tek tek satır seçip yalnızca onları
 hazırla, hazırlıktan çıkar ya da geri al. Shift ile aralık, tek tıkla bütün blok.
 Aynı dosyadaki iki ayrı değişikliği ayrı commit'lere bölmek için.
@@ -126,6 +131,27 @@ Gömülü git'ten kullanılmayan parçalar paketleme sonrası çıkarılıyor
 (`forge.config.ts` → `TRIMMED_GIT_PATHS`): HTTPS kimlik yöneticisi, arayüz
 kütüphaneleri, git'in çevirileri ve gitweb. Kurulu boyut 431 MB'tan 329 MB'a,
 `.deb` 135 MB'tan 101 MB'a iniyor.
+
+### İkili dosya önizlemesi
+
+Diff bir görüntüde hiçbir şey anlatmıyor; git yalnızca "Binary files differ"
+diyor. Bu dosyalarda içeriğin kendisi gösteriliyor.
+
+Yalnızca tarayıcı motorunun kendiliğinden çözebildiği biçimler destekleniyor.
+Dönüştürme yapılmıyor: bir kod çözücü paketlemek uygulamayı büyütür ve
+desteklenmeyen bir biçimde bozuk görüntü göstermektense hiç göstermemek daha
+dürüst.
+
+Hangi uzantıların önizlenebildiği yalnızca ana süreçte tanımlı. Arayüz o
+listenin kopyasını tutmuyor — iki liste zamanla ayrışıyor ve kullanıcı
+"destekleniyor ama açılmıyor" durumuyla karşılaşıyor. Karar veriye bakılarak
+veriliyor: iki sürüm de boş dönerse dosya önizlenemiyor demek.
+
+İçerik ana süreçte `git show` çıktısından ikili olarak okunuyor. Normal komut
+yolu çıktıyı metne çeviriyor ve ikili içeriği bozuyor, bu yüzden süreç doğrudan
+başlatılıp stdout buffer olarak toplanıyor. Arayüzde blob adresine çevriliyor:
+`data:` adresi birkaç megabaytlık bir dosyada DOM'a devasa bir dize gömüyor ve
+serbest bırakılamıyor.
 
 ### İkon
 

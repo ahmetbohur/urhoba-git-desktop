@@ -477,6 +477,16 @@ export function HistoryView({ repoId }: { repoId: string }) {
                     : undefined
                 }
                 sideBySide={settings?.sideBySideDiff ?? false}
+                /*
+                 * Commit'in kendisi ile bir öncesi. İlk commit'te `sha^` yok;
+                 * o durumda git nesneyi bulamıyor ve "önce" tarafı boş kalıyor,
+                 * yani dosya o commit'te eklenmiş görünüyor.
+                 */
+                preview={{
+                  repoId,
+                  beforeRef: selectedSha ? `${selectedSha}^` : null,
+                  afterRef: selectedSha,
+                }}
               />
             </div>
           </>
