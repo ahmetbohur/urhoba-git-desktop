@@ -28,7 +28,13 @@ function collectSourceFiles(directory: string): string[] {
   return files;
 }
 
-/** `t('...')` çağrılarındaki sabit anahtarlar. Değişkenli çağrılar atlanır. */
+/*
+ * Çağrılardaki sabit anahtarlar. Değişkenli çağrılar atlanır.
+ *
+ * Tarayıcı yorumları ayıklamıyor: kaynak koddaki bir yorumda örnek olarak
+ * yazılmış bir çağrı da anahtar sanılıyor. Yorumlarda örnek verirken metni
+ * sabit dize hâlinde yazmamak gerekiyor.
+ */
 function collectKeys(): Set<string> {
   const keys = new Set<string>();
   for (const file of collectSourceFiles(RENDERER_DIR)) {

@@ -9,6 +9,8 @@ import {
   History as HistoryIcon,
   ListOrdered,
   RotateCcw,
+  ShieldAlert,
+  ShieldCheck,
   Tag,
   Undo2,
 } from 'lucide-react';
@@ -37,7 +39,14 @@ import { ReflogDialog } from './dialogs/ReflogDialog';
 import { BlameDialog } from './dialogs/BlameDialog';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import { TagDialog } from './dialogs/TagDialog';
-import type { Commit, CommitRef, FileChangeKind, LogFilter, ResetMode } from '@shared/types';
+import type {
+  Commit,
+  CommitRef,
+  FileChangeKind,
+  LogFilter,
+  ResetMode,
+  SignatureStatus,
+} from '@shared/types';
 
 const KIND_MARKS: Record<FileChangeKind, { mark: string; className: string }> = {
   added: { mark: 'A', className: 'text-ok' },
@@ -99,6 +108,55 @@ function RefBadge({ commitRef }: { commitRef: CommitRef }) {
       )}
       {commitRef.name}
       {commitRef.isHead && <span className="text-[9px]">●</span>}
+    </Badge>
+  );
+}
+
+/**
+ * Commit imzası.
+ *
+ * "İmzalı" tek bir evet/hayır değil: imza var ama anahtarına güvenilmiyor
+ * olabilir, ya da doğrulama yapılandırması eksik olduğu için hiç
+ * denenememiş olabilir. Hepsini yeşil bir rozete indirmek yanlış güven
+ * veriyor, o yüzden durumların rengi ve metni ayrı.
+ *
+ * İmzasız commit'te hiçbir şey gösterilmiyor: imzasızlık çoğu depoda
+ * olağan ve her satıra "imzasız" yazmak gürültüden başka bir şey değil.
+ */
+function SignatureBadge({
+  signature,
+  signer,
+}: {
+  signature: SignatureStatus;
+  signer: string;
+}) {
+  const t = useT();
+  if (signature === 'none') return null;
+
+  /*
+   * Etiketler doğrudan `t()` ile yazılıyor, bir eşlemeden okunmuyor: çeviri
+   * kapsamı testi yalnızca sabit metinli çağrıları tarayabiliyor ve değişkenle
+   * çağrılan metinler İngilizce arayüzde sessizce Türkçe kalıyor.
+   */
+  const label =
+    signature === 'good'
+      ? t('imza doğrulandı')
+      : signature === 'untrusted'
+        ? t('imza güvenilmiyor')
+        : signature === 'bad'
+          ? t('imza geçersiz')
+          : t('imza doğrulanamadı');
+
+  const tone = signature === 'bad' ? 'crit' : signature === 'good' ? 'ok' : 'warn';
+
+  return (
+    <Badge tone={tone}>
+      {signature === 'bad' ? (
+        <ShieldAlert className="size-2.5" />
+      ) : (
+        <ShieldCheck className="size-2.5" />
+      )}
+      {signer ? `${label} · ${signer}` : label}
     </Badge>
   );
 }
@@ -472,6 +530,7 @@ export function HistoryView({ repoId }: { repoId: string }) {
                       <span className="selectable font-mono text-[11px] text-ink-3">
                         {detail.shortSha}
                       </span>
+                      <SignatureBadge signature={detail.signature} signer={detail.signer} />
                       {detail.additions > 0 && (
                         <Badge tone="ok">+{formatCount(detail.additions)}</Badge>
                       )}

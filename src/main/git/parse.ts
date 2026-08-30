@@ -7,6 +7,7 @@ import type {
   FileChange,
   FileChangeKind,
   ReflogEntry,
+  SignatureStatus,
   SubmoduleState,
   WorkingTreeStatus,
 } from '@shared/types';
@@ -159,7 +160,38 @@ export function parsePorcelainV2(raw: string): WorkingTreeStatus {
 
 const US = '\x1f';
 const RS = '\x1e';
-export const LOG_FORMAT = ['%H', '%h', '%P', '%an', '%ae', '%aI', '%D', '%s', '%b'].join(US) + RS;
+/*
+ * İmza alanları konudan ve gövdeden önce duruyor. Gövde serbest metin ve en
+ * sonda kalması gerekiyor; araya alan eklemek gövdedeki bir ayırıcı benzeri
+ * karakterin alanları kaydırma riskini doğuruyor.
+ */
+export const LOG_FORMAT =
+  ['%H', '%h', '%P', '%an', '%ae', '%aI', '%D', '%G?', '%GS', '%s', '%b'].join(US) + RS;
+
+/**
+ * `%G?` çıktısını okunur bir duruma çevirir.
+ *
+ * Git yedi ayrı harf döndürüyor. Süresi dolmuş, iptal edilmiş ve güvenilmeyen
+ * anahtarları tek "güvenilmiyor" başlığında topluyoruz — üçü de kullanıcıya
+ * aynı şeyi söylüyor: imza var ama ona dayanarak karar verme.
+ */
+function parseSignature(code: string | undefined): SignatureStatus {
+  switch (code) {
+    case 'G':
+      return 'good';
+    case 'B':
+      return 'bad';
+    case 'U':
+    case 'X':
+    case 'Y':
+    case 'R':
+      return 'untrusted';
+    case 'E':
+      return 'unverifiable';
+    default:
+      return 'none';
+  }
+}
 
 function parseRefs(decoration: string): CommitRef[] {
   if (decoration.trim().length === 0) return [];
@@ -201,8 +233,19 @@ export function parseLog(raw: string): Commit[] {
     .map((record) => record.replace(/^\n/, ''))
     .filter((record) => record.trim().length > 0)
     .map((record) => {
-      const [sha, shortSha, parents, authorName, authorEmail, authoredAt, decoration, subject, body] =
-        record.split(US);
+      const [
+        sha,
+        shortSha,
+        parents,
+        authorName,
+        authorEmail,
+        authoredAt,
+        decoration,
+        signatureCode,
+        signer,
+        subject,
+        body,
+      ] = record.split(US);
       return {
         sha,
         shortSha,
@@ -213,6 +256,8 @@ export function parseLog(raw: string): Commit[] {
         authoredAt,
         parents: parents.trim().length > 0 ? parents.trim().split(' ') : [],
         refs: parseRefs(decoration ?? ''),
+        signature: parseSignature(signatureCode),
+        signer: (signer ?? '').trim(),
       } satisfies Commit;
     });
 }

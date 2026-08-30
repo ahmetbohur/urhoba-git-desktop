@@ -18,6 +18,10 @@ başlığında o gruptaki kaydedilmemiş değişiklik sayısı görünür.
 renklendirmeli diff (tek sütun veya yan yana), tek tık veya toplu stage/unstage,
 onaylı geri alma (discard), commit ve son commit'i düzeltme (amend).
 
+**Commit imzaları** — İmzalı commit'lerde detay panelinde doğrulama durumu
+görünür: doğrulandı, güvenilmiyor, geçersiz ya da doğrulanamadı. İmzasız
+commit'te hiçbir şey gösterilmez.
+
 **Alt modüller** — Değişiklik listesinde alt modülün *neyinin* değiştiği yazar:
 işaret edilen commit mi, içindeki kaydedilmemiş çalışma mı, takip edilmeyen
 dosyalar mı. Kurulmamış alt modül varsa üstte uyarı şeridi çıkar ve tek tıkla
@@ -150,6 +154,19 @@ Gömülü git'ten kullanılmayan parçalar paketleme sonrası çıkarılıyor
 (`forge.config.ts` → `TRIMMED_GIT_PATHS`): HTTPS kimlik yöneticisi, arayüz
 kütüphaneleri, git'in çevirileri ve gitweb. Kurulu boyut 431 MB'tan 329 MB'a,
 `.deb` 135 MB'tan 101 MB'a iniyor.
+
+### Commit imzaları
+
+"İmzalı mı" tek bir evet/hayır değil: imza var ama anahtarına güvenilmiyor
+olabilir, anahtar iptal edilmiş olabilir, ya da doğrulama yapılandırması eksik
+olduğu için hiç denenememiş olabilir. Hepsini yeşil bir rozete indirmek yanlış
+güven verir, o yüzden dört durum ayrı ayrı gösterilir.
+
+Süresi dolmuş, iptal edilmiş ve güvenilmeyen anahtarlar tek başlıkta toplanır —
+üçü de kullanıcıya aynı şeyi söylüyor: imza var ama ona dayanarak karar verme.
+
+İmzasız commit'te hiçbir şey gösterilmez; imzasızlık çoğu depoda olağan ve her
+satıra "imzasız" yazmak gürültüden başka bir şey değil.
 
 ### Alt modüller
 

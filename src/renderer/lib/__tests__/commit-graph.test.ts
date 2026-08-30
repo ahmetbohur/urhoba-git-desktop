@@ -18,6 +18,8 @@ function commit(sha: string, parents: string[]): Commit {
     authoredAt: '2026-08-30T00:00:00Z',
     parents,
     refs: [],
+    signature: 'none',
+    signer: '',
   };
 }
 

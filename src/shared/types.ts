@@ -217,6 +217,16 @@ export interface CommitRef {
   isHead?: boolean;
 }
 
+/**
+ * Commit imzasının durumu.
+ *
+ * "İmzalı mı" tek bir evet/hayır değil: imza var ama anahtarına
+ * güvenilmiyor olabilir, anahtar iptal edilmiş olabilir, ya da doğrulama
+ * yapılandırması eksik olduğu için hiç denenememiş olabilir. Bunları tek
+ * rozete indirmek yanlış güven veriyor.
+ */
+export type SignatureStatus = 'none' | 'good' | 'untrusted' | 'bad' | 'unverifiable';
+
 export interface Commit {
   sha: string;
   shortSha: string;
@@ -228,6 +238,9 @@ export interface Commit {
   authoredAt: string;
   parents: string[];
   refs: CommitRef[];
+  signature: SignatureStatus;
+  /** İmzayı atan; doğrulanamayan imzalarda boş olabilir. */
+  signer: string;
 }
 
 export interface CommitDetail extends Commit {

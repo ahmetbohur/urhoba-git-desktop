@@ -134,6 +134,8 @@ describe('parseLog', () => {
       'ada@example.com',
       '2026-08-30T10:00:00+03:00',
       'HEAD -> refs/heads/main, refs/remotes/origin/main, tag: refs/tags/v1.0, refs/tags/v0.9',
+      'G',
+      'Ada Lovelace <ada@example.com>',
       'Girişi düzelt',
       'İlk satır\nİkinci satır',
     ].join(US);
@@ -144,6 +146,8 @@ describe('parseLog', () => {
     expect(commit.body).toBe('İlk satır\nİkinci satır');
     expect(commit.authorName).toBe('Ada Lovelace');
     expect(commit.parents).toEqual(['b'.repeat(40)]);
+    expect(commit.signature).toBe('good');
+    expect(commit.signer).toBe('Ada Lovelace <ada@example.com>');
     // Açıklamalı etiket `tag:` önekiyle, hafif etiket öneksiz geliyor; ikisi de
     // aynı türde ref olarak çözülmeli.
     /*
@@ -365,5 +369,47 @@ describe('parsePorcelainV2 — alt modüller', () => {
     const raw = `# branch.head main${NUL}1 .M N... 100644 100644 100644 abc123 abc123 src/a.ts${NUL}`;
 
     expect(parsePorcelainV2(raw).unstaged[0].submodule).toBeUndefined();
+  });
+});
+
+describe('parseLog — imza durumu', () => {
+  const US = '\x1f';
+  const RS = '\x1e';
+
+  const record = (code: string, signer = '') =>
+    [
+      'a'.repeat(40),
+      'aaaaaaa',
+      '',
+      'Ada',
+      'ada@example.com',
+      '2026-08-30T10:00:00+03:00',
+      '',
+      code,
+      signer,
+      'Başlık',
+      '',
+    ].join(US) + RS;
+
+  it('geçerli imzayı tanır', () => {
+    expect(parseLog(record('G', 'Ada')).at(0)?.signature).toBe('good');
+  });
+
+  it('bozuk imzayı ayrı tutar', () => {
+    // Bozuk imza ile güvenilmeyen anahtar aynı şey değil; biri sahtecilik
+    // işareti, diğeri yalnızca eksik yapılandırma.
+    expect(parseLog(record('B')).at(0)?.signature).toBe('bad');
+  });
+
+  it('süresi dolmuş ve iptal edilmiş anahtarları güvenilmez sayar', () => {
+    for (const code of ['U', 'X', 'Y', 'R']) {
+      expect(parseLog(record(code)).at(0)?.signature).toBe('untrusted');
+    }
+  });
+
+  it('doğrulanamayan imzayı imzasızdan ayırır', () => {
+    // `E`: imza var ama anahtar bulunamadığı için kontrol edilemedi.
+    expect(parseLog(record('E')).at(0)?.signature).toBe('unverifiable');
+    expect(parseLog(record('N')).at(0)?.signature).toBe('none');
   });
 });

@@ -118,6 +118,56 @@ test('arayüz görüntüleri', async () => {
   await page.screenshot({ path: `${SHOT_DIR}/12-blame.png` });
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
+  /*
+   * İmza rozeti: SSH anahtarıyla imzalanmış bir commit kurup detay panelinde
+   * doğrulandığının göründüğünü kontrol ediyoruz.
+   */
+  const signedRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-imza-'));
+  const signedGit = (args: string[]) => execFileSync('git', args, { cwd: signedRoot });
+  const publicKey = path.join(os.homedir(), '.ssh/id_ed25519.pub');
+  if (fs.existsSync(publicKey)) {
+    signedGit(['init', '--initial-branch=main']);
+    signedGit(['config', 'user.email', 'ornek@urhoba.test']);
+    signedGit(['config', 'user.name', 'Urhoba']);
+    signedGit(['config', 'gpg.format', 'ssh']);
+    signedGit(['config', 'user.signingkey', publicKey]);
+    const allowed = path.join(signedRoot, 'allowed-signers');
+    fs.writeFileSync(allowed, `ornek@urhoba.test ${fs.readFileSync(publicKey, 'utf8').trim()}\n`);
+    signedGit(['config', 'gpg.ssh.allowedSignersFile', allowed]);
+    fs.writeFileSync(path.join(signedRoot, 'a.txt'), 'imzalı\n');
+    signedGit(['add', 'a.txt']);
+    signedGit(['-c', 'commit.gpgsign=true', 'commit', '-m', 'imzalı commit']);
+
+    await page.evaluate(
+      (target) => window.urhoba.invoke('repo:add', { path: target }),
+      signedRoot,
+    );
+    await page.reload();
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1200);
+    await page.getByPlaceholder('Depolarda ara').fill('urhoba-imza');
+    await page.waitForTimeout(500);
+    await page.getByText(path.basename(signedRoot)).first().click();
+    await page.waitForTimeout(1200);
+    await page.getByRole('tab', { name: 'Geçmiş' }).click();
+    await page.waitForTimeout(1500);
+    await page.locator('button.border-b').first().click();
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: `${SHOT_DIR}/23-imza.png` });
+
+    // Sonraki adımlar asıl depoda sürüyor; seçimi geri alıyoruz.
+    await page.getByPlaceholder('Depolarda ara').fill('urhoba-git-desktop');
+    await page.waitForTimeout(500);
+    await page.getByText('urhoba-git-desktop').first().click();
+    await page.waitForTimeout(1500);
+    await page.getByPlaceholder('Depolarda ara').fill('');
+    await page.waitForTimeout(500);
+    // Depo seçimi sekmeyi de değiştiriyor; sonraki adımlar geçmişte sürüyor.
+    await page.getByRole('tab', { name: 'Geçmiş' }).click();
+    await page.waitForTimeout(1500);
+  }
+  fs.rmSync(signedRoot, { recursive: true, force: true });
+
   // Süslemeler: yerel ve uzak dal aynı commit'te birlikte görünmeli.
   await page.screenshot({ path: `${SHOT_DIR}/18-gecmis-suslemeler.png` });
 
