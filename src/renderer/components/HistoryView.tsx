@@ -7,6 +7,7 @@ import {
   GitBranch,
   GitGraph,
   History as HistoryIcon,
+  ListOrdered,
   RotateCcw,
   Tag,
   Undo2,
@@ -31,6 +32,7 @@ import { Badge, Button, EmptyState, SectionLabel, Spinner } from './primitives';
 import { CommitGraph } from './CommitGraph';
 import { DiffView } from './DiffView';
 import { HistoryFilterBar } from './HistoryFilterBar';
+import { RebaseDialog } from './dialogs/RebaseDialog';
 import { ReflogDialog } from './dialogs/ReflogDialog';
 import { BlameDialog } from './dialogs/BlameDialog';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
@@ -111,6 +113,7 @@ function CommitRow({
   onTag,
   onCopySha,
   onCherryPick,
+  onRebaseFrom,
 }: {
   commit: Commit;
   graphRow: ReturnType<typeof buildGraph>[number] | undefined;
@@ -121,6 +124,7 @@ function CommitRow({
   onTag: () => void;
   onCopySha: () => void;
   onCherryPick: () => void;
+  onRebaseFrom: () => void;
 }) {
   const t = useT();
   return (
@@ -208,6 +212,13 @@ function CommitRow({
             {t('Bu commit’i geri al (revert)')}
           </ContextMenu.Item>
           <ContextMenu.Item
+            onSelect={onRebaseFrom}
+            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
+          >
+            <ListOrdered className="size-3.5" />
+            {t('Bu commit’ten sonrasını düzenle…')}
+          </ContextMenu.Item>
+          <ContextMenu.Item
             onSelect={onReset}
             className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] text-crit outline-none data-[highlighted]:bg-crit-tint"
           >
@@ -237,6 +248,7 @@ export function HistoryView({ repoId }: { repoId: string }) {
   const [resetTarget, setResetTarget] = useState<Commit | null>(null);
   const [resetMode, setResetMode] = useState<ResetMode>('mixed');
   const [reflogOpen, setReflogOpen] = useState(false);
+  const [rebaseBase, setRebaseBase] = useState<Commit | null>(null);
   const [revertTarget, setRevertTarget] = useState<Commit | null>(null);
   const [tagTarget, setTagTarget] = useState<Commit | null>(null);
   const [cherryTarget, setCherryTarget] = useState<Commit | null>(null);
@@ -356,6 +368,19 @@ export function HistoryView({ repoId }: { repoId: string }) {
         }
       />
       <ReflogDialog open={reflogOpen} onOpenChange={setReflogOpen} repoId={repoId} />
+      {/*
+        Koşullu monte: pencere her açılışta seçilen commit'in üstündeki listeyle
+        taze başlasın, önceki seçimin adımları kalmasın.
+      */}
+      {rebaseBase && (
+        <RebaseDialog
+          open
+          onOpenChange={(next) => !next && setRebaseBase(null)}
+          repoId={repoId}
+          baseSha={rebaseBase.sha}
+          commits={commits.slice(0, commits.findIndex((item) => item.sha === rebaseBase.sha))}
+        />
+      )}
 
       <div className="flex min-h-0 flex-1">
         <div className="flex w-96 shrink-0 flex-col border-r border-line bg-surface">
@@ -397,6 +422,7 @@ export function HistoryView({ repoId }: { repoId: string }) {
                         }}
                         onTag={() => setTagTarget(commit)}
                         onCherryPick={() => setCherryTarget(commit)}
+                        onRebaseFrom={() => setRebaseBase(commit)}
                         onCopySha={() => {
                           void navigator.clipboard.writeText(commit.sha);
                           toast({ kind: 'success', title: t('SHA kopyalandı') });

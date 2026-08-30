@@ -1,6 +1,10 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { run } from './client';
 import { getStatus } from './status';
-import type { MergeResult, RepoOperation } from '@shared/types';
+import { buildTodo, validateSteps } from './rebase-todo';
+import type { MergeResult, RebaseStep, RepoOperation } from '@shared/types';
 
 /**
  * Birleştirme, rebase ve yarım kalmış işlemlerin yönetimi.
@@ -197,4 +201,68 @@ export async function continueOperation(repoId: string, repoPath: string): Promi
     allowFailure: true,
   });
   return finish(repoId, repoPath, result.ok, result.stderr, result.stdout, 'İşlem tamamlandı.');
+}
+
+/**
+ * Etkileşimli rebase.
+ *
+ * Git todo listesini bir dosyaya yazıp `GIT_SEQUENCE_EDITOR` ile editörü
+ * açıyor. Editör yerine listeyi olduğu gibi kopyalayan küçük bir betik
+ * veriyoruz: kullanıcı arayüzde ne seçtiyse git de onu görüyor, arada bir
+ * metin editörü açılmıyor.
+ *
+ * Betik dosya olarak yazılıyor çünkü `GIT_SEQUENCE_EDITOR` bir kabuk komutu
+ * olarak çalıştırılıyor ve yollarda boşluk olabiliyor; tırnaklamayı betiğin
+ * içinde bir kez doğru yapmak, ortam değişkeninde kaçış dizisiyle uğraşmaktan
+ * daha güvenilir.
+ *
+ * Mesaj düzenleyen adımlar (`reword`) desteklenmiyor: git o adımda ayrıca
+ * commit mesajı editörünü açıyor ve hangi commit için açtığını dışarıdan
+ * anlamak güvenilir değil. Yanlış commit'e yanlış mesaj yazmaktansa bu adımı
+ * hiç sunmuyoruz; son commit'in mesajı zaten "düzelt" ile değiştirilebiliyor.
+ */
+export async function interactiveRebase(
+  repoId: string,
+  repoPath: string,
+  baseSha: string,
+  steps: RebaseStep[],
+): Promise<MergeResult> {
+  const problem = validateSteps(steps);
+  if (problem) throw new Error(problem);
+
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-rebase-'));
+  const todoPath = path.join(directory, 'todo');
+  const isWindows = process.platform === 'win32';
+  const scriptPath = path.join(directory, isWindows ? 'editor.bat' : 'editor.sh');
+
+  fs.writeFileSync(todoPath, buildTodo(steps), 'utf8');
+  if (isWindows) {
+    fs.writeFileSync(scriptPath, `@echo off\r\ncopy /y "${todoPath}" %1 >nul\r\n`, 'utf8');
+  } else {
+    fs.writeFileSync(scriptPath, `#!/bin/sh\ncat "${todoPath}" > "$1"\n`, 'utf8');
+    fs.chmodSync(scriptPath, 0o755);
+  }
+
+  try {
+    const result = await run({
+      repoId,
+      repoPath,
+      args: ['rebase', '--interactive', baseSha],
+      allowFailure: true,
+      env: { GIT_SEQUENCE_EDITOR: scriptPath },
+    });
+
+    // Çakışma çıktığında rebase yarıda duruyor; sonucu mevcut işlem akışı
+    // (devam et / iptal et) devralıyor.
+    return finish(
+      repoId,
+      repoPath,
+      result.ok,
+      result.stderr,
+      result.stdout,
+      'Commit’ler yeniden düzenlendi.',
+    );
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 }

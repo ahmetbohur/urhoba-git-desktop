@@ -7,6 +7,7 @@ import { getBranches, createBranch, checkout } from '../branches';
 import { commit, discard, getFileDiff, getStatus, stage, unstage } from '../status';
 import { getCommitDetail, getLog } from '../history';
 import { pull, push } from '../remote';
+import { interactiveRebase } from '../merge';
 
 /**
  * Gerçek git süreçlerine karşı uçtan uca testler.
@@ -286,5 +287,65 @@ describe('uzak sunucu akışı', () => {
     expect(fs.existsSync(path.join(repoPath, 'b.txt'))).toBe(false);
 
     fs.rmSync(otherPath, { recursive: true, force: true });
+  });
+});
+
+describe('etkileşimli rebase', () => {
+  it('commit’leri birleştirir ve atar', async () => {
+    write('a.txt', 'bir\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'temel']);
+    const base = git(['rev-parse', 'HEAD']).trim();
+
+    write('b.txt', 'iki\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'ikinci']);
+    write('c.txt', 'üç\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'üçüncü']);
+    write('d.txt', 'dört\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'dördüncü']);
+
+    const before = await getLog(REPO_ID, repoPath, 0, 20);
+    const [fourth, third, second] = before;
+
+    const result = await interactiveRebase(REPO_ID, repoPath, base, [
+      { sha: second.sha, subject: second.subject, action: 'pick' },
+      { sha: third.sha, subject: third.subject, action: 'fixup' },
+      { sha: fourth.sha, subject: fourth.subject, action: 'drop' },
+    ]);
+
+    expect(result.outcome).toBe('merged');
+
+    const after = await getLog(REPO_ID, repoPath, 0, 20);
+    // Dört commit'ten geriye temel + birleşmiş ikinci kalıyor.
+    expect(after).toHaveLength(2);
+    expect(after[0].subject).toBe('ikinci');
+    // Birleştirilen commit'in dosyası duruyor, atılanınki gitmiş olmalı.
+    expect(fs.existsSync(path.join(repoPath, 'c.txt'))).toBe(true);
+    expect(fs.existsSync(path.join(repoPath, 'd.txt'))).toBe(false);
+  });
+
+  it('en eski commit birleştirilmek istenirse hiçbir şey yapmaz', async () => {
+    write('a.txt', 'bir\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'temel']);
+    const base = git(['rev-parse', 'HEAD']).trim();
+    write('b.txt', 'iki\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'ikinci']);
+
+    const [second] = await getLog(REPO_ID, repoPath, 0, 5);
+
+    await expect(
+      interactiveRebase(REPO_ID, repoPath, base, [
+        { sha: second.sha, subject: second.subject, action: 'squash' },
+      ]),
+    ).rejects.toThrow(/En eski commit/);
+
+    // Depo dokunulmamış kalmalı: doğrulama git'i hiç çalıştırmadan durduruyor.
+    const after = await getLog(REPO_ID, repoPath, 0, 5);
+    expect(after).toHaveLength(2);
   });
 });

@@ -132,6 +132,19 @@ export const inputSchemas = {
   }),
   'git:merge': repoId.extend({ branch: z.string().min(1) }),
   'git:rebase': repoId.extend({ branch: z.string().min(1) }),
+  /** Adımlar eskiden yeniye sıralı; git todo dosyasını böyle okuyor. */
+  'git:rebase-interactive': repoId.extend({
+    baseSha: z.string().min(4),
+    steps: z
+      .array(
+        z.object({
+          sha: z.string().min(4),
+          subject: z.string(),
+          action: z.enum(['pick', 'squash', 'fixup', 'drop']),
+        }),
+      )
+      .min(1),
+  }),
   'git:operation-abort': repoId,
   'git:operation-continue': repoId,
 
@@ -356,6 +369,7 @@ export interface IpcOutputs {
   'git:branch-rename': BranchRenameResult;
   'git:merge': MergeResult;
   'git:rebase': MergeResult;
+  'git:rebase-interactive': MergeResult;
   'git:operation-abort': void;
   'git:operation-continue': MergeResult;
 

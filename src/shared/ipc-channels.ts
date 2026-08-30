@@ -44,6 +44,7 @@ export const IPC_CHANNELS = [
   'git:branch-rename',
   'git:merge',
   'git:rebase',
+  'git:rebase-interactive',
   'git:operation-abort',
   'git:operation-continue',
   // --- Geçmiş ---

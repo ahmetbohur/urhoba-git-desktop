@@ -60,6 +60,11 @@ Yazara, mesaja, dosya yoluna ve tarih aralığına göre filtreleme.
 reset (soft / mixed / hard, her birinin ne yaptığı yazılı) veya cherry-pick.
 SHA kopyalama ve commit'i etiketleme aynı menüde.
 
+**Etkileşimli rebase** — Commit'e sağ tıklayıp sonrasındaki commit'leri yeniden
+düzenle: sırayı değiştir, bir öncekiyle birleştir (mesajlarla ya da mesajsız),
+tamamen at. Kaydedilmemiş değişiklik varken ya da yarım işlem sürerken düğme
+kapalı kalır.
+
 **HEAD geçmişi (reflog)** — HEAD'in geçmişte durduğu noktaları listeler ve
 oraya döndürür. Commit geçmişinden silinmiş çalışmaya ulaşmanın tek yolu bu:
 yanlış bir reset ya da yarıda kesilmiş bir rebase'ten sonra kaybolmuş görünen
@@ -140,6 +145,23 @@ Gömülü git'ten kullanılmayan parçalar paketleme sonrası çıkarılıyor
 (`forge.config.ts` → `TRIMMED_GIT_PATHS`): HTTPS kimlik yöneticisi, arayüz
 kütüphaneleri, git'in çevirileri ve gitweb. Kurulu boyut 431 MB'tan 329 MB'a,
 `.deb` 135 MB'tan 101 MB'a iniyor.
+
+### Etkileşimli rebase
+
+Git todo listesini bir dosyaya yazıp `GIT_SEQUENCE_EDITOR` ile editörü açıyor.
+Editör yerine listeyi olduğu gibi kopyalayan küçük bir betik veriliyor:
+kullanıcı arayüzde ne seçtiyse git de onu görüyor, arada metin editörü
+açılmıyor. Betik dosya olarak yazılıyor çünkü değişken bir kabuk komutu gibi
+çalıştırılıyor ve yollarda boşluk olabiliyor.
+
+Liste üretimi ve doğrulaması saf fonksiyon (`git/rebase-todo.ts`): yanlış bir
+todo listesi commit kaybettiriyor, o yüzden git'i hiç çalıştırmadan test
+edilebilmesi gerekiyor.
+
+`reword` desteklenmiyor. Git o adımda ayrıca commit mesajı editörünü açıyor ve
+hangi commit için açtığını dışarıdan anlamak güvenilir değil; yanlış commit'e
+yanlış mesaj yazmaktansa adım hiç sunulmuyor. Son commit'in mesajı zaten
+"son commit'i düzelt" ile değiştirilebiliyor.
 
 ### Satır içi fark
 

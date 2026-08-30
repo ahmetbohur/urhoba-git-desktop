@@ -46,6 +46,38 @@ export const en: Record<string, string> = {
   'Depolar': 'Repositories',
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
+  'Commit’leri yeniden düzenle': 'Reorder commits',
+  'Sırayı değiştir, birleştir ya da at. Geçmiş yeniden yazılır.':
+    'Reorder, combine or drop them. History is rewritten.',
+  'Bu commit’ten sonrasını düzenle…': 'Edit the commits after this one…',
+  'Yukarı taşı': 'Move up',
+  'Aşağı taşı': 'Move down',
+  'Koru': 'Keep',
+  'Birleştir': 'Combine',
+  'Kaynat': 'Fold in',
+  'At': 'Drop',
+  'Olduğu gibi kalsın.': 'Leave it as it is.',
+  'Bir öncekine katılsın, mesajlar birleşsin.':
+    'Join it into the previous one and merge the messages.',
+  'Bir öncekine katılsın, mesajı atılsın.':
+    'Join it into the previous one and discard its message.',
+  'Bu commit tamamen çıkarılsın.': 'Remove this commit entirely.',
+  'En alttaki en eski commit. “Birleştir” ve “kaynat” bir alttakine katar.':
+    'The bottom one is the oldest. “Combine” and “fold in” join into the one below.',
+  'Bu commit’ler yeniden yazılacak. Uzak sunucuya gönderilmişlerse zorlamalı gönderim gerekir.':
+    'These commits will be rewritten. If they were pushed, a force push will be needed.',
+  'Kaydedilmemiş değişiklikler var. Önce commit’le ya da sakla.':
+    'There are uncommitted changes. Commit or stash them first.',
+  'Yarım kalmış bir işlem var. Önce onu bitir.':
+    'An operation is in progress. Finish it first.',
+  'Ayrık HEAD durumunda yeniden düzenleme yapılamaz.':
+    'Cannot reorder while in detached HEAD.',
+  'Bütün commit’ler atılıyor; en az biri kalmalı.':
+    'Every commit is being dropped; at least one must remain.',
+  'En eski commit bir öncekiyle birleştirilemez; onu “koru” yap.':
+    'The oldest commit cannot be combined into a previous one; set it to “keep”.',
+  'Yeniden düzenleme': 'Reordering',
+  'Düzenlenemedi': 'Could not reorder',
   'HEAD geçmişi': 'HEAD history',
   'HEAD geçmişi (reflog)': 'HEAD history (reflog)',
   'Geçmişten silinmiş commit’lere de buradan dönebilirsin.':

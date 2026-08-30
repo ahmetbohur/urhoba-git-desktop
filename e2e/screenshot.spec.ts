@@ -129,6 +129,16 @@ test('arayüz görüntüleri', async () => {
   await page.screenshot({ path: `${SHOT_DIR}/19-reflog.png` });
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
+
+  // Etkileşimli rebase: bir commit'e sağ tıklayıp düzenleme penceresini aç.
+  await page.locator('button.border-b').nth(4).click({ button: 'right' });
+  await page.waitForTimeout(600);
+  await page.getByText('Bu commit’ten sonrasını düzenle…').click();
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: `${SHOT_DIR}/21-rebase.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
   await page.getByRole('tab', { name: 'Değişiklikler' }).click();

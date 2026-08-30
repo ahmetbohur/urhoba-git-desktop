@@ -123,6 +123,11 @@ interface RunOptions {
   allowFailure?: boolean;
   /** İlerleme çıktısı üreten komutlar için stderr akışı. */
   onStderr?: (chunk: string) => void;
+  /**
+   * Bu komuta özel ortam değişkenleri. Ortak ayarların üstüne biniyor —
+   * etkileşimli rebase'in kendi sıra editörünü vermesi gibi durumlar için.
+   */
+  env?: Record<string, string>;
 }
 
 export interface RunResult {
@@ -138,7 +143,15 @@ export interface RunResult {
  * doğrudan çalışabilir.
  */
 export async function run(options: RunOptions): Promise<RunResult> {
-  const { repoId, repoPath, args, skipQueue = false, allowFailure = false, onStderr } = options;
+  const {
+    repoId,
+    repoPath,
+    args,
+    skipQueue = false,
+    allowFailure = false,
+    onStderr,
+    env: extraEnv,
+  } = options;
 
   const execute = async (): Promise<RunResult> => {
     const startedAt = Date.now();
@@ -147,7 +160,7 @@ export async function run(options: RunOptions): Promise<RunResult> {
     let result: { stdout: string; stderr: string; exitCode: number };
     try {
       result = await execGit(args, repoPath, {
-        env: childEnv(),
+        env: childEnv(extraEnv),
         processCallback: onStderr
           ? (child: ChildProcess) => {
               child.stderr?.on('data', (chunk: Buffer) => onStderr(chunk.toString('utf8')));

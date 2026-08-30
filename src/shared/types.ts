@@ -147,6 +147,15 @@ export interface ReflogEntry {
   at: string;
 }
 
+/** Etkileşimli rebase'te bir commit'e uygulanacak işlem. */
+export type RebaseAction = 'pick' | 'squash' | 'fixup' | 'drop';
+
+export interface RebaseStep {
+  sha: string;
+  subject: string;
+  action: RebaseAction;
+}
+
 /** `git blame` çıktısındaki tek bir satır. */
 export interface BlameLine {
   sha: string;

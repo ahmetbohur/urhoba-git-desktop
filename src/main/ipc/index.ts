@@ -176,6 +176,10 @@ const handlers: Handlers = {
     const repo = activateRepo(repoId);
     return merge.rebase(repo.id, repo.path, branch);
   },
+  'git:rebase-interactive': ({ repoId, baseSha, steps }) => {
+    const repo = activateRepo(repoId);
+    return merge.interactiveRebase(repo.id, repo.path, baseSha, steps);
+  },
   'git:operation-abort': ({ repoId }) => {
     const repo = activateRepo(repoId);
     return merge.abortOperation(repo.id, repo.path);
