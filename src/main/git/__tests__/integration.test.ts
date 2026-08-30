@@ -10,6 +10,7 @@ import { pull, push } from '../remote';
 import { interactiveRebase } from '../merge';
 import { listSubmodules, updateSubmodules } from '../submodule';
 import * as bisect from '../bisect';
+import { getFilePreview } from '../preview';
 
 /**
  * Gerçek git süreçlerine karşı uçtan uca testler.
@@ -488,5 +489,46 @@ describe('ikili arama', () => {
     await bisect.reset(REPO_ID, repoPath);
     const status = await getStatus(REPO_ID, repoPath);
     expect(status.operation).toBe('none');
+  });
+});
+
+describe('LFS işaretçileri', () => {
+  const POINTER = [
+    'version https://git-lfs.github.com/spec/v1',
+    'oid sha256:4d7a214614ab2935c943f9e0ff69d22eadbb8f32b1258daaa5e2ca24d17e2393',
+    'size 5242880',
+    '',
+  ].join('\n');
+
+  it('commit’teki işaretçiyi görüntü sanmaz', async () => {
+    /*
+     * git-lfs kurulu olmasa da işaretçiyi tanımamız gerekiyor: kullanıcı
+     * LFS'siz bir makinede depoyu açtığında dosyanın içeriği zaten budur.
+     */
+    write('logo.png', POINTER);
+    git(['add', '-A']);
+    git(['commit', '-m', 'lfs işaretçisi']);
+
+    const preview = await getFilePreview(repoPath, 'logo.png', 'HEAD');
+
+    expect(preview?.kind).toBe('image');
+    expect(preview?.lfs?.size).toBe(5242880);
+    expect(preview?.lfs?.oid).toBe(
+      '4d7a214614ab2935c943f9e0ff69d22eadbb8f32b1258daaa5e2ca24d17e2393',
+    );
+  });
+
+  it('gerçek görüntüde işaretçi bilgisi bırakmaz', async () => {
+    // PNG imzası; işaretçi sanılmamalı.
+    fs.writeFileSync(
+      path.join(repoPath, 'gercek.png'),
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+    git(['add', '-A']);
+    git(['commit', '-m', 'gerçek görüntü']);
+
+    const preview = await getFilePreview(repoPath, 'gercek.png', 'HEAD');
+
+    expect(preview?.lfs).toBeUndefined();
   });
 });

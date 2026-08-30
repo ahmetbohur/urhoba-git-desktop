@@ -2,6 +2,7 @@ import { spawn } from 'dugite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { childEnv } from './client';
+import { parseLfsPointer } from './lfs';
 import type { FilePreview, PreviewKind } from '@shared/types';
 
 /**
@@ -131,10 +132,18 @@ export async function getFilePreview(
     ref === null ? readWorkingTree(repoPath, filePath) : await readBlob(repoPath, ref, filePath);
   if (!content) return null;
 
+  /*
+   * LFS ile takip edilen dosyada git'teki içerik üç satırlık bir işaretçi.
+   * Onu görüntü diye çizmeye kalkmak bozuk bir kare gösteriyor; ne olduğunu
+   * söylemek daha dürüst.
+   */
+  const lfs = parseLfsPointer(content);
+
   return {
     kind: type.kind,
     mime: type.mime,
     base64: content.toString('base64'),
     bytes: content.length,
+    ...(lfs ? { lfs } : {}),
   };
 }

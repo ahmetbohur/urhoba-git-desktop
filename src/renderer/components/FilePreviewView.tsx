@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileWarning } from 'lucide-react';
 import { useT } from '../i18n';
+import { formatFileSize } from '../lib/format';
 import { invoke } from '../lib/ipc';
 import { useQuery } from '../lib/queries';
 import { EmptyState, Spinner } from './primitives';
@@ -41,12 +42,6 @@ function useObjectUrl(preview: FilePreview | null | undefined): string | null {
   }, [url]);
 
   return url;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function Media({
@@ -125,11 +120,27 @@ function Side({
         ) : !preview || !url ? (
           // Dosya o sürümde yoksa: yeni eklenmiş ya da silinmiş demek.
           <p className="text-[12px] text-ink-3">{t('Yok')}</p>
+        ) : preview.lfs ? (
+          /*
+           * LFS ile takip edilen dosyada git'teki içerik üç satırlık bir
+           * işaretçi, dosyanın kendisi değil. Onu çizmeye kalkmak bozuk bir
+           * kare gösteriyor; ne olduğunu söylemek daha dürüst.
+           */
+          <div className="flex flex-col items-center gap-1 text-center">
+            <FileWarning className="size-5 text-ink-3" />
+            <p className="text-[12px] font-medium text-ink">{t('Git LFS dosyası')}</p>
+            <p className="text-[11px] text-ink-2">{formatFileSize(preview.lfs.size)}</p>
+            <p className="font-mono text-[10px] break-all text-ink-3">
+              {preview.lfs.oid.slice(0, 16)}…
+            </p>
+          </div>
         ) : (
           <Media preview={preview} url={url} onFailed={onFailed} />
         )}
       </div>
-      {preview && <p className="text-[11px] text-ink-3">{formatBytes(preview.bytes)}</p>}
+      {preview && !preview.lfs && (
+        <p className="text-[11px] text-ink-3">{formatFileSize(preview.bytes)}</p>
+      )}
     </div>
   );
 }

@@ -46,6 +46,12 @@ export const en: Record<string, string> = {
   'Depolar': 'Repositories',
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
+  'Git LFS dosyası': 'Git LFS file',
+  '{before} → {after}': '{before} → {after}',
+  'Eklendi · {size}': 'Added · {size}',
+  'Silindi · {size}': 'Deleted · {size}',
+  'İçerik depoda değil; git-lfs ile ayrı tutuluyor.':
+    'The content is not in the repository; git-lfs keeps it separately.',
   'Buradan ikili arama başlat': 'Start a bisect from here',
   'İkili arama başladı': 'Bisect started',
   'İkili arama sürüyor': 'A bisect is in progress',

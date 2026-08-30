@@ -4,8 +4,9 @@ import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { pairLinesForSideBySide } from '../lib/diff-layout';
 import { intralineRanges, type Range } from '../lib/intraline';
+import { lfsChangeFromDiff } from '../lib/lfs-diff';
 import { languageForPath, tokenizeLines, type HighlightToken } from '../lib/highlight';
-import { formatCount } from '../lib/format';
+import { formatCount, formatFileSize } from '../lib/format';
 import { Badge, Button, EmptyState, Spinner, Tooltip } from './primitives';
 import { FilePreviewView } from './FilePreviewView';
 import type { DiffHunk, DiffLine, FileDiff, HunkSelection, LineStageMode } from '@shared/types';
@@ -296,6 +297,8 @@ export function DiffView({
   const anchor = useRef<{ hunkIndex: number; lineIndex: number } | null>(null);
 
   const selectable = !!onApplyLines && !!diff && !diff.isBinary && !diff.isTooLarge;
+  // Özet diff'in kendisinden çıkarılıyor; ayrı bir git çağrısı gerekmiyor.
+  const lfsChange = useMemo(() => (diff ? lfsChangeFromDiff(diff.hunks) : null), [diff]);
 
   const { code, offsets, language } = useMemo(() => {
     if (!diff) return { code: '', offsets: [] as number[], language: null };
@@ -486,6 +489,31 @@ export function DiffView({
             title={t('Diff çok büyük')}
             description={t('Bu dosyanın farkı arayüzde gösterilemeyecek kadar büyük.')}
           />
+        ) : lfsChange ? (
+          /*
+           * LFS işaretçisi git için metin, o yüzden ikili yolundan geçmiyor.
+           * Ham hâlinde ekranda sha256 satırları görünüyor ve kullanıcıya
+           * hiçbir şey söylemiyor; asıl bilgi dosyanın boyutunun değişmesi.
+           */
+          <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+            <FileWarning className="size-5 text-ink-3" />
+            <p className="text-[13px] font-medium text-ink">{t('Git LFS dosyası')}</p>
+            <p className="text-[12px] text-ink-2">
+              {lfsChange.before && lfsChange.after
+                ? t('{before} → {after}', {
+                    before: formatFileSize(lfsChange.before.size),
+                    after: formatFileSize(lfsChange.after.size),
+                  })
+                : lfsChange.after
+                  ? t('Eklendi · {size}', { size: formatFileSize(lfsChange.after.size) })
+                  : t('Silindi · {size}', {
+                      size: formatFileSize(lfsChange.before?.size ?? 0),
+                    })}
+            </p>
+            <p className="text-[11px] text-ink-3">
+              {t('İçerik depoda değil; git-lfs ile ayrı tutuluyor.')}
+            </p>
+          </div>
         ) : diff.hunks.length === 0 ? (
           <EmptyState
             title={t('Fark yok')}

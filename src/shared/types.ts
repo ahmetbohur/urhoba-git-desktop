@@ -163,12 +163,26 @@ export interface FileDiff {
 /** Diff yerine içeriğin kendisinin gösterilebildiği dosya türleri. */
 export type PreviewKind = 'image' | 'video' | 'audio' | 'font';
 
+/**
+ * Git LFS işaretçisi: dosyanın kendisi değil, nerede durduğunun kaydı.
+ */
+export interface LfsPointer {
+  oid: string;
+  /** Asıl dosyanın bayt cinsinden boyutu. */
+  size: number;
+}
+
 export interface FilePreview {
   kind: PreviewKind;
   mime: string;
   /** İçerik base64; arayüz bundan bir blob adresi üretiyor. */
   base64: string;
   bytes: number;
+  /**
+   * İçerik bir LFS işaretçisiyse asıl dosyanın bilgisi. Bu durumda `base64`
+   * işaretçi metnini taşıyor, dosyanın kendisini değil.
+   */
+  lfs?: LfsPointer;
 }
 
 /**

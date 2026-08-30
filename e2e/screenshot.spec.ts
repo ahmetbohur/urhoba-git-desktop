@@ -318,6 +318,32 @@ test('arayüz görüntüleri', async () => {
   sampleGit(['commit', '-m', 'logo eklendi']);
   fs.copyFileSync('assets/icon-64.png', path.join(samplePath, 'logo.png'));
 
+  /*
+   * LFS işaretçisi: git'teki içeriği üç satırlık metin olan bir görüntü.
+   * git-lfs kurulu olmasa da tanınıp "Git LFS dosyası" diye gösterilmeli.
+   */
+  fs.writeFileSync(
+    path.join(samplePath, 'buyuk.png'),
+    [
+      'version https://git-lfs.github.com/spec/v1',
+      'oid sha256:4d7a214614ab2935c943f9e0ff69d22eadbb8f32b1258daaa5e2ca24d17e2393',
+      'size 5242880',
+      '',
+    ].join('\n'),
+  );
+  sampleGit(['add', 'buyuk.png']);
+  sampleGit(['commit', '-m', 'lfs işaretçisi']);
+  fs.appendFileSync(path.join(samplePath, 'buyuk.png'), '');
+  fs.writeFileSync(
+    path.join(samplePath, 'buyuk.png'),
+    [
+      'version https://git-lfs.github.com/spec/v1',
+      'oid sha256:9a1f0b6d2c3e4f5061728394a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e',
+      'size 7340032',
+      '',
+    ].join('\n'),
+  );
+
   // Kelime düzeyinde fark: satırın tamamı değil, değişen kelimeler vurgulanmalı.
   fs.writeFileSync(
     path.join(samplePath, 'ayar.ts'),
@@ -343,6 +369,10 @@ test('arayüz görüntüleri', async () => {
   await page.getByText('ayar.ts').first().click();
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${SHOT_DIR}/20-kelime-farki.png` });
+
+  await page.getByText('buyuk.png').first().click();
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${SHOT_DIR}/25-lfs.png` });
 
   /*
    * Alt modül: hem kurulmamış uyarı şeridi hem değişiklik listesindeki rozet.

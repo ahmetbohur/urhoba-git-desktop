@@ -35,6 +35,9 @@ kurulur.
 vurgulanır. Uzun bir satırda tek sayı değiştiğinde satırın tamamını okumak
 gerekmiyor.
 
+**Git LFS** — LFS ile takip edilen dosyalarda sha256 satırları yerine dosyanın
+boyutu ve ne olduğu gösterilir; git-lfs kurulu olmasa da tanınır.
+
 **İkili dosya önizlemesi** — Görüntü, video, ses ve yazı tipi dosyalarında diff
 yerine içeriğin kendisi, eski ve yeni hâli yan yana gösterilir. Saydam
 görüntülerin arkasında damalı zemin, altında dosya boyutu. Geçmişte de aynı
@@ -231,6 +234,21 @@ değiştiyse de vurgu üretilmiyor: her yeri boyamak bilgi taşımıyor.
 Eşleştirme yan yana görünümdekiyle aynı kuralı izliyor — arka arkaya gelen
 silinenler ve eklenenler sırayla eşleniyor. İki görünümde farklı çiftler kurmak
 aynı diff'i iki türlü göstermek olurdu.
+
+### Git LFS
+
+LFS ile takip edilen bir dosyanın git'teki içeriği dosyanın kendisi değil, üç
+satırlık bir işaretçi metni. Bu metin git için ikili değil, düz metin —
+dolayısıyla ikili dosya yolundan hiç geçmiyor ve ham hâlinde ekranda sha256
+satırları görünüyordu.
+
+İki yerde ele alınıyor: diff'te işaretçi tanınıp "5.0 MB → 7.0 MB" özeti
+gösteriliyor (özet diff'in kendisinden çıkarılıyor, ayrı bir git çağrısı
+gerekmiyor), önizlemede ise dosyanın çizilmeye çalışılması yerine ne olduğu
+yazılıyor.
+
+Tanıma git-lfs kurulu olmasa da çalışıyor: kullanıcı LFS'siz bir makinede
+depoyu açtığında dosyanın içeriği zaten işaretçinin kendisi.
 
 ### İkili dosya önizlemesi
 
