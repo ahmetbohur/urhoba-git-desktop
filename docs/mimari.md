@@ -299,6 +299,43 @@ görünür yanıt boş dönüyor — model 400 token harcıyor, kullanıcı "bo�
 hatası alıyordu. Bize gereken tek satırlık bir commit başlığı, uzun uzun akıl
 yürütme değil.
 
+### macOS imzalama ve notarization
+
+İmzalama ortam değişkenleri tanımlıysa kendiliğinden açılıyor, yoksa hiç
+denenmiyor. Koşulsuz açmak sertifikası olmayan bir makinede `npm run make`
+komutunu kırardı ve imzasız derleme almak geliştirme sırasında gerekiyor.
+Sırlar ortamdan okunuyor; depoda hiçbir şey durmuyor.
+
+| Değişken | Ne |
+| --- | --- |
+| `APPLE_IDENTITY` | `Developer ID Application: Ad Soyad (TEAMID)` |
+| `APPLE_ID` | Apple hesabının e-postası |
+| `APPLE_PASSWORD` | uygulamaya özel parola — hesap parolası değil |
+| `APPLE_TEAM_ID` | ekip kimliği |
+
+Yalnızca `APPLE_IDENTITY` verilirse imzalanır ama notarize edilmez; diğer üçü de
+varsa notarization da yapılır.
+
+**Sertleştirilmiş çalışma zamanı** notarization'ın koşulu ve üç hak gerektiriyor:
+V8 çalışma anında makine kodu ürettiği için JIT izinleri, uygulama kendi
+taşıdığı git'i çalıştırdığı için kütüphane doğrulamasının kapatılması, ve git
+alt süreçlerine ortam değişkeni geçirdiğimiz için ilgili izin.
+
+**Gömülü git de imzalanıyor.** Apple paketin içindeki her çalıştırılabilir
+dosyanın imzalı olmasını istiyor; imzasız bir ikiliyi sertleştirilmiş çalışma
+zamanında çalıştırmak zaten engelleniyor. `optionsForFile` bütün dosyalara aynı
+hakları verdiği için `Resources/git` altındaki ikililer de kapsama giriyor.
+
+Derlemeden sonra doğrulama:
+
+```bash
+codesign --verify --deep --strict --verbose=2 "out/Urhoba Git Desktop-darwin-arm64/Urhoba Git Desktop.app"
+spctl --assess --type exec --verbose "out/Urhoba Git Desktop-darwin-arm64/Urhoba Git Desktop.app"
+```
+
+İkincisi `accepted` demiyorsa notarization tamamlanmamış demektir; `xcrun
+notarytool log` ile hangi dosyanın reddedildiği görülebiliyor.
+
 ### macOS paketini Linux'ta üretme
 
 Üretilemiyor. Üç ayrı engel var ve ikisi imzalamadan bağımsız:

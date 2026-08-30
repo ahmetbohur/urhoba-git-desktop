@@ -22,6 +22,24 @@ function commandExists(command: string): boolean {
 const hasRpmbuild = commandExists('rpmbuild');
 
 /**
+ * macOS imzalama yalnızca gerekli bilgiler ortamda varken açılıyor.
+ *
+ * Koşulsuz açmak, sertifikası olmayan bir makinede `npm run make` komutunu
+ * kırardı; imzasız derleme alabilmek geliştirme sırasında gerekiyor. Sırlar
+ * ortam değişkeninden okunuyor, depoda hiçbir şey durmuyor.
+ *
+ *   APPLE_IDENTITY   "Developer ID Application: Ad Soyad (TEAMID)"
+ *   APPLE_ID         Apple hesabının e-postası
+ *   APPLE_PASSWORD   uygulamaya özel parola (hesap parolası değil)
+ *   APPLE_TEAM_ID    ekip kimliği
+ */
+const appleIdentity = process.env.APPLE_IDENTITY?.trim();
+const appleId = process.env.APPLE_ID?.trim();
+const applePassword = process.env.APPLE_PASSWORD?.trim();
+const appleTeamId = process.env.APPLE_TEAM_ID?.trim();
+const canNotarize = !!(appleId && applePassword && appleTeamId);
+
+/**
  * Paketlemenin hedeflediği platform.
  *
  * `process.platform` çalıştığımız makineyi söylüyor, üretilen paketin
@@ -103,6 +121,36 @@ const config: ForgeConfig = {
      * görev yöneticisinde görüyor ve ürün adı daha anlaşılır.
      */
     executableName: targetPlatform() === 'linux' ? 'urhoba-git-desktop' : undefined,
+
+    /*
+     * İmzalama sertleştirilmiş çalışma zamanıyla yapılıyor; notarization bunu
+     * zorunlu tutuyor. Gömülü git ikilileri de imzalanmalı: Apple paketin
+     * içindeki her çalıştırılabilir dosyanın imzalı olmasını istiyor ve
+     * imzasız bir ikiliyi çalıştırmaya kalkmak sertleştirilmiş çalışma
+     * zamanında engelleniyor.
+     */
+    ...(appleIdentity
+      ? {
+          osxSign: {
+            identity: appleIdentity,
+            optionsForFile: () => ({
+              hardenedRuntime: true,
+              entitlements: 'assets/entitlements.mac.plist',
+              entitlementsInherit: 'assets/entitlements.mac.inherit.plist',
+            }),
+          } as NonNullable<ForgeConfig['packagerConfig']>['osxSign'],
+        }
+      : {}),
+
+    ...(canNotarize
+      ? {
+          osxNotarize: {
+            appleId: appleId as string,
+            appleIdPassword: applePassword as string,
+            teamId: appleTeamId as string,
+          },
+        }
+      : {}),
   },
   rebuildConfig: {},
   hooks: {

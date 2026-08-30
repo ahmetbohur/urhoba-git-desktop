@@ -196,8 +196,14 @@ npm start
 Kurulum dosyası üretmek için `npm run make`. RPM yalnızca `rpmbuild` kuruluysa
 üretilir; yoksa `.deb` üretimi engellenmeden sürer.
 
-> **Not:** Windows ve macOS derlemeleri henüz imzalanmıyor. İmzasız kurulumda
-> Windows SmartScreen ve macOS Gatekeeper uyarı verir.
+macOS derlemesi bir Mac üzerinde yapılmalı — gömülü git platforma özgü olduğu
+için Linux'ta üretilen bir `.app` çalışmıyor. İmzalama ve notarization ortam
+değişkenleri tanımlıysa kendiliğinden devreye giriyor; ayrıntılar
+[docs/mimari.md](docs/mimari.md) içinde.
+
+> **Not:** Windows derlemesi imzalanmıyor. İmzasız kurulumda SmartScreen
+> "Windows protected your PC" uyarısı verir; **More info → Run anyway** ile
+> geçilir.
 
 ## Klavye kısayolları
 
