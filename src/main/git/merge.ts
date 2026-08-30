@@ -235,7 +235,18 @@ export async function interactiveRebase(
   const isWindows = process.platform === 'win32';
   const scriptPath = path.join(directory, isWindows ? 'editor.bat' : 'editor.sh');
 
-  fs.writeFileSync(todoPath, buildTodo(steps), 'utf8');
+  /*
+   * Mesaj değiştirilen her commit için ayrı bir dosya: todo'daki `exec` satırı
+   * bu dosyayı okuyup commit'i düzeltiyor, dolayısıyla editör hiç açılmıyor ve
+   * hangi mesajın hangi commit'e gittiği belirsiz kalmıyor.
+   */
+  const messagePathFor = (sha: string) => path.join(directory, `mesaj-${sha}`);
+  for (const step of steps) {
+    if (step.action !== 'reword') continue;
+    fs.writeFileSync(messagePathFor(step.sha), `${(step.message ?? '').trim()}\n`, 'utf8');
+  }
+
+  fs.writeFileSync(todoPath, buildTodo(steps, messagePathFor), 'utf8');
   if (isWindows) {
     fs.writeFileSync(scriptPath, `@echo off\r\ncopy /y "${todoPath}" %1 >nul\r\n`, 'utf8');
   } else {

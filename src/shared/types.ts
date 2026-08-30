@@ -148,12 +148,14 @@ export interface ReflogEntry {
 }
 
 /** Etkileşimli rebase'te bir commit'e uygulanacak işlem. */
-export type RebaseAction = 'pick' | 'squash' | 'fixup' | 'drop';
+export type RebaseAction = 'pick' | 'reword' | 'squash' | 'fixup' | 'drop';
 
 export interface RebaseStep {
   sha: string;
   subject: string;
   action: RebaseAction;
+  /** Yalnızca `reword` için: commit'in yeni mesajı. */
+  message?: string;
 }
 
 /** `git blame` çıktısındaki tek bir satır. */

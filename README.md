@@ -61,8 +61,8 @@ reset (soft / mixed / hard, her birinin ne yaptığı yazılı) veya cherry-pick
 SHA kopyalama ve commit'i etiketleme aynı menüde.
 
 **Etkileşimli rebase** — Commit'e sağ tıklayıp sonrasındaki commit'leri yeniden
-düzenle: sırayı değiştir, bir öncekiyle birleştir (mesajlarla ya da mesajsız),
-tamamen at. Kaydedilmemiş değişiklik varken ya da yarım işlem sürerken düğme
+düzenle: sırayı değiştir, mesajını değiştir, bir öncekiyle birleştir (mesajlarla
+ya da mesajsız), tamamen at. Kaydedilmemiş değişiklik varken ya da yarım işlem sürerken düğme
 kapalı kalır.
 
 **HEAD geçmişi (reflog)** — HEAD'in geçmişte durduğu noktaları listeler ve
@@ -158,10 +158,12 @@ Liste üretimi ve doğrulaması saf fonksiyon (`git/rebase-todo.ts`): yanlış b
 todo listesi commit kaybettiriyor, o yüzden git'i hiç çalıştırmadan test
 edilebilmesi gerekiyor.
 
-`reword` desteklenmiyor. Git o adımda ayrıca commit mesajı editörünü açıyor ve
-hangi commit için açtığını dışarıdan anlamak güvenilir değil; yanlış commit'e
-yanlış mesaj yazmaktansa adım hiç sunulmuyor. Son commit'in mesajı zaten
-"son commit'i düzelt" ile değiştirilebiliyor.
+Mesaj değişikliği git'in `reword` komutuyla yapılmıyor: o komut mesaj editörünü
+açıyor ve hangi commit için açtığını dışarıdan anlamak güvenilir değil. Bunun
+yerine todo listesine `pick` satırının ardından bir `exec git commit --amend
+--file=…` satırı konuyor. Editör hiç açılmıyor, hangi mesajın hangi commit'e
+gittiği satırın yerinden belli oluyor ve kaç commit'in mesajı değiştirilirse
+değiştirilsin belirsizlik oluşmuyor.
 
 ### Satır içi fark
 

@@ -16,14 +16,15 @@ import type { Commit, RebaseAction, RebaseStep } from '@shared/types';
  * eskiden yeniye okuyor. Çeviriyi gönderirken yapıyoruz — kullanıcıya
  * alışkın olduğu sırayı göstermek, git'in iç biçimini ona öğretmekten iyi.
  *
- * `reword` yok: git o adımda ayrıca commit mesajı editörünü açıyor ve hangi
- * commit için açtığını dışarıdan anlamak güvenilir değil. Yanlış commit'e
- * yanlış mesaj yazmaktansa adımı hiç sunmuyoruz; son commit'in mesajı zaten
- * "son commit'i düzelt" ile değiştirilebiliyor.
+ * Mesaj değişikliği git'in `reword` komutuyla yapılmıyor: o komut mesaj
+ * editörünü açıyor ve hangi commit için açtığını dışarıdan anlamak güvenilir
+ * değil. Bunun yerine yeni mesaj burada yazılıyor ve commit uygulandıktan
+ * hemen sonra çalışan bir adım mesajı yerine koyuyor.
  */
 
 const ACTIONS: Array<{ action: RebaseAction; label: string; hint: string }> = [
   { action: 'pick', label: 'Koru', hint: 'Olduğu gibi kalsın.' },
+  { action: 'reword', label: 'Mesaj', hint: 'Yalnızca commit mesajı değişsin.' },
   { action: 'squash', label: 'Birleştir', hint: 'Bir öncekine katılsın, mesajlar birleşsin.' },
   { action: 'fixup', label: 'Kaynat', hint: 'Bir öncekine katılsın, mesajı atılsın.' },
   { action: 'drop', label: 'At', hint: 'Bu commit tamamen çıkarılsın.' },
@@ -31,6 +32,7 @@ const ACTIONS: Array<{ action: RebaseAction; label: string; hint: string }> = [
 
 const ACTION_STYLES: Record<RebaseAction, string> = {
   pick: 'border-line bg-surface',
+  reword: 'border-accent bg-accent-tint',
   squash: 'border-accent bg-accent-tint',
   fixup: 'border-accent bg-accent-tint',
   drop: 'border-crit bg-crit-tint line-through opacity-70',
@@ -58,7 +60,14 @@ export function RebaseDialog({
   const { data: status } = useStatus(repoId);
 
   const [steps, setSteps] = useState<RebaseStep[]>(() =>
-    commits.map((commit) => ({ sha: commit.sha, subject: commit.subject, action: 'pick' })),
+    commits.map((commit) => ({
+      sha: commit.sha,
+      subject: commit.subject,
+      action: 'pick' as RebaseAction,
+      // Mesaj alanı seçildiğinde mevcut konu ile dolu gelsin; kullanıcı baştan
+      // yazmak yerine düzeltiyor.
+      message: commit.subject,
+    })),
   );
 
   const move = (index: number, delta: number) => {
@@ -71,6 +80,10 @@ export function RebaseDialog({
 
   const setAction = (index: number, action: RebaseAction) => {
     setSteps(steps.map((step, position) => (position === index ? { ...step, action } : step)));
+  };
+
+  const setMessage = (index: number, message: string) => {
+    setSteps(steps.map((step, position) => (position === index ? { ...step, message } : step)));
   };
 
   const apply = useMutation({
@@ -143,10 +156,11 @@ export function RebaseDialog({
             <div
               key={step.sha}
               className={cn(
-                'flex items-center gap-2 border-b border-line-soft px-2 py-1.5 last:border-b-0',
+                'border-b border-line-soft last:border-b-0',
                 step.action === 'drop' && 'bg-crit-tint',
               )}
             >
+              <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="flex shrink-0 flex-col">
                 <button
                   type="button"
@@ -180,8 +194,8 @@ export function RebaseDialog({
                 {step.subject}
               </span>
 
-              <div className="flex shrink-0 gap-0.5">
-                {ACTIONS.map((option) => (
+                <div className="flex shrink-0 gap-0.5">
+                  {ACTIONS.map((option) => (
                   <button
                     key={option.action}
                     type="button"
@@ -198,7 +212,20 @@ export function RebaseDialog({
                     {t(option.label)}
                   </button>
                 ))}
+                </div>
               </div>
+
+              {step.action === 'reword' && (
+                <div className="px-2 pb-2 pl-11">
+                  <input
+                    value={step.message ?? ''}
+                    onChange={(event) => setMessage(index, event.target.value)}
+                    aria-label={t('Yeni commit mesajı')}
+                    placeholder={t('Yeni commit mesajı')}
+                    className="selectable h-7 w-full rounded-md border border-line bg-ground px-2 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>

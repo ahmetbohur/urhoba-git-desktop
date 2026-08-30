@@ -327,6 +327,39 @@ describe('etkileşimli rebase', () => {
     expect(fs.existsSync(path.join(repoPath, 'd.txt'))).toBe(false);
   });
 
+  it('mesajı değiştirir ve komşu commit’lere dokunmaz', async () => {
+    write('a.txt', 'bir\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'temel']);
+    const base = git(['rev-parse', 'HEAD']).trim();
+
+    write('b.txt', 'iki\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'eski başlık']);
+    write('c.txt', 'üç\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'dokunulmayan']);
+
+    const [third, second] = await getLog(REPO_ID, repoPath, 0, 10);
+
+    const result = await interactiveRebase(REPO_ID, repoPath, base, [
+      { sha: second.sha, subject: second.subject, action: 'reword', message: 'yeni başlık' },
+      { sha: third.sha, subject: third.subject, action: 'pick' },
+    ]);
+
+    expect(result.outcome).toBe('merged');
+
+    const after = await getLog(REPO_ID, repoPath, 0, 10);
+    expect(after.map((commit) => commit.subject)).toEqual([
+      'dokunulmayan',
+      'yeni başlık',
+      'temel',
+    ]);
+    // Mesaj değişikliği içeriğe dokunmamalı.
+    expect(fs.existsSync(path.join(repoPath, 'b.txt'))).toBe(true);
+    expect(fs.existsSync(path.join(repoPath, 'c.txt'))).toBe(true);
+  });
+
   it('en eski commit birleştirilmek istenirse hiçbir şey yapmaz', async () => {
     write('a.txt', 'bir\n');
     git(['add', '-A']);

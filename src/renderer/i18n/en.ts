@@ -47,6 +47,9 @@ export const en: Record<string, string> = {
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
   'Commit’leri yeniden düzenle': 'Reorder commits',
+  'Mesaj': 'Message',
+  'Yalnızca commit mesajı değişsin.': 'Change only the commit message.',
+  'Yeni commit mesajı': 'New commit message',
   'Sırayı değiştir, birleştir ya da at. Geçmiş yeniden yazılır.':
     'Reorder, combine or drop them. History is rewritten.',
   'Bu commit’ten sonrasını düzenle…': 'Edit the commits after this one…',

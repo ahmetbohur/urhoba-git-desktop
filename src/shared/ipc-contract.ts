@@ -140,7 +140,8 @@ export const inputSchemas = {
         z.object({
           sha: z.string().min(4),
           subject: z.string(),
-          action: z.enum(['pick', 'squash', 'fixup', 'drop']),
+          action: z.enum(['pick', 'reword', 'squash', 'fixup', 'drop']),
+          message: z.string().max(4000).optional(),
         }),
       )
       .min(1),

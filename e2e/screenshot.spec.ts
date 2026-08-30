@@ -135,6 +135,9 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(600);
   await page.getByText('Bu commit’ten sonrasını düzenle…').click();
   await page.waitForTimeout(1200);
+  // Mesaj değiştirme seçilince satırın altında giriş alanı açılmalı.
+  await page.getByRole('button', { name: /: Mesaj$/ }).first().click();
+  await page.waitForTimeout(500);
   await page.screenshot({ path: `${SHOT_DIR}/21-rebase.png` });
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);

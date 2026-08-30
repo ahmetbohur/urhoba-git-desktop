@@ -13,6 +13,9 @@ import type { RebaseAction, RebaseStep } from '@shared/types';
 /** Todo dosyasında satır başına düşen komut adı. */
 const COMMANDS: Record<RebaseAction, string> = {
   pick: 'pick',
+  // Mesaj değişikliği git'in `reword` komutuyla değil, ardından çalışan bir
+  // `exec` satırıyla yapılıyor — sebebi aşağıda.
+  reword: 'pick',
   squash: 'squash',
   fixup: 'fixup',
   drop: 'drop',
@@ -23,10 +26,26 @@ const COMMANDS: Record<RebaseAction, string> = {
  * okuyor, arayüzdeki sıralama ise tersine (yeni üstte) olduğu için çeviriyi
  * çağıran yapıyor.
  */
-export function buildTodo(steps: RebaseStep[]): string {
-  const lines = steps
-    .filter((step) => step.action !== 'drop')
-    .map((step) => `${COMMANDS[step.action]} ${step.sha} ${step.subject}`);
+export function buildTodo(steps: RebaseStep[], messagePathFor: (sha: string) => string): string {
+  const lines: string[] = [];
+
+  for (const step of steps) {
+    if (step.action === 'drop') continue;
+    lines.push(`${COMMANDS[step.action]} ${step.sha} ${step.subject}`);
+
+    /*
+     * Git'in kendi `reword` komutu mesaj editörünü açıyor ve hangi commit için
+     * açtığını dışarıdan anlamak güvenilir değil — birden fazla mesaj
+     * değiştirildiğinde hangisinin sırası olduğu bilinemiyor.
+     *
+     * Bunun yerine commit uygulandıktan hemen sonra çalışan bir `exec` satırı
+     * mesajı dosyadan okuyup değiştiriyor. Editör hiç açılmıyor, hangi mesajın
+     * hangi commit'e gittiği de satırın yerinden belli oluyor.
+     */
+    if (step.action === 'reword') {
+      lines.push(`exec git commit --amend --file="${messagePathFor(step.sha)}"`);
+    }
+  }
 
   // Bütün commit'ler atıldıysa git "nothing to do" diyip işlemi iptal ediyor;
   // bu durumu çağıran zaten engelliyor ama dosya da tutarlı kalsın.
@@ -45,6 +64,11 @@ export function validateSteps(steps: RebaseStep[]): string | null {
 
   const kept = steps.filter((step) => step.action !== 'drop');
   if (kept.length === 0) return 'Bütün commit’ler atılıyor; en az biri kalmalı.';
+
+  const emptyMessage = kept.find(
+    (step) => step.action === 'reword' && (step.message ?? '').trim().length === 0,
+  );
+  if (emptyMessage) return 'Mesajı değiştirilen commit’lerden birinin mesajı boş.';
 
   /*
    * Birleştirme kendinden önceki commit'e ekleniyor. Listenin başındaki bir
