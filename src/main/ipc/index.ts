@@ -5,6 +5,7 @@ import * as branches from '../git/branches';
 import * as conflict from '../git/conflict';
 import * as history from '../git/history';
 import * as merge from '../git/merge';
+import * as diagnostics from '../services/diagnostics';
 import * as github from '../github/provider';
 import * as rewrite from '../git/rewrite';
 import * as tags from '../git/tags';
@@ -262,6 +263,10 @@ const handlers: Handlers = {
     repos.requireRepo(repoId);
     return autopull.pullNow(repoId);
   },
+
+  // --- Tanılama ---
+  'app:diagnostics': () => diagnostics.collect(),
+  'app:open-logs': () => diagnostics.openLogFolder(),
 
   // --- GitHub ---
   'github:status': () => github.getStatus(),

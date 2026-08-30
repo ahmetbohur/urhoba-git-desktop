@@ -11,9 +11,8 @@ import path from 'node:path';
  * ilk çalıştırmada bu yüzden yanlış sonuç verdi.
  *
  * Yalıtımı `GIT_CONFIG_GLOBAL` ile değil `HOME`'u boş bir dizine yönlendirerek
- * yapıyoruz: simple-git, ortamda yapılandırma yolu değişkeni görürse komutu
- * güvenlik gerekçesiyle reddediyor ve bunun için üretim kodundaki korumayı
- * gevşetmek gerekirdi. Testin uğruna üretimi zayıflatmak yanlış takas.
+ * yapıyoruz: bu, git'in yapılandırma arama yolunun tamamını (global, XDG)
+ * tek hamlede etkisiz kılıyor ve üretim kodunda hiçbir şeyi değiştirmiyor.
  */
 const isolatedHome = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-home-'));
 process.env.HOME = isolatedHome;

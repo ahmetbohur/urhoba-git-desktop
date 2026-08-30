@@ -4,6 +4,7 @@ import { cn } from '../../lib/cn';
 import { errorMessage, invoke } from '../../lib/ipc';
 import { keys, useMutation, useQueryClient, useSettings } from '../../lib/queries';
 import { useUi } from '../../stores/ui';
+import { DiagnosticsPanel } from '../DiagnosticsPanel';
 import { RemoteSettings } from '../RemoteSettings';
 import { SectionLabel } from '../primitives';
 import { DialogShell } from './DialogShell';
@@ -120,6 +121,8 @@ export function SettingsDialog({
           </section>
 
           <RemoteSettings repoId={repoId} />
+
+          <DiagnosticsPanel />
 
           <section>
             <SectionLabel>Yeni depolar için varsayılan otomatik pull</SectionLabel>

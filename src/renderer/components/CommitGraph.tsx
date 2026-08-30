@@ -14,6 +14,11 @@ const LANE_WIDTH = 14;
 const NODE_RADIUS = 3.5;
 const MAX_LANES = 8;
 
+/** Şerit indeksinin yatay konumu. Sabitlere bağlı olduğu için bileşen dışında. */
+function laneX(lane: number): number {
+  return Math.min(lane, MAX_LANES - 1) * LANE_WIDTH + LANE_WIDTH / 2;
+}
+
 export function CommitGraph({
   row,
   height,
@@ -26,7 +31,6 @@ export function CommitGraph({
   // Çok dallı geçmişte grafik sütunu listeyi ezmesin diye genişliği sınırlıyoruz.
   const lanes = Math.min(Math.max(row.width, 1), MAX_LANES);
   const width = lanes * LANE_WIDTH;
-  const laneX = (lane: number) => Math.min(lane, MAX_LANES - 1) * LANE_WIDTH + LANE_WIDTH / 2;
 
   const paths = useMemo(
     () =>
@@ -40,8 +44,7 @@ export function CommitGraph({
             : `M ${x1} 0 C ${x1} ${height / 2}, ${x2} ${height / 2}, ${x2} ${height}`;
         return { d, color: graphColor(edge.colorLane), key: `${index}-${edge.from}-${edge.to}` };
       }),
-    // laneX yalnızca sabitlere ve satırın genişliğine bağlı.
-    [row.edges, height, lanes],
+    [row.edges, height],
   );
 
   const nodeX = laneX(row.lane);

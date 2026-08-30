@@ -7,6 +7,7 @@ import type {
   Commit,
   CommitDetail,
   ConflictFile,
+  Diagnostics,
   GithubAuthStatus,
   GithubRepo,
   MergeResult,
@@ -195,6 +196,10 @@ export const inputSchemas = {
   // --- Otomatik pull ---
   'autopull:run-now': repoId,
 
+  // --- Tanılama ---
+  'app:diagnostics': z.undefined(),
+  'app:open-logs': z.undefined(),
+
   // --- GitHub ---
   'github:status': z.undefined(),
   'github:sign-in': z.object({ token: z.string().min(1) }),
@@ -285,6 +290,9 @@ export interface IpcOutputs {
   'settings:repo-set': RepoSettings;
 
   'autopull:run-now': PullResult;
+
+  'app:diagnostics': Diagnostics;
+  'app:open-logs': void;
 
   'github:status': GithubAuthStatus;
   'github:sign-in': GithubAuthStatus;

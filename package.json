@@ -13,7 +13,9 @@
     "lint": "eslint --ext .ts,.tsx .",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "electron-forge package && playwright test",
+    "test:all": "vitest run && npm run test:e2e"
   },
   "keywords": [
     "git",
@@ -33,6 +35,7 @@
     "@electron-forge/plugin-fuses": "^7.11.2",
     "@electron-forge/plugin-vite": "^7.11.2",
     "@electron/fuses": "^1.8.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/react": "^19.2.18",
@@ -46,6 +49,7 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
@@ -58,14 +62,15 @@
     "chokidar": "^5.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "dugite": "^3.2.3",
     "electron-squirrel-startup": "^1.0.1",
     "lucide-react": "^1.37.0",
     "radix-ui": "^1.6.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "shiki": "^4.4.3",
-    "simple-git": "^3.36.0",
     "tailwind-merge": "^3.6.0",
+    "update-electron-app": "^3.3.0",
     "zod": "^4.5.4",
     "zustand": "^5.0.15"
   }

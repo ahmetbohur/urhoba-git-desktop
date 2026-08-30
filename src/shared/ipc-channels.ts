@@ -71,6 +71,9 @@ export const IPC_CHANNELS = [
   'settings:repo-set',
   // --- Otomatik pull ---
   'autopull:run-now',
+  // --- Tanılama ---
+  'app:diagnostics',
+  'app:open-logs',
   // --- GitHub ---
   'github:status',
   'github:sign-in',

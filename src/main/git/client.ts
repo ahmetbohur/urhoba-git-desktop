@@ -1,23 +1,31 @@
-import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git';
+import type { ChildProcess } from 'node:child_process';
+import { exec as execGit } from 'dugite';
 import { randomUUID } from 'node:crypto';
 import { enqueue } from './queue';
 import { emitAppEvent } from '../services/events';
-import type { IpcErrorShape } from '@shared/ipc-contract';
+import type { IpcErrorShape } from '@shared/ipc-channels';
 
 /**
  * Git komutlarının tek giriş noktası.
  *
- * Kritik ayar `GIT_TERMINAL_PROMPT=0` ve `BatchMode=yes`: Electron'un alt süreci
- * bir terminale bağlı değil, dolayısıyla git kullanıcı adı veya SSH parolası
- * sorduğunda cevap alamaz ve komut sonsuza kadar asılı kalır. Bu iki ayar
- * "soramıyorsan hemen hata ver" demek — arka plandaki otomatik pull'un uygulamayı
- * kilitlememesi buna bağlı.
+ * Alt sürecin ortamı özenle kuruluyor:
+ *
+ * - `GIT_TERMINAL_PROMPT=0` ve SSH tarafında `BatchMode=yes`: Electron'un alt
+ *   süreci bir terminale bağlı değil, dolayısıyla git kullanıcı adı veya SSH
+ *   parolası sorduğunda cevap alamaz ve komut sonsuza kadar asılı kalır. Bu iki
+ *   ayar "soramıyorsan hemen hata ver" demek — arka plandaki otomatik pull'un
+ *   uygulamayı kilitlememesi buna bağlı.
+ * - `GIT_EDITOR=true`: editör gereken yerlerde (rebase --continue gibi) "true"
+ *   komutu çalışıp hemen başarıyla çıkar, git de varsayılan mesajla devam eder.
+ * - `LC_ALL=C` ve renk kapalı: çıktıyı ayrıştırdığımız için dilin ve kaçış
+ *   kodlarının sabit olması şart.
+ * - Editör ve askpass değişkenleri kullanıcının kabuğundan sızmasın diye
+ *   siliniyor: makineden makineye değişen davranış en zor bulunan hata türü.
  */
 
 /**
  * SSH komutu.
  *
- * `BatchMode=yes`: parola sorulamadığı için sorulmak yerine hemen hata versin.
  * `StrictHostKeyChecking=accept-new`: bilinmeyen sunucunun anahtarını ilk
  * bağlantıda kabul et, sonradan değişirse reddet. `yes` olsaydı her yeni sunucu
  * elle müdahale isteyecekti, `no` ise anahtar değişimini de sessizce geçerdi.
@@ -31,59 +39,26 @@ function sshCommand(): string {
   return 'ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new';
 }
 
-const BASE_ENV: Record<string, string> = {
-  GIT_TERMINAL_PROMPT: '0',
-  SSH_ASKPASS_REQUIRE: 'never',
-  // Çıktıyı ayrıştırdığımız için dilin ve renk kodlarının sabit olması şart.
-  LC_ALL: 'C',
-  GIT_CONFIG_PARAMETERS: "'color.ui=false'",
-};
+export function childEnv(extra: Record<string, string> = {}): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined) env[key] = value;
+  }
 
-/**
- * Alt sürece verilecek ortam.
- *
- * Editör ve askpass değişkenleri bilerek siliniyor. Bir GUI'de hiçbir git komutu
- * editör açmamalı ve kimlik istemi yapmamalı; üstelik simple-git ortamda
- * `GIT_EDITOR` veya `GIT_ASKPASS` görürse komutu güvenlik gerekçesiyle tamamen
- * reddediyor. Kullanıcının kabuğunda bu değişkenler tanımlıysa — yaygın bir
- * durum — uygulamanın tamamı çalışmaz hâle gelirdi. İstemleri kapatma işini
- * `GIT_TERMINAL_PROMPT=0` ve SSH tarafında `BatchMode=yes` üstleniyor.
- */
-export function childEnv(): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env, ...BASE_ENV, GIT_SSH_COMMAND: sshCommand() };
-  for (const name of [
-    'GIT_EDITOR',
-    'GIT_SEQUENCE_EDITOR',
-    'EDITOR',
-    'VISUAL',
-    'GIT_ASKPASS',
-    'SSH_ASKPASS',
-  ]) {
+  for (const name of ['GIT_ASKPASS', 'SSH_ASKPASS', 'GIT_SEQUENCE_EDITOR', 'EDITOR', 'VISUAL']) {
     delete env[name];
   }
-  return env;
-}
 
-function baseOptions(repoPath: string): Partial<SimpleGitOptions> {
   return {
-    baseDir: repoPath,
-    binary: 'git',
-    maxConcurrentProcesses: 1,
-    trimmed: false,
-    config: ['color.ui=false'],
-    // simple-git ortamdan gelen GIT_SSH_COMMAND'i varsayılan olarak reddediyor,
-    // çünkü kullanıcı girdisinden gelirse komut çalıştırmaya yarar. Buradaki
-    // değeri kullanıcı değil biz üretiyoruz (bkz. `sshCommand`), dolayısıyla
-    // izin vermek güvenli — ve bu bayrak olmadan arka plan işleri parola
-    // isteminde sonsuza kadar asılı kalır.
-    unsafe: { allowUnsafeSshCommand: true },
+    ...env,
+    GIT_TERMINAL_PROMPT: '0',
+    SSH_ASKPASS_REQUIRE: 'never',
+    GIT_EDITOR: 'true',
+    GIT_SSH_COMMAND: sshCommand(),
+    LC_ALL: 'C',
+    GIT_CONFIG_PARAMETERS: "'color.ui=false'",
+    ...extra,
   };
-}
-
-export function gitFor(repoPath: string): SimpleGit {
-  const git = simpleGit(baseOptions(repoPath));
-  git.env(childEnv());
-  return git;
 }
 
 export class GitCommandError extends Error {
@@ -144,14 +119,17 @@ interface RunOptions {
   args: string[];
   /** Sıraya alınmadan çalışsın mı — sadece salt okunur, hızlı komutlar için. */
   skipQueue?: boolean;
-  /** Sıfır olmayan çıkış kodunun beklendiği durumlar (örn. `diff --quiet`). */
+  /** Sıfır olmayan çıkış kodunun beklendiği durumlar (örn. çakışan merge). */
   allowFailure?: boolean;
+  /** İlerleme çıktısı üreten komutlar için stderr akışı. */
+  onStderr?: (chunk: string) => void;
 }
 
 export interface RunResult {
   stdout: string;
   ok: boolean;
   stderr: string;
+  exitCode: number;
 }
 
 /**
@@ -160,25 +138,25 @@ export interface RunResult {
  * doğrudan çalışabilir.
  */
 export async function run(options: RunOptions): Promise<RunResult> {
-  const { repoId, repoPath, args, skipQueue = false, allowFailure = false } = options;
+  const { repoId, repoPath, args, skipQueue = false, allowFailure = false, onStderr } = options;
+
   const execute = async (): Promise<RunResult> => {
     const startedAt = Date.now();
     const printable = `git ${args.join(' ')}`;
+
+    let result: { stdout: string; stderr: string; exitCode: number };
     try {
-      const stdout = await gitFor(repoPath).raw(args);
-      emitAppEvent({
-        type: 'git:command',
-        entry: {
-          id: randomUUID(),
-          repoId,
-          command: printable,
-          durationMs: Date.now() - startedAt,
-          ok: true,
-          at: new Date().toISOString(),
-        },
+      result = await execGit(args, repoPath, {
+        env: childEnv(),
+        processCallback: onStderr
+          ? (child: ChildProcess) => {
+              child.stderr?.on('data', (chunk: Buffer) => onStderr(chunk.toString('utf8')));
+            }
+          : undefined,
       });
-      return { stdout, ok: true, stderr: '' };
     } catch (error) {
+      // Buraya yalnızca git süreci hiç başlatılamazsa düşüyoruz; komutun
+      // başarısız olması normal yoldan `exitCode` ile geliyor.
       const detail = error instanceof Error ? error.message : String(error);
       emitAppEvent({
         type: 'git:command',
@@ -192,11 +170,43 @@ export async function run(options: RunOptions): Promise<RunResult> {
           at: new Date().toISOString(),
         },
       });
-      if (allowFailure) return { stdout: '', ok: false, stderr: detail };
-      throw new GitCommandError(humanizeGitError(detail), detail);
+      throw new GitCommandError('Git çalıştırılamadı. Uygulama kurulumu bozulmuş olabilir.', detail);
     }
+
+    const ok = result.exitCode === 0;
+    emitAppEvent({
+      type: 'git:command',
+      entry: {
+        id: randomUUID(),
+        repoId,
+        command: printable,
+        durationMs: Date.now() - startedAt,
+        ok,
+        error: ok ? undefined : result.stderr,
+        at: new Date().toISOString(),
+      },
+    });
+
+    if (!ok && !allowFailure) {
+      throw new GitCommandError(humanizeGitError(result.stderr), result.stderr);
+    }
+    return { stdout: result.stdout, stderr: result.stderr, ok, exitCode: result.exitCode };
   };
 
   if (skipQueue) return execute();
   return enqueue(repoPath, execute);
+}
+
+/**
+ * Uygulamanın kullandığı git sürümü — tanılama panelinde gösteriliyor.
+ * Gömülü git kullanıldığı için bu, kullanıcının sisteminde kurulu git'ten
+ * bağımsızdır ve her makinede aynı sürümü verir.
+ */
+export async function getGitVersion(): Promise<string> {
+  try {
+    const result = await execGit(['--version'], process.cwd(), { env: childEnv() });
+    return result.stdout.trim();
+  } catch {
+    return 'bilinmiyor';
+  }
 }

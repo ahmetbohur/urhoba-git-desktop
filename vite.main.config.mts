@@ -3,10 +3,12 @@ import path from 'node:path';
 
 // Ana süreç derlemesi.
 //
-// Bağımlılıkları external bırakmıyoruz: chokidar 5 ESM-only ve ana süreç CommonJS
-// olarak yükleniyor, dolayısıyla `require('chokidar')` çalışmazdı. Vite'ın bundle
-// etmesi ESM'i CJS'e çeviriyor ve paketleme sırasında node_modules'e bağımlılık
-// kalmıyor. Her iki paket de saf JS; native eklenti yok.
+// chokidar bundle ediliyor: ESM-only olduğu için `require` ile yüklenemezdi,
+// Vite onu CJS'e çeviriyor.
+//
+// dugite de bundle ediliyor. Gömülü git ikilisinin yerini kendi `__dirname`
+// tahminiyle bulmaya çalışıyor ama bundle edilmiş kodda o tahmin yanlış çıkar;
+// bu yüzden yolu ana süreçte `LOCAL_GIT_DIRECTORY` ile açıkça bildiriyoruz.
 export default defineConfig({
   build: {
     rollupOptions: {

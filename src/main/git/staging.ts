@@ -24,8 +24,8 @@ async function applyPatch(
   patch: string,
   toIndex: boolean,
 ): Promise<void> {
-  // `git apply` yamayı stdin'den de okur ama simple-git üzerinden stdin beslemek
-  // güvenilir değil; geçici dosya en az sürprizli yol.
+  // `git apply` yamayı stdin'den de okuyabilir; geçici dosya kullanmak
+  // ayrıştırma ve kaçış sürprizlerine kapalı olduğu için tercih edildi.
   const patchFile = path.join(os.tmpdir(), `urhoba-${randomUUID()}.patch`);
   await fs.promises.writeFile(patchFile, patch, 'utf8');
   try {

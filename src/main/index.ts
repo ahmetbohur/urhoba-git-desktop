@@ -1,7 +1,10 @@
 import { app, BrowserWindow, Menu, nativeTheme, session, shell } from 'electron';
+import fs from 'node:fs';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { registerIpcHandlers } from './ipc';
+import { installCrashHandlers, log } from './services/logger';
+import { initializeUpdates } from './services/updater';
 import * as autopull from './services/autopull';
 import * as store from './services/store';
 import { stopWatching } from './services/watcher';
@@ -9,6 +12,42 @@ import { stopWatching } from './services/watcher';
 // Windows'ta kurulum/kaldırma sırasında kısayolları Squirrel yönetiyor.
 if (started) {
   app.quit();
+}
+
+/**
+ * Gömülü git'in yerini dugite'e bildirir.
+ *
+ * Uygulama kendi git'ini taşıyor: kullanıcının makinesinde git kurulu olmasa da
+ * çalışıyor ve herkeste aynı sürüm çalıştığı için "bende oluyor sende olmuyor"
+ * sınıfı hatalar ortadan kalkıyor.
+ *
+ * Yolu dugite'in kendi tahminine bırakmıyoruz. O tahmin kendi dosya konumuna
+ * dayanıyor, oysa ana süreç kodu tek bir dosyaya derleniyor ve konum değişiyor.
+ * Paketlenmiş uygulamada git `resources/git` altında, geliştirmede node_modules
+ * içinde duruyor.
+ */
+function configureEmbeddedGit(): void {
+  /*
+   * Uygulamanın nasıl başlatıldığına göre git farklı yerlerde duruyor:
+   * paketlenmiş uygulamada `resources/git`, `npm start` ile geliştirmede proje
+   * kökündeki node_modules, uçtan uca testlerde ise derlenmiş ana süreç dosyası
+   * doğrudan çağrıldığı için çalışma dizininde. Üçünü de sırayla deniyoruz —
+   * tek bir yola bel bağlamak bu senaryolardan ikisini kırıyordu.
+   */
+  const candidates = [
+    path.join(process.resourcesPath, 'git'),
+    path.join(app.getAppPath(), 'node_modules', 'dugite', 'git'),
+    path.join(process.cwd(), 'node_modules', 'dugite', 'git'),
+  ];
+
+  const found = candidates.find((candidate) => fs.existsSync(candidate));
+  if (found) {
+    process.env.LOCAL_GIT_DIRECTORY = found;
+    return;
+  }
+  // Bulunamazsa değişkeni ayarlamıyoruz: dugite kendi çözümüne düşsün, hata da
+  // ilk git komutunda anlaşılır bir mesajla yüzeye çıksın.
+  log('warn', 'Gömülü git bulunamadı, sistemdeki git denenecek', { candidates });
 }
 
 const isDevelopment = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
@@ -122,12 +161,20 @@ function createWindow(): void {
 }
 
 app.on('ready', () => {
+  installCrashHandlers();
+  configureEmbeddedGit();
+  log('info', 'Uygulama başlatıldı', {
+    version: app.getVersion(),
+    electron: process.versions.electron,
+    embeddedGit: process.env.LOCAL_GIT_DIRECTORY ?? 'sistem git',
+  });
   applyContentSecurityPolicy();
   buildMenu();
   registerIpcHandlers();
 
   nativeTheme.themeSource = store.getSettings().theme;
   autopull.reconcileSchedules();
+  initializeUpdates();
 
   createWindow();
 });

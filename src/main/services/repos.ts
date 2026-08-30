@@ -2,8 +2,8 @@ import { dialog, shell } from 'electron';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { simpleGit } from 'simple-git';
-import { childEnv, run } from '../git/client';
+import { humanizeGitError, run } from '../git/client';
+import { parseCloneProgress } from '../git/clone-progress';
 import { emitAppEvent } from './events';
 import * as store from './store';
 import type { Repo } from '@shared/types';
@@ -90,20 +90,33 @@ export async function cloneRepo(
     throw new Error(`"${folderName}" klasörü zaten var ve boş değil.`);
   }
 
-  // Klonlamada simple-git'in kendi ilerleme geri çağrısını kullanıyoruz;
-  // bu bilgi `git clone --progress` çıktısından geliyor ve stderr'de akıyor.
-  const git = simpleGit({
-    baseDir: parentDir,
-    progress({ method, stage, progress }) {
+  /*
+   * `--progress` bayrağı olmadan git, çıktısı bir terminale gitmediğinde
+   * ilerleme basmıyor. Bu satırlar stderr'e akıyor; ayrıştırıp arayüze tek bir
+   * yüzde olarak iletiyoruz.
+   */
+  const result = await run({
+    repoId: null,
+    repoPath: parentDir,
+    args: ['clone', '--progress', url, target],
+    allowFailure: true,
+    onStderr: (chunk) => {
+      const update = parseCloneProgress(chunk);
+      if (!update) return;
       emitAppEvent({
         type: 'clone:progress',
-        progress: { taskId, phase: `${method}: ${stage}`, percent: progress },
+        progress: { taskId, phase: update.phase, percent: update.percent },
       });
     },
   });
-  git.env(childEnv());
 
-  await git.clone(url, target, ['--progress']);
+  if (!result.ok) {
+    // Yarım kalan klasörü bırakmıyoruz: kullanıcı tekrar denediğinde "klasör
+    // zaten var" hatası almasın.
+    await fs.promises.rm(target, { recursive: true, force: true });
+    throw new Error(humanizeGitError(result.stderr));
+  }
+
   return addRepo(target);
 }
 

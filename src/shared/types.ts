@@ -165,6 +165,20 @@ export interface PushResult {
   upstreamSet: boolean;
 }
 
+/** Sorun bildirirken paylaşılacak ortam bilgisi. */
+export interface Diagnostics {
+  appVersion: string;
+  electronVersion: string;
+  chromeVersion: string;
+  nodeVersion: string;
+  platform: string;
+  gitVersion: string;
+  embeddedGitDirectory: string | null;
+  usesEmbeddedGit: boolean;
+  userDataPath: string;
+  logPath: string;
+}
+
 export interface GithubUser {
   login: string;
   name: string | null;

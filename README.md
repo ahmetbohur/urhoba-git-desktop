@@ -76,7 +76,13 @@ npm run package    # platform için paketle
 npm run make       # kurulum dosyası üret
 ```
 
-Gereksinim: Node.js 20+ ve sistemde kurulu `git`.
+```bash
+npm run test:e2e    # paketleyip uçtan uca testleri çalıştırır
+npm run test:all    # birim + uçtan uca
+```
+
+Geliştirme için Node.js 20+ yeterli. **Uygulamayı kullanmak için sistemde git
+kurulu olması gerekmiyor** — kendi git sürümünü taşıyor.
 
 ## Mimari
 
@@ -114,6 +120,23 @@ src/
 kırılgan yeri olduğu için bu fonksiyonlar Electron'a hiç ihtiyaç duymadan test
 ediliyor; ayrıca `__tests__/integration.test.ts` her çalıştığında geçici depolar
 kurup komutları gerçekten çalıştırıyor.
+
+### Gömülü git
+
+Uygulama git'i kendisi taşıyor (dugite). Bunun iki faydası var: kullanıcının
+makinesinde git kurulu olmasa da çalışıyor ve herkeste aynı sürüm çalıştığı için
+"bende oluyor sende olmuyor" sınıfı hatalar ortadan kalkıyor.
+
+Git ikilisi asar arşivinin dışında, `resources/git` altında duruyor;
+çalıştırılabilir dosyalar arşiv içinden çalıştırılamaz. Yolu ana süreçte
+`LOCAL_GIT_DIRECTORY` ile bildiriyoruz ve üç senaryoyu da deniyoruz: paketlenmiş
+uygulama, `npm start` ile geliştirme, ve uçtan uca testler. Bulunamazsa sistemdeki
+git'e düşülüyor ve bu durum tanılama panelinde görünüyor.
+
+Alt sürecin ortamı özenle kuruluyor: editör ve askpass değişkenleri siliniyor,
+`GIT_TERMINAL_PROMPT=0` ve SSH tarafında `BatchMode=yes` ayarlanıyor. Bunlar
+olmadan bir kimlik istemi arka plandaki otomatik pull'u sonsuza kadar
+askıda bırakabilir.
 
 ### GitHub jetonu
 
@@ -158,11 +181,35 @@ silme satırı bağlama dönüşür, seçilmeyen ekleme satırı yamadan tamamen
 | `Ctrl/Cmd + Shift + G` | Git komut günlüğü |
 | `Ctrl/Cmd + Enter` | Commit (mesaj alanındayken) |
 
+## Dağıtım
+
+`npm run make` üç platform için kurulum dosyası üretir: Windows'ta Squirrel,
+Linux'ta `.deb` ve `.rpm`, macOS'ta `.zip`. Gömülü git yüzünden paket ~430 MB
+olur.
+
+**Kod imzalama henüz yapılandırılmadı** ve bu bilinçli bir bekleme: imzasız
+kurulumda Windows SmartScreen ile macOS Gatekeeper uygulamayı engeller, ama ikisi
+de ücretli sertifika gerektiriyor (Apple Developer üyeliği yıllık, Windows kod
+imzalama sertifikası ayrı). Bütçe ayrıldığında `forge.config.ts` içinde
+`osxSign`/`osxNotarize` ve Squirrel'ın `certificateFile` alanları doldurulmalı.
+O zamana kadar Linux paketleri ve imzasız taşınabilir sürüm sorunsuz dağıtılabilir.
+
+**Otomatik güncelleme** hazır ama uykuda: `package.json` içine `repository`
+alanı eklenip GitHub Releases'e yayın yapıldığında kendiliğinden devreye giriyor.
+Farklı bir sunucu kullanılacaksa `URHOBA_UPDATE_FEED` ortam değişkeni yeterli.
+Yayın kaynağı tanımlı değilken güncelleme hiç aranmıyor — kullanıcıya
+açıklayamayacağımız ağ hataları göstermemek için.
+
 ## Yol haritası
 
-Faz 0 (zemin), Faz 1 (MVP commit döngüsü), Faz 2 (günlük kullanım), Faz 3
-(geçmiş ve grafik) ve Faz 4 (GitHub) tamamlandı; otomatik pull ile SSH yardımcısı
-da planın dışında eklendi. Sıradaki adım:
+Faz 0–5 tamamlandı. Faz 5'te gömülü git'e geçildi, tanılama ve günlük altyapısı,
+uygulama ikonu, azaltılmış hareket desteği, uçtan uca testler ve dağıtım
+yapılandırması eklendi.
 
-- **Faz 5** — gömülü git (dugite), i18n, erişilebilirlik denetimi, uçtan uca
-  testler, kod imzalama ve otomatik güncelleme
+Kalanlar:
+
+- **İngilizce arayüz (i18n)** — 29 dosyada yaklaşık 650 metnin çeviri katmanına
+  taşınmasını gerektiriyor; kendi başına bir çalışma turu
+- **Kod imzalama** — ücretli sertifika bekliyor (yukarıya bakın)
+- **Büyük depo profillemesi** — sayfalama ve sanallaştırma var ama 50.000
+  commit'lik bir depoda ölçüm yapılmadı

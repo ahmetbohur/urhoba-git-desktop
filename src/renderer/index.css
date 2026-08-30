@@ -117,6 +117,43 @@
     outline-offset: 1px;
     border-radius: 3px;
   }
+
+  /*
+   * Azaltılmış hareket tercihi.
+   *
+   * Otomatik pull göstergesinin nabzı, yükleme çarkları ve menü açılış
+   * geçişleri — hepsi kullanıcının işletim sisteminde "hareketi azalt" seçiliyse
+   * durur. Süreyi sıfır yerine 0.01ms yapıyoruz: böylece geçiş bitiş olayına
+   * bağlı davranışlar (Radix'in menü kapanışı gibi) yine tetikleniyor, sadece
+   * gözle görülür hareket kalmıyor.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Klavyeyle gezinenler için içeriğe atlama bağlantısı. */
+  .skip-link {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    z-index: 100;
+    transform: translateY(-200%);
+    background: var(--accent);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .skip-link:focus {
+    transform: translateY(0);
+  }
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;

@@ -10,13 +10,56 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    name: 'Urhoba Git Desktop',
+    /*
+     * Gömülü git.
+     *
+     * Vite eklentisi paketleme sırasında node_modules'ü temizlediği için
+     * dugite'in kendi ikili dosyaları pakete girmiyor. Git klasörünü ayrı bir
+     * kaynak olarak `resources/git` altına kopyalıyor, yolu da ana süreçte
+     * `LOCAL_GIT_DIRECTORY` ile dugite'e bildiriyoruz. Bu yol dugite'in
+     * `__dirname` tahminine güvenmekten daha sağlam: bundle edilmiş kodda o
+     * tahmin zaten yanlış çıkıyor.
+     */
+    extraResource: ['node_modules/dugite/git'],
+    /*
+     * Uzantısız veriyoruz: her hedef kendi biçimini seçiyor (Windows .ico,
+     * Linux .png). macOS için .icns üretilmedi; o platformda şimdilik varsayılan
+     * Electron ikonu görünür.
+     */
+    icon: 'assets/icon',
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      name: 'urhoba-git-desktop',
+      setupIcon: 'assets/icon.ico',
+    }),
     new MakerZIP({}, ['darwin']),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerRpm({
+      options: {
+        name: 'urhoba-git-desktop',
+        productName: 'Urhoba Git Desktop',
+        genericName: 'Git İstemcisi',
+        description: 'Depolarını tek pencereden takip eden modern bir masaüstü Git istemcisi.',
+        categories: ['Development'],
+        icon: 'assets/icon.png',
+        homepage: 'https://github.com/urhoba/urhoba-git-desktop',
+      },
+    }),
+    new MakerDeb({
+      options: {
+        name: 'urhoba-git-desktop',
+        productName: 'Urhoba Git Desktop',
+        genericName: 'Git İstemcisi',
+        description: 'Depolarını tek pencereden takip eden modern bir masaüstü Git istemcisi.',
+        categories: ['Development'],
+        icon: 'assets/icon.png',
+        homepage: 'https://github.com/urhoba/urhoba-git-desktop',
+        // Gömülü git taşındığı için sistemde git kurulu olması gerekmiyor.
+        depends: [],
+      },
+    }),
   ],
   plugins: [
     new VitePlugin({

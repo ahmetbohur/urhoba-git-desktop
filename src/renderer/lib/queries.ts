@@ -263,4 +263,4 @@ export function useInvalidateRepo() {
   };
 }
 
-export { useMutation, useQueryClient };
+export { useMutation, useQuery, useQueryClient };

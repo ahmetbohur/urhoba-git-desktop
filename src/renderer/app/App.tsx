@@ -143,18 +143,27 @@ export function App() {
   return (
     <Tooltip.Provider delayDuration={400}>
       <div className="flex h-full">
+        <a href="#ana-icerik" className="skip-link">
+          İçeriğe atla
+        </a>
         <RepoSidebar autoPullRepoIds={autoPullRepoIds} />
 
-        <main className="flex min-w-0 flex-1 flex-col bg-ground">
+        <main id="ana-icerik" className="flex min-w-0 flex-1 flex-col bg-ground">
           {activeRepo ? (
             <>
               <TopBar repo={activeRepo} />
 
-              <nav className="flex shrink-0 gap-1 border-b border-line bg-surface px-3">
+              <nav
+                aria-label="Depo görünümleri"
+                role="tablist"
+                className="flex shrink-0 gap-1 border-b border-line bg-surface px-3"
+              >
                 {TABS.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
                     type="button"
+                    role="tab"
+                    aria-selected={tab === id}
                     onClick={() => setTab(id)}
                     className={cn(
                       'flex items-center gap-1.5 border-b-2 px-2 py-2 text-[13px] font-medium',
