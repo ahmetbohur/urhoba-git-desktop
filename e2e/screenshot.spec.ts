@@ -1,4 +1,5 @@
 import { test, _electron as electron } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -135,12 +136,26 @@ test('arayüz görüntüleri', async () => {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
 
-  // Yayınlama penceresi: uzak sunucusu olmayan geçici bir depoda açılıyor.
-  await page.evaluate(async () => {
-    await window.urhoba.invoke('repo:add', {
-      path: '/tmp/urhoba-shots-repo/urhoba-yayin-ornegi',
-    });
-  });
+  /*
+   * Yayınlama penceresi uzak sunucusu olmayan bir depo istiyor. Kullanıcının
+   * gerçek depolarının hepsinde origin var, o yüzden senaryo kendi deposunu
+   * kuruyor — elle hazırlanmış bir klasöre bel bağlamak senaryoyu kırıyordu.
+   */
+  const sampleRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-yayin-'));
+  const samplePath = path.join(sampleRoot, 'urhoba-yayin-ornegi');
+  fs.mkdirSync(samplePath);
+  const sampleGit = (args: string[]) => execFileSync('git', args, { cwd: samplePath });
+  sampleGit(['init', '--initial-branch=main']);
+  sampleGit(['config', 'user.email', 'ornek@urhoba.test']);
+  sampleGit(['config', 'user.name', 'Urhoba']);
+  fs.writeFileSync(path.join(samplePath, 'README.md'), '# Urhoba Yayın Örneği\n');
+  sampleGit(['add', '-A']);
+  sampleGit(['commit', '-m', 'ilk commit']);
+
+  await page.evaluate(
+    (target) => window.urhoba.invoke('repo:add', { path: target }),
+    samplePath,
+  );
   // Depo IPC üzerinden eklendiği için kenar çubuğu kendiliğinden tazelenmiyor.
   await page.reload();
   await page.waitForLoadState('domcontentloaded');
@@ -152,6 +167,18 @@ test('arayüz görüntüleri', async () => {
   await page.getByRole('button', { name: 'GitHub’da yayınla' }).first().click();
   await page.waitForTimeout(900);
   await page.screenshot({ path: `${SHOT_DIR}/14-yayinla.png` });
+
+  // Giriş yapılmamışken yayınlama penceresinden giriş penceresine geçiş.
+  await page.getByRole('button', { name: 'GitHub’a giriş yap' }).click();
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${SHOT_DIR}/15-yayinla-giris.png` });
+
+  // İki pencere üst üste açık: önce giriş, sonra yayınlama kapanıyor.
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  fs.rmSync(sampleRoot, { recursive: true, force: true });
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
 

@@ -57,7 +57,8 @@ export function TopBar({ repo }: { repo: Repo }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sshOpen, setSshOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
-  const [githubOpen, setGithubOpen] = useState(false);
+  const githubOpen = useUi((s) => s.githubOpen);
+  const setGithubOpen = useUi((s) => s.setGithubOpen);
   const [forcePushOpen, setForcePushOpen] = useState(false);
   const publishOpen = useUi((s) => s.publishOpen);
   const setPublishOpen = useUi((s) => s.setPublishOpen);

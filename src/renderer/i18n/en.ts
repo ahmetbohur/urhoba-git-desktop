@@ -47,6 +47,7 @@ export const en: Record<string, string> = {
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
   'GitHub ile giriş yap': 'Sign in with GitHub',
+  'GitHub’a giriş yap': 'Sign in to GitHub',
   'Kişisel erişim jetonu kullan': 'Use a personal access token',
   'Geri dön': 'Go back',
   'Kodu kopyala': 'Copy the code',

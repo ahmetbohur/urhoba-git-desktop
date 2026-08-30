@@ -58,6 +58,7 @@ export function PublishDialog({
   const t = useT();
   const client = useQueryClient();
   const toast = useUi((s) => s.toast);
+  const setGithubOpen = useUi((s) => s.setGithubOpen);
   const { data: auth } = useGithubStatus();
   const { data: status } = useStatus(repo.id);
   const { data: aiStatus } = useAiStatus(repo.id);
@@ -267,7 +268,20 @@ export function PublishDialog({
         </div>
 
         {blocker ? (
-          <p className="rounded-md bg-crit-tint px-2.5 py-2 text-[11px] text-ink">{blocker}</p>
+          <div className="flex items-center justify-between gap-3 rounded-md bg-crit-tint px-2.5 py-2">
+            <p className="text-[11px] text-ink">{blocker}</p>
+            {/*
+              Giriş yapılmamışken uyarıyı okuyup pencereyi kapatmak, kullanıcı
+              simgesini bulmak ve buraya geri dönmek gerekiyordu. Giriş penceresi
+              bunun üstünde açılıyor; kapandığında durum sorgusu tazelendiği için
+              uyarı kendiliğinden kayboluyor.
+            */}
+            {!auth?.authenticated && (
+              <Button size="sm" variant="primary" onClick={() => setGithubOpen(true)}>
+                {t('GitHub’a giriş yap')}
+              </Button>
+            )}
+          </div>
         ) : (
           <p className="rounded-md bg-surface-2 px-2.5 py-2 text-[11px] text-ink-2">
             {t('{branch} dalı gönderilecek ve origin şu adrese kurulacak:', {
