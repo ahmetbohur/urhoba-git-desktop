@@ -32,13 +32,7 @@ const PROVIDERS: Array<{ id: AiProviderId; label: string; hint: string; local: b
   { id: 'anthropic', label: 'Claude', hint: 'Bulut — kod dışarı gider', local: false },
 ];
 
-export function AiSettingsSection({
-  repoId,
-  repoSettings,
-}: {
-  repoId: string;
-  repoSettings: RepoSettings | null;
-}) {
+export function AiSettingsSection({ repoSettings }: { repoSettings: RepoSettings | null }) {
   const t = useT();
   const { data: settings } = useSettings();
   const { data: status } = useAiStatus();
@@ -81,11 +75,6 @@ export function AiSettingsSection({
     },
     onError: (error) =>
       toast({ kind: 'error', title: t('Anahtar kaydedilemedi'), description: errorMessage(error) }),
-  });
-
-  const saveRepo = useMutation({
-    mutationFn: (allowCloudAi: boolean) => invoke('settings:repo-set', { repoId, allowCloudAi }),
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.repoSettings(repoId) }),
   });
 
   if (!ai) return null;
@@ -207,23 +196,16 @@ export function AiSettingsSection({
           </div>
 
           {ai.provider !== 'ollama' && (
-            <div className="flex items-start justify-between gap-4 rounded-lg border border-warn bg-warn-tint p-2.5">
-              <div className="min-w-0">
-                <p className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
-                  <Sparkles className="size-3.5 text-warn" />
-                  {t('Bu deponun kodu buluta gönderilebilsin')}
-                </p>
-                <p className="text-[11px] text-ink-2">
-                  {t('Commit mesajı önerisi için diff gönderilir. Her depo için ayrı ayrı açılır.')}
-                </p>
-              </div>
-              <Switch.Root
-                checked={repoSettings?.allowCloudAi ?? false}
-                onCheckedChange={(allowed) => saveRepo.mutate(allowed)}
-                className="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-surface-3 transition-colors data-[state=checked]:bg-accent"
-              >
-                <Switch.Thumb className="block size-4 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[18px]" />
-              </Switch.Root>
+            <div className="rounded-lg border border-warn bg-warn-tint p-2.5">
+              <p className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
+                <Sparkles className="size-3.5 text-warn" />
+                {repoSettings?.allowCloudAi
+                  ? t('Bu depoda buluta kod gönderilmesine izin verildi')
+                  : t('Bu depoda buluta kod gönderilmiyor')}
+              </p>
+              <p className="mt-0.5 text-[11px] text-ink-2">
+                {t('Genel varsayılanı ve bu deponun ayarını yukarıdaki bölümlerden değiştirebilirsin.')}
+              </p>
             </div>
           )}
 

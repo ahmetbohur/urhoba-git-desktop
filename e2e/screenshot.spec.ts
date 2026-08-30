@@ -92,6 +92,23 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${SHOT_DIR}/10-gruplu-liste.png` });
 
+  // Satır geçmişi: geçmişten bir commit açıp dosyasına çift tıklıyoruz.
+  // Bu yol çalışma dizininin o anki durumundan bağımsız.
+  await page.getByRole('tab', { name: 'Geçmiş' }).click();
+  await page.waitForTimeout(2000);
+  // Commit satırları alt kenarlıklı butonlar; ilkini seçiyoruz.
+  await page.locator('button.border-b').first().click();
+  await page.waitForTimeout(2000);
+  await page.getByText('README.md').first().click({ button: 'right' });
+  await page.waitForTimeout(500);
+  await page.getByText('Satır geçmişi (blame)').click();
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: `${SHOT_DIR}/12-blame.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  await page.getByRole('tab', { name: 'Değişiklikler' }).click();
+  await page.waitForTimeout(600);
+
   // AI ayarları bölümü
   await page.evaluate(() =>
     window.urhoba.invoke('settings:set', {

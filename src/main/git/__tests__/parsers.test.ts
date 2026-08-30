@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseUnifiedDiff } from '../diff';
 import {
+  parseBlame,
   parseLog,
   parseNameStatus,
   parseNumstat,
@@ -198,5 +199,85 @@ describe('parseRefLines', () => {
     expect(list.local).toHaveLength(1);
     expect(list.local[0]).toMatchObject({ ahead: 1, behind: 2, upstream: 'origin/main' });
     expect(list.remote.map((b) => b.fullName)).toEqual(['origin/main']);
+  });
+});
+
+
+describe('parseBlame', () => {
+  /** Porcelain biçimi commit başlığını yalnızca ilk görüşte yazar. */
+  const raw = [
+    'a'.repeat(40) + ' 1 1 2',
+    'author Ada Lovelace',
+    'author-mail <ada@example.com>',
+    'author-time 1767225600',
+    'author-tz +0300',
+    'summary Girişi ekle',
+    'filename src/app.ts',
+    '\tconst a = 1;',
+    'a'.repeat(40) + ' 2 2',
+    '\tconst b = 2;',
+    'b'.repeat(40) + ' 3 3 1',
+    'author Mehmet Yılmaz',
+    'author-mail <mehmet@example.com>',
+    'author-time 1767312000',
+    'author-tz +0300',
+    'summary Hata düzelt',
+    'filename src/app.ts',
+    '\tconst c = 3;',
+  ].join('\n');
+
+  it('her satırı kendi commit’iyle eşler', () => {
+    const lines = parseBlame(raw);
+    expect(lines).toHaveLength(3);
+    expect(lines.map((line) => line.content)).toEqual([
+      'const a = 1;',
+      'const b = 2;',
+      'const c = 3;',
+    ]);
+  });
+
+  it('tekrar edilmeyen commit bilgisini önbellekten tamamlar', () => {
+    // İkinci satırın başlığında yalnızca sha var; yazar bilgisi ilk satırdan gelmeli.
+    const [, second] = parseBlame(raw);
+    expect(second.authorName).toBe('Ada Lovelace');
+    expect(second.summary).toBe('Girişi ekle');
+  });
+
+  it('farklı commit’in bilgisini karıştırmaz', () => {
+    const [, , third] = parseBlame(raw);
+    expect(third.authorName).toBe('Mehmet Yılmaz');
+    expect(third.summary).toBe('Hata düzelt');
+    expect(third.shortSha).toBe('bbbbbbbb');
+  });
+
+  it('e-postayı köşeli parantezlerden arındırır', () => {
+    expect(parseBlame(raw)[0].authorEmail).toBe('ada@example.com');
+  });
+
+  it('zaman damgasını ISO tarihe çevirir', () => {
+    expect(parseBlame(raw)[0].authoredAt).toMatch(/^2026-01-01T/);
+  });
+
+  it('satır numaralarını sonuç dosyasına göre verir', () => {
+    expect(parseBlame(raw).map((line) => line.lineNumber)).toEqual([1, 2, 3]);
+  });
+
+  it('boş çıktıda boş liste döner', () => {
+    expect(parseBlame('')).toEqual([]);
+  });
+
+  it('boş satır içeren dosyayı kaybetmez', () => {
+    const withEmpty = [
+      'c'.repeat(40) + ' 1 1 1',
+      'author X',
+      'author-mail <x@y.z>',
+      'author-time 1767225600',
+      'summary boş satır',
+      'filename a.txt',
+      '\t',
+    ].join('\n');
+    const lines = parseBlame(withEmpty);
+    expect(lines).toHaveLength(1);
+    expect(lines[0].content).toBe('');
   });
 });

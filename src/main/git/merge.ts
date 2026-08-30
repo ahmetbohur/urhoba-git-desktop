@@ -73,6 +73,37 @@ export async function merge(repoId: string, repoPath: string, branch: string): P
   );
 }
 
+/**
+ * Bir commit'i geçerli dala uygular.
+ *
+ * Çakışma burada da hata değil beklenen bir sonuç: aynı satırlara dokunan iki
+ * dal arasında commit taşımak sık sık çakışır ve kullanıcı bunu çözebilir.
+ * Yarım kalan cherry-pick'i "devam et / iptal et" şeridi zaten yönetiyor.
+ */
+export async function cherryPick(
+  repoId: string,
+  repoPath: string,
+  sha: string,
+): Promise<MergeResult> {
+  const result = await run({
+    repoId,
+    repoPath,
+    // `-x`: mesaja "(cherry picked from commit …)" satırı ekliyor. Bir commit'in
+    // iki dalda ayrı sha ile durması ileride kafa karıştırıyor; izini bırakmak
+    // sonradan "bu nereden geldi" sorusunu cevaplıyor.
+    args: ['cherry-pick', '-x', sha],
+    allowFailure: true,
+  });
+  return finish(
+    repoId,
+    repoPath,
+    result.ok,
+    result.stderr,
+    result.stdout,
+    `${sha.slice(0, 8)} bu dala uygulandı.`,
+  );
+}
+
 export async function rebase(
   repoId: string,
   repoPath: string,
@@ -146,15 +177,24 @@ export async function continueOperation(repoId: string, repoPath: string): Promi
     }
   }
 
-  if (status.operation !== 'rebase') {
-    return finish(repoId, repoPath, true, '', '', 'Birleştirme tamamlandı.');
+  /*
+   * Commit atıldıktan sonra işlem çoğu zaman kendiliğinden kapanıyor: tek
+   * commit'lik bir cherry-pick ya da revert'te `--continue` çalıştırmak
+   * "devam eden işlem yok" hatası veriyor. Bu yüzden önce duruma bakıp
+   * gerçekten sırada bir şey kalmışsa devam ediyoruz — rebase'de birden çok
+   * commit sıraya girdiği için kalıyor.
+   */
+  const afterCommit = await getStatus(repoId, repoPath);
+  if (afterCommit.operation === 'none') {
+    return finish(repoId, repoPath, true, '', '', 'İşlem tamamlandı.');
   }
 
+  const command = afterCommit.operation === 'rebase' ? 'rebase' : afterCommit.operation;
   const result = await run({
     repoId,
     repoPath,
-    args: ['rebase', '--continue'],
+    args: [command, '--continue'],
     allowFailure: true,
   });
-  return finish(repoId, repoPath, result.ok, result.stderr, result.stdout, 'Rebase tamamlandı.');
+  return finish(repoId, repoPath, result.ok, result.stderr, result.stdout, 'İşlem tamamlandı.');
 }

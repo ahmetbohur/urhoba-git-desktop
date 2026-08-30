@@ -147,14 +147,15 @@ test('tema değişikliği anında renklere yansıyor', async () => {
   await page.getByLabel('Ayarlar').click();
   await expect(page.getByText('Görünüm ve dil')).toBeVisible({ timeout: 10_000 });
 
-  await page.getByRole('button', { name: 'Koyu' }).click();
+  // Kesin eşleşme şart: ayarlardaki üç durumlu anahtarlarda da "Açık" geçiyor.
+  await page.getByRole('button', { name: 'Koyu', exact: true }).click();
   await expect.poll(background, { timeout: 8000 }).toBe('rgb(19, 18, 24)');
 
-  await page.getByRole('button', { name: 'Açık' }).click();
+  await page.getByRole('button', { name: 'Açık', exact: true }).click();
   await expect.poll(background, { timeout: 8000 }).toBe('rgb(244, 243, 247)');
 
   // Sistem seçilince öznitelik kalkmalı; karar yeniden medya sorgusuna döner.
-  await page.getByRole('button', { name: 'Sistem' }).click();
+  await page.getByRole('button', { name: 'Sistem', exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.hasAttribute('data-theme')), {
       timeout: 8000,

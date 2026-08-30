@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ContextMenu } from 'radix-ui';
-import { EyeOff, ExternalLink, GitCommitHorizontal, Sparkles, TriangleAlert } from 'lucide-react';
+import { EyeOff, ExternalLink, GitCommitHorizontal, History, Sparkles, TriangleAlert } from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { directoryName, fileName, formatCount } from '../lib/format';
@@ -20,6 +20,7 @@ import { useUi } from '../stores/ui';
 import { Badge, Button, EmptyState, SectionLabel } from './primitives';
 import { ConflictView } from './ConflictView';
 import { DiffView } from './DiffView';
+import { BlameDialog } from './dialogs/BlameDialog';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import type { FileChange, FileChangeKind, HunkSelection, LineStageMode } from '@shared/types';
 
@@ -50,6 +51,7 @@ function FileRow({
   onDiscard,
   onIgnore,
   onOpenExternal,
+  onBlame,
 }: {
   row: Extract<Row, { type: 'file' }>;
   selected: boolean;
@@ -58,6 +60,7 @@ function FileRow({
   onDiscard: () => void;
   onIgnore: () => void;
   onOpenExternal: () => void;
+  onBlame: () => void;
 }) {
   const t = useT();
   const { file, staged, conflicted } = row;
@@ -111,6 +114,13 @@ function FileRow({
             className="cursor-pointer rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
           >
             {staged ? t('Hazırlıktan çıkar') : t('Commit için hazırla')}
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            onSelect={onBlame}
+            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
+          >
+            <History className="size-3.5" />
+            {t('Satır geçmişi (blame)')}
           </ContextMenu.Item>
           <ContextMenu.Item
             onSelect={onOpenExternal}
@@ -279,6 +289,7 @@ export function ChangesView({ repoId }: { repoId: string }) {
   const client = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [discardTarget, setDiscardTarget] = useState<string | null>(null);
+  const [blameTarget, setBlameTarget] = useState<string | null>(null);
 
   const sideBySide = settings?.sideBySideDiff ?? false;
   const toggleSideBySide = useMutation({
@@ -490,6 +501,7 @@ export function ChangesView({ repoId }: { repoId: string }) {
                         onDiscard={() => setDiscardTarget(row.file.path)}
                         onIgnore={() => ignorePath.mutate(row.file.path)}
                         onOpenExternal={() => openExternal.mutate(row.file.path)}
+                        onBlame={() => setBlameTarget(row.file.path)}
                       />
                     )}
                   </div>
@@ -530,6 +542,13 @@ export function ChangesView({ repoId }: { repoId: string }) {
           />
         )}
       </div>
+
+      <BlameDialog
+        repoId={repoId}
+        path={blameTarget}
+        open={blameTarget !== null}
+        onOpenChange={(next) => !next && setBlameTarget(null)}
+      />
 
       <ConfirmDialog
         open={discardTarget !== null}

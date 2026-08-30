@@ -118,6 +118,26 @@ export interface FileDiff {
   deletions: number;
 }
 
+/** `git blame` çıktısındaki tek bir satır. */
+export interface BlameLine {
+  sha: string;
+  shortSha: string;
+  lineNumber: number;
+  content: string;
+  authorName: string;
+  authorEmail: string;
+  authoredAt: string;
+  /** Satırı getiren commit'in özeti. */
+  summary: string;
+}
+
+export interface BlameResult {
+  path: string;
+  lines: BlameLine[];
+  /** İkili ya da çok büyük dosyalarda satır listesi boş gelir. */
+  unavailableReason: string | null;
+}
+
 export interface CommitRef {
   /** Etiket, dal veya HEAD işaretçisi. */
   name: string;
@@ -460,23 +480,39 @@ export interface AutoPullSettings {
   fastForwardOnly: boolean;
 }
 
-export interface RepoSettings {
+/**
+ * Hem genel hem depo bazlı ayarlanabilen alanlar.
+ *
+ * Genel ayar bütün depolar için geçerli; bir depo istediği alanı kendisi için
+ * geçersiz kılabiliyor. Geçersiz kılınmayan alan genel ayarı izlemeye devam
+ * ediyor — genel ayar değiştiğinde o depolar da kendiliğinden güncelleniyor.
+ */
+export interface ScopedSettings {
   autoPull: AutoPullSettings;
   /** Otomatik pull kapalıyken de arka planda fetch edilip rozetler tazelensin mi. */
   autoFetch: boolean;
-  /**
-   * Bu deponun kodu bulut sağlayıcısına gönderilebilir mi. Varsayılan kapalı ve
-   * depo bazlı: "bütün depolarda açık" diye bir seçenek bilerek yok.
-   */
-  allowCloudAi?: boolean;
+  /** Bu deponun kodu bulut AI sağlayıcısına gönderilebilir mi. */
+  allowCloudAi: boolean;
+}
+
+/** Bir depoda hangi alanların genel ayardan ayrıldığı. */
+export interface SettingsOverrides {
+  autoPull: boolean;
+  autoFetch: boolean;
+  allowCloudAi: boolean;
+}
+
+/** Bir depo için geçerli olan çözülmüş ayarlar ve hangilerinin özel olduğu. */
+export interface RepoSettings extends ScopedSettings {
+  overrides: SettingsOverrides;
 }
 
 export interface AppSettings {
   theme: ThemePreference;
   language: LanguagePreference;
   ai: AiSettings;
-  /** Tüm depolar için varsayılan; depo bazlı ayar bunu ezer. */
-  defaultAutoPull: AutoPullSettings;
+  /** Bütün depolar için geçerli varsayılanlar; depo bazlı ayar bunları ezebilir. */
+  defaults: ScopedSettings;
   autoFetchIntervalMinutes: number;
   /** Commit ekranında diff'i yan yana göster. */
   sideBySideDiff: boolean;

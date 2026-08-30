@@ -318,6 +318,19 @@ export const en: Record<string, string> = {
     'Click a commit to see its changes. Right-click for revert, reset and tag options.',
   'merge': 'merge',
   'SHA’yı kopyala': 'Copy SHA',
+  'Satır geçmişi (blame)': 'Line history (blame)',
+  'Satır geçmişi': 'Line history',
+  'Satır geçmişi yok': 'No line history',
+  'Bu commit’i buraya uygula (cherry-pick)': 'Apply this commit here (cherry-pick)',
+  'Commit’i buraya uygula': 'Apply commit here',
+  'Cherry-pick': 'Cherry-pick',
+  'Cherry-pick yapılamadı': 'Could not cherry-pick',
+  'commit’indeki değişiklikler bu dala yeni bir commit olarak uygulanacak. Aynı satırlara dokunulmuşsa çakışma çıkabilir; çakışmayı çözüp işleme devam edebilirsin.':
+    'will be applied to this branch as a new commit. If the same lines were touched you may get a conflict; resolve it and continue.',
+  'İkili dosyalarda satır geçmişi gösterilemiyor.':
+    'Line history is not available for binary files.',
+  'Bu dosyanın geçmişi okunamadı. Henüz commit edilmemiş olabilir.':
+    'Could not read this file’s history. It may not be committed yet.',
   'SHA kopyalandı': 'SHA copied',
   'Bu commit’i etiketle…': 'Tag this commit…',
   'Bu commit’i geri al (revert)': 'Revert this commit',
@@ -458,7 +471,28 @@ export const en: Record<string, string> = {
     'Refreshes how far ahead the remote branch is; never touches local files.',
   'Bu deponun otomatik pull ayarları üst çubuktaki “Oto pull” düğmesinde.':
     'Auto pull settings for this repository live in the “Auto pull” button in the top bar.',
-  'Yeni depolar için varsayılan otomatik pull': 'Default auto pull for new repositories',
+  'Genel varsayılanlar': 'Global defaults',
+  'Bütün depolar için geçerli. Bir depo istediği ayarı kendisi için değiştirebilir.':
+    'Applies to every repository. Any repository can override a setting for itself.',
+  'Yalnızca bu depoyu etkiler. “Genel” seçili kaldığı sürece ayar genel varsayılanı izler.':
+    'Affects this repository only. While “Global” is selected the setting follows the global default.',
+  'Genel (açık)': 'Global (on)',
+  'Genel (kapalı)': 'Global (off)',
+  'Kapalı': 'Off',
+  'Uzak sunucudaki değişiklikleri arka planda çeker.':
+    'Pulls remote changes in the background.',
+  'Ayrıntılı ayarlar üst çubuktaki “Oto pull” düğmesinde.':
+    'Detailed settings live in the “Auto pull” button in the top bar.',
+  'Bulut AI’ya kod gönderilebilsin': 'Allow sending code to cloud AI',
+  'Bütün depolar için geçerli olur. Kapalıyken commit mesajı önerisi yalnızca yerel modelle çalışır.':
+    'Applies to every repository. When off, commit suggestions only work with a local model.',
+  'Commit mesajı önerisi için bu deponun diff’i buluta gönderilir.':
+    'This repository’s diff is sent to the cloud for commit suggestions.',
+  'Bu depoda buluta kod gönderilmesine izin verildi':
+    'Sending code to the cloud is allowed for this repository',
+  'Bu depoda buluta kod gönderilmiyor': 'Code is not sent to the cloud for this repository',
+  'Genel varsayılanı ve bu deponun ayarını yukarıdaki bölümlerden değiştirebilirsin.':
+    'You can change the global default and this repository’s setting in the sections above.',
   'Açık gelsin': 'Enabled by default',
   'Yeni eklenen depolarda otomatik pull baştan etkin olsun.':
     'Turn auto pull on for newly added repositories.',

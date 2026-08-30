@@ -49,6 +49,8 @@ export const IPC_CHANNELS = [
   'git:log',
   'git:commit-detail',
   'git:commit-file-diff',
+  'git:blame',
+  'git:cherry-pick',
   // --- Geçmiş işlemleri ---
   'git:revert',
   'git:reset',

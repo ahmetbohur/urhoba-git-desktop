@@ -2,7 +2,13 @@ import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { inferGroup } from './grouping';
-import type { AppSettings, Repo, RepoSettings } from '@shared/types';
+import type {
+  AppSettings,
+  AutoPullSettings,
+  Repo,
+  RepoSettings,
+  ScopedSettings,
+} from '@shared/types';
 
 /**
  * userData altında iki JSON dosyası: depo listesi ve ayarlar.
@@ -13,11 +19,17 @@ import type { AppSettings, Repo, RepoSettings } from '@shared/types';
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   language: 'tr',
-  defaultAutoPull: {
-    enabled: false,
-    intervalMinutes: 10,
-    onlyWhenClean: true,
-    fastForwardOnly: true,
+  defaults: {
+    autoPull: {
+      enabled: false,
+      intervalMinutes: 10,
+      onlyWhenClean: true,
+      fastForwardOnly: true,
+    },
+    autoFetch: true,
+    // Bulut AI varsayılan olarak kapalı: kod dışarı çıkacaksa bu bilinçli bir
+    // karar olmalı, sessiz bir varsayılan değil.
+    allowCloudAi: false,
   },
   autoFetchIntervalMinutes: 10,
   ai: {
@@ -35,7 +47,12 @@ const DEFAULT_SETTINGS: AppSettings = {
 interface StoreShape {
   settings: AppSettings;
   repos: Repo[];
-  repoSettings: Record<string, RepoSettings>;
+  /**
+   * Yalnızca genel ayardan ayrılan alanlar tutuluyor. Bir alan burada yoksa
+   * depo genel ayarı izliyor demek — genel ayar değiştiğinde o depo da
+   * kendiliğinden güncelleniyor.
+   */
+  repoSettings: Record<string, Partial<ScopedSettings>>;
   /** Katlanmış grup adları — açık/kapalı durumu oturumlar arası korunuyor. */
   collapsedGroups?: string[];
 }
@@ -76,6 +93,17 @@ function load(): StoreShape {
       // İç içe nesneler yayılma ile birleşmediği için ayrıca ele alınıyor;
       // eski kayıtlarda `ai` alanı hiç yok.
       ai: { ...DEFAULT_SETTINGS.ai, ...(parsed.settings?.ai ?? {}) },
+      defaults: {
+        ...DEFAULT_SETTINGS.defaults,
+        ...(parsed.settings?.defaults ?? {}),
+        autoPull: {
+          ...DEFAULT_SETTINGS.defaults.autoPull,
+          // Eski kayıtlarda bu alan `defaultAutoPull` adıyla duruyordu.
+          ...((parsed.settings as { defaultAutoPull?: AutoPullSettings } | undefined)
+            ?.defaultAutoPull ?? {}),
+          ...(parsed.settings?.defaults?.autoPull ?? {}),
+        },
+      },
     },
     repos: Array.isArray(parsed.repos) ? parsed.repos : [],
     repoSettings: parsed.repoSettings ?? {},
@@ -201,25 +229,55 @@ export function touchRepo(id: string): void {
   persist();
 }
 
-/** Depo bazlı ayar yoksa uygulama varsayılanından türetilir. */
+/**
+ * Bir depo için geçerli ayarları çözer: genel varsayılanların üstüne o deponun
+ * kendi seçtiği alanlar biniyor. `overrides` hangi alanların depoya özel
+ * olduğunu söylüyor — arayüz "genel" ile "bu depoya özel" ayrımını buradan
+ * gösteriyor.
+ */
 export function getRepoSettings(id: string): RepoSettings {
   const store = load();
-  const existing = store.repoSettings[id];
-  if (existing) return { ...existing, autoPull: { ...existing.autoPull } };
+  const defaults = store.settings.defaults;
+  const own = store.repoSettings[id] ?? {};
+
   return {
-    autoPull: { ...store.settings.defaultAutoPull },
-    autoFetch: true,
-    // Bulut sağlayıcıya kod göndermek her depo için ayrı ayrı açılır.
-    allowCloudAi: false,
+    autoPull: { ...(own.autoPull ?? defaults.autoPull) },
+    autoFetch: own.autoFetch ?? defaults.autoFetch,
+    allowCloudAi: own.allowCloudAi ?? defaults.allowCloudAi,
+    overrides: {
+      autoPull: own.autoPull !== undefined,
+      autoFetch: own.autoFetch !== undefined,
+      allowCloudAi: own.allowCloudAi !== undefined,
+    },
   };
 }
 
-export function updateRepoSettings(id: string, patch: Partial<RepoSettings>): RepoSettings {
+/**
+ * Depo ayarını günceller. Bir alana `null` verilmesi "genel ayara dön" demek;
+ * o alan kayıttan siliniyor ve depo yeniden genel ayarı izlemeye başlıyor.
+ */
+export function updateRepoSettings(
+  id: string,
+  patch: {
+    autoPull?: AutoPullSettings | null;
+    autoFetch?: boolean | null;
+    allowCloudAi?: boolean | null;
+  },
+): RepoSettings {
   const store = load();
-  const next: RepoSettings = { ...getRepoSettings(id), ...patch };
-  store.repoSettings[id] = next;
+  const own = { ...(store.repoSettings[id] ?? {}) };
+
+  for (const key of ['autoPull', 'autoFetch', 'allowCloudAi'] as const) {
+    const value = patch[key];
+    if (value === undefined) continue;
+    if (value === null) delete own[key];
+    else (own as Record<string, unknown>)[key] = value;
+  }
+
+  if (Object.keys(own).length === 0) delete store.repoSettings[id];
+  else store.repoSettings[id] = own;
   persist();
-  return next;
+  return getRepoSettings(id);
 }
 
 export function getAllRepoSettings(): Array<{ repo: Repo; settings: RepoSettings }> {

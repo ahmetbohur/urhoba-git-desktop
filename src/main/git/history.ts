@@ -1,7 +1,7 @@
 import { run } from './client';
 import { parseUnifiedDiff } from './diff';
-import { LOG_FORMAT, parseLog, parseNameStatus, parseNumstat } from './parse';
-import type { Commit, CommitDetail, FileDiff, LogFilter } from '@shared/types';
+import { LOG_FORMAT, parseBlame, parseLog, parseNameStatus, parseNumstat } from './parse';
+import type { BlameResult, Commit, CommitDetail, FileDiff, LogFilter } from '@shared/types';
 
 /**
  * Geçmiş okuma. Çıktı biçimleri ve ayrıştırma `parse.ts` içinde; burada yalnızca
@@ -115,4 +115,44 @@ export async function getCommitFileDiff(
     skipQueue: true,
   });
   return parseUnifiedDiff(stdout, filePath);
+}
+
+/** Satır sayısı bunun üstündeki dosyalarda blame arayüzü kullanışsız hâle geliyor. */
+const BLAME_LINE_LIMIT = 20_000;
+
+/**
+ * Bir dosyanın satır satır kimin tarafından yazıldığını çıkarır.
+ *
+ * `-w` boşluk değişimlerini yok sayıyor: yalnızca girinti düzelten bir commit
+ * yüzünden bütün dosyanın yazarı değişmiş gibi görünmesin. `-M` ve `-C` ise
+ * satırın dosya içinde taşındığı ya da başka dosyadan kopyalandığı durumlarda
+ * asıl yazarı buluyor.
+ */
+export async function getBlame(
+  repoId: string,
+  repoPath: string,
+  filePath: string,
+  ref?: string,
+): Promise<BlameResult> {
+  const args = ['blame', '--porcelain', '-w', '-M', '-C'];
+  if (ref) args.push(ref);
+  args.push('--', filePath);
+
+  const result = await run({ repoId, repoPath, args, skipQueue: true, allowFailure: true });
+  if (!result.ok) {
+    const reason = result.stderr.toLowerCase().includes('binary')
+      ? 'İkili dosyalarda satır geçmişi gösterilemiyor.'
+      : 'Bu dosyanın geçmişi okunamadı. Henüz commit edilmemiş olabilir.';
+    return { path: filePath, lines: [], unavailableReason: reason };
+  }
+
+  const lines = parseBlame(result.stdout);
+  if (lines.length > BLAME_LINE_LIMIT) {
+    return {
+      path: filePath,
+      lines: lines.slice(0, BLAME_LINE_LIMIT),
+      unavailableReason: `Dosya çok uzun; ilk ${BLAME_LINE_LIMIT} satır gösteriliyor.`,
+    };
+  }
+  return { path: filePath, lines, unavailableReason: null };
 }

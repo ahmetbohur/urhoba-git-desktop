@@ -5,7 +5,8 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { checkout, createBranch, deleteBranch, getBranches, renameBranch } from '../branches';
 import { applyChoices, parseConflictSections, readConflict, resolveConflict } from '../conflict';
-import { abortOperation, continueOperation, merge, rebase } from '../merge';
+import { abortOperation, cherryPick, continueOperation, merge, rebase } from '../merge';
+import { getBlame } from '../history';
 import { stageLines } from '../staging';
 import { applyStash, createStash, dropStash, listStashes } from '../stash';
 import { commit, getFileDiff, getStatus, stage } from '../status';
@@ -318,6 +319,122 @@ describe('dal değiştirme koruması', () => {
     await deleteBranch(REPO_ID, repoPath, 'yan', true);
     const branches = await getBranches(REPO_ID, repoPath);
     expect(branches.local.map((b) => b.fullName)).toEqual(['main']);
+  });
+});
+
+describe('cherry-pick', () => {
+  it('bir commit’i başka dala uygular ve izini bırakır', async () => {
+    await seed();
+    await createBranch(REPO_ID, repoPath, 'yan', undefined, true);
+    write('yan.txt', 'yan daldan\n');
+    await stage(REPO_ID, repoPath, ['yan.txt']);
+    const yanCommit = await commit(REPO_ID, repoPath, 'Yan daldaki iş', undefined, false);
+
+    await checkout(REPO_ID, repoPath, 'main');
+    const result = await cherryPick(REPO_ID, repoPath, yanCommit.sha);
+
+    expect(result.outcome).toBe('merged');
+    expect(fs.existsSync(path.join(repoPath, 'yan.txt'))).toBe(true);
+
+    // `-x` sayesinde commit'in nereden geldiği mesajda duruyor.
+    const message = git(['log', '-1', '--format=%B']);
+    expect(message).toContain('Yan daldaki iş');
+    expect(message).toContain('cherry picked from commit');
+  });
+
+  it('çakışmayı çözülecek durum olarak raporlar ve iptal edilebilir', async () => {
+    await seed();
+    await createBranch(REPO_ID, repoPath, 'yan', undefined, true);
+    write('app.txt', ['bir', 'YAN', 'üç', 'dört', 'beş'].join('\n') + '\n');
+    await stage(REPO_ID, repoPath, ['app.txt']);
+    const yanCommit = await commit(REPO_ID, repoPath, 'Yan değişiklik', undefined, false);
+
+    await checkout(REPO_ID, repoPath, 'main');
+    write('app.txt', ['bir', 'ANA', 'üç', 'dört', 'beş'].join('\n') + '\n');
+    await stage(REPO_ID, repoPath, ['app.txt']);
+    await commit(REPO_ID, repoPath, 'Ana değişiklik', undefined, false);
+
+    const result = await cherryPick(REPO_ID, repoPath, yanCommit.sha);
+
+    expect(result.outcome).toBe('conflict');
+    expect(result.conflictedPaths).toEqual(['app.txt']);
+    expect((await getStatus(REPO_ID, repoPath)).operation).toBe('cherry-pick');
+
+    await abortOperation(REPO_ID, repoPath);
+    expect((await getStatus(REPO_ID, repoPath)).operation).toBe('none');
+    expect(read('app.txt')).toContain('ANA');
+  });
+
+  it('çakışma çözülünce işlem tamamlanabiliyor', async () => {
+    await seed();
+    await createBranch(REPO_ID, repoPath, 'yan', undefined, true);
+    write('app.txt', ['bir', 'YAN', 'üç', 'dört', 'beş'].join('\n') + '\n');
+    await stage(REPO_ID, repoPath, ['app.txt']);
+    const yanCommit = await commit(REPO_ID, repoPath, 'Yan değişiklik', undefined, false);
+
+    await checkout(REPO_ID, repoPath, 'main');
+    write('app.txt', ['bir', 'ANA', 'üç', 'dört', 'beş'].join('\n') + '\n');
+    await stage(REPO_ID, repoPath, ['app.txt']);
+    await commit(REPO_ID, repoPath, 'Ana değişiklik', undefined, false);
+
+    await cherryPick(REPO_ID, repoPath, yanCommit.sha);
+    // Çakışmayı elle çöz ve hazırla.
+    write('app.txt', ['bir', 'İKİSİ', 'üç', 'dört', 'beş'].join('\n') + '\n');
+    await stage(REPO_ID, repoPath, ['app.txt']);
+
+    const done = await continueOperation(REPO_ID, repoPath);
+
+    expect(done.outcome).toBe('merged');
+    expect((await getStatus(REPO_ID, repoPath)).operation).toBe('none');
+  });
+});
+
+describe('blame', () => {
+  it('her satırı yazan commit’i bulur', async () => {
+    write('app.txt', ['ilk satır', 'ikinci satır'].join('\n') + '\n');
+    await stage(REPO_ID, repoPath, ['app.txt']);
+    await commit(REPO_ID, repoPath, 'İki satır ekle', undefined, false);
+
+    write('app.txt', ['ilk satır', 'ikinci satır', 'üçüncü satır'].join('\n') + '\n');
+    await stage(REPO_ID, repoPath, ['app.txt']);
+    await commit(REPO_ID, repoPath, 'Üçüncü satırı ekle', undefined, false);
+
+    const blame = await getBlame(REPO_ID, repoPath, 'app.txt');
+
+    expect(blame.unavailableReason).toBeNull();
+    expect(blame.lines).toHaveLength(3);
+    expect(blame.lines.map((line) => line.content)).toEqual([
+      'ilk satır',
+      'ikinci satır',
+      'üçüncü satır',
+    ]);
+    // İlk iki satır ilk commit'ten, üçüncü satır ikinciden gelmeli.
+    expect(blame.lines[0].summary).toBe('İki satır ekle');
+    expect(blame.lines[2].summary).toBe('Üçüncü satırı ekle');
+    expect(blame.lines[0].authorName).toBe('Test Kullanıcı');
+  });
+
+  it('boşluk değişimini yazar değişikliği saymaz', async () => {
+    write('app.txt', 'kod satırı\n');
+    await stage(REPO_ID, repoPath, ['app.txt']);
+    await commit(REPO_ID, repoPath, 'Kodu yaz', undefined, false);
+
+    // Yalnızca girinti eklendi: -w sayesinde asıl yazar korunmalı.
+    write('app.txt', '    kod satırı\n');
+    await stage(REPO_ID, repoPath, ['app.txt']);
+    await commit(REPO_ID, repoPath, 'Girintiyi düzelt', undefined, false);
+
+    const blame = await getBlame(REPO_ID, repoPath, 'app.txt');
+    expect(blame.lines[0].summary).toBe('Kodu yaz');
+  });
+
+  it('takip edilmeyen dosyada anlaşılır sebep döner', async () => {
+    await seed();
+    write('yeni.txt', 'henüz commit edilmedi\n');
+
+    const blame = await getBlame(REPO_ID, repoPath, 'yeni.txt');
+    expect(blame.lines).toEqual([]);
+    expect(blame.unavailableReason).toMatch(/commit edilmemiş/);
   });
 });
 

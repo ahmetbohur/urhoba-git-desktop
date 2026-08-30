@@ -77,6 +77,8 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
   const lastResult = useUi((s) => s.lastAutoPull[repoId]);
 
   const save = useMutation({
+    // Buradan yapılan her değişiklik depoya özel bir ayar oluşturuyor: kullanıcı
+    // bu depoda ayrı bir davranış istediğini söylemiş oluyor.
     mutationFn: (autoPull: AutoPullSettings) =>
       invoke('settings:repo-set', { repoId, autoPull }),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.repoSettings(repoId) }),

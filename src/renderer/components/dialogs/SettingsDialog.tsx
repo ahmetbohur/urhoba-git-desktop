@@ -6,12 +6,14 @@ import { errorMessage, invoke } from '../../lib/ipc';
 import { keys, useMutation, useQuery, useQueryClient, useSettings } from '../../lib/queries';
 import { useUi } from '../../stores/ui';
 import { AiSettingsSection } from './AiSettingsSection';
+import { PlainToggle, ScopedToggle } from './ScopedSetting';
 import { DiagnosticsPanel } from '../DiagnosticsPanel';
 import { RemoteSettings } from '../RemoteSettings';
 import { SectionLabel } from '../primitives';
 import { DialogShell } from './DialogShell';
 import type {
   AppSettings,
+  AutoPullSettings,
   AutostartStatus,
   LanguagePreference,
   RepoSettings,
@@ -108,7 +110,12 @@ export function SettingsDialog({
   });
 
   const saveRepo = useMutation({
-    mutationFn: (patch: Partial<RepoSettings>) => invoke('settings:repo-set', { repoId, ...patch }),
+    // `null` verilen alan depo kaydından siliniyor ve genel ayara dönüyor.
+    mutationFn: (patch: {
+      autoFetch?: boolean | null;
+      allowCloudAi?: boolean | null;
+      autoPull?: AutoPullSettings | null;
+    }) => invoke('settings:repo-set', { repoId, ...patch }),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.repoSettings(repoId) }),
   });
 
@@ -197,57 +204,117 @@ export function SettingsDialog({
           </section>
 
           <section>
-            <SectionLabel>{t('Bu depo')}</SectionLabel>
+            <SectionLabel>{t('Genel varsayılanlar')}</SectionLabel>
+            <p className="mt-1 text-[11px] text-ink-2">
+              {t('Bütün depolar için geçerli. Bir depo istediği ayarı kendisi için değiştirebilir.')}
+            </p>
             <div className="mt-1 divide-y divide-line-soft">
-              <Row
+              <PlainToggle
                 label={t('Arka planda fetch')}
                 hint={t('Uzak dalın kaç commit ilerde olduğunu tazeler; yerel dosyalara dokunmaz.')}
-                checked={repoSettings?.autoFetch ?? true}
-                onCheckedChange={(autoFetch) => saveRepo.mutate({ autoFetch })}
+                checked={settings.defaults.autoFetch}
+                onCheckedChange={(autoFetch) =>
+                  saveApp.mutate({ defaults: { ...settings.defaults, autoFetch } })
+                }
+              />
+              <PlainToggle
+                label={t('Otomatik pull')}
+                hint={t('Uzak sunucudaki değişiklikleri arka planda çeker.')}
+                checked={settings.defaults.autoPull.enabled}
+                onCheckedChange={(enabled) =>
+                  saveApp.mutate({
+                    defaults: {
+                      ...settings.defaults,
+                      autoPull: { ...settings.defaults.autoPull, enabled },
+                    },
+                  })
+                }
+              />
+              <PlainToggle
+                label={t('Sadece çalışma dizini temizken')}
+                hint={t('Kaydedilmemiş değişiklik varken otomatik pull denenmesin.')}
+                checked={settings.defaults.autoPull.onlyWhenClean}
+                onCheckedChange={(onlyWhenClean) =>
+                  saveApp.mutate({
+                    defaults: {
+                      ...settings.defaults,
+                      autoPull: { ...settings.defaults.autoPull, onlyWhenClean },
+                    },
+                  })
+                }
+              />
+              <PlainToggle
+                label={t('Sadece fast-forward')}
+                hint={t('Arka planda merge commit’i üretilmesin.')}
+                checked={settings.defaults.autoPull.fastForwardOnly}
+                onCheckedChange={(fastForwardOnly) =>
+                  saveApp.mutate({
+                    defaults: {
+                      ...settings.defaults,
+                      autoPull: { ...settings.defaults.autoPull, fastForwardOnly },
+                    },
+                  })
+                }
+              />
+              <PlainToggle
+                label={t('Bulut AI’ya kod gönderilebilsin')}
+                hint={t('Bütün depolar için geçerli olur. Kapalıyken commit mesajı önerisi yalnızca yerel modelle çalışır.')}
+                checked={settings.defaults.allowCloudAi}
+                onCheckedChange={(allowCloudAi) =>
+                  saveApp.mutate({ defaults: { ...settings.defaults, allowCloudAi } })
+                }
               />
             </div>
-            <p className="mt-2 text-[11px] text-ink-3">
-              {t('Bu deponun otomatik pull ayarları üst çubuktaki “Oto pull” düğmesinde.')}
-            </p>
           </section>
 
-          <AiSettingsSection repoId={repoId} repoSettings={repoSettings} />
+          <section>
+            <SectionLabel>{t('Bu depo')}</SectionLabel>
+            <p className="mt-1 text-[11px] text-ink-2">
+              {t('Yalnızca bu depoyu etkiler. “Genel” seçili kaldığı sürece ayar genel varsayılanı izler.')}
+            </p>
+            {repoSettings && (
+              <div className="mt-1 divide-y divide-line-soft">
+                <ScopedToggle
+                  label={t('Arka planda fetch')}
+                  hint={t('Uzak dalın kaç commit ilerde olduğunu tazeler; yerel dosyalara dokunmaz.')}
+                  value={repoSettings.autoFetch}
+                  inheritedValue={settings.defaults.autoFetch}
+                  isOverridden={repoSettings.overrides.autoFetch}
+                  onChange={(autoFetch) => saveRepo.mutate({ autoFetch })}
+                />
+                <ScopedToggle
+                  label={t('Otomatik pull')}
+                  hint={t('Ayrıntılı ayarlar üst çubuktaki “Oto pull” düğmesinde.')}
+                  value={repoSettings.autoPull.enabled}
+                  inheritedValue={settings.defaults.autoPull.enabled}
+                  isOverridden={repoSettings.overrides.autoPull}
+                  onChange={(enabled) =>
+                    saveRepo.mutate({
+                      autoPull:
+                        enabled === null
+                          ? null
+                          : { ...settings.defaults.autoPull, enabled },
+                    })
+                  }
+                />
+                <ScopedToggle
+                  label={t('Bulut AI’ya kod gönderilebilsin')}
+                  hint={t('Commit mesajı önerisi için bu deponun diff’i buluta gönderilir.')}
+                  value={repoSettings.allowCloudAi}
+                  inheritedValue={settings.defaults.allowCloudAi}
+                  isOverridden={repoSettings.overrides.allowCloudAi}
+                  onChange={(allowCloudAi) => saveRepo.mutate({ allowCloudAi })}
+                />
+              </div>
+            )}
+          </section>
+
+          <AiSettingsSection repoSettings={repoSettings} />
 
           <RemoteSettings repoId={repoId} />
 
           <DiagnosticsPanel />
 
-          <section>
-            <SectionLabel>{t('Yeni depolar için varsayılan otomatik pull')}</SectionLabel>
-            <div className="mt-1 divide-y divide-line-soft">
-              <Row
-                label={t('Açık gelsin')}
-                hint={t('Yeni eklenen depolarda otomatik pull baştan etkin olsun.')}
-                checked={settings.defaultAutoPull.enabled}
-                onCheckedChange={(enabled) =>
-                  saveApp.mutate({ defaultAutoPull: { ...settings.defaultAutoPull, enabled } })
-                }
-              />
-              <Row
-                label={t('Sadece çalışma dizini temizken')}
-                hint={t('Kaydedilmemiş değişiklik varken otomatik pull denenmesin.')}
-                checked={settings.defaultAutoPull.onlyWhenClean}
-                onCheckedChange={(onlyWhenClean) =>
-                  saveApp.mutate({ defaultAutoPull: { ...settings.defaultAutoPull, onlyWhenClean } })
-                }
-              />
-              <Row
-                label={t('Sadece fast-forward')}
-                hint={t('Arka planda merge commit’i üretilmesin.')}
-                checked={settings.defaultAutoPull.fastForwardOnly}
-                onCheckedChange={(fastForwardOnly) =>
-                  saveApp.mutate({
-                    defaultAutoPull: { ...settings.defaultAutoPull, fastForwardOnly },
-                  })
-                }
-              />
-            </div>
-          </section>
         </div>
       )}
     </DialogShell>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ContextMenu } from 'radix-ui';
-import { Copy, GitBranch, Tag, Undo2 } from 'lucide-react';
+import { Copy, GitBranch, GitGraph, History as HistoryIcon, Tag, Undo2 } from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { buildGraph } from '../lib/commit-graph';
@@ -22,6 +22,7 @@ import { Badge, EmptyState, SectionLabel, Spinner } from './primitives';
 import { CommitGraph } from './CommitGraph';
 import { DiffView } from './DiffView';
 import { HistoryFilterBar } from './HistoryFilterBar';
+import { BlameDialog } from './dialogs/BlameDialog';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import { TagDialog } from './dialogs/TagDialog';
 import type { Commit, CommitRef, FileChangeKind, LogFilter, ResetMode } from '@shared/types';
@@ -76,6 +77,7 @@ function CommitRow({
   onReset,
   onTag,
   onCopySha,
+  onCherryPick,
 }: {
   commit: Commit;
   graphRow: ReturnType<typeof buildGraph>[number] | undefined;
@@ -85,6 +87,7 @@ function CommitRow({
   onReset: () => void;
   onTag: () => void;
   onCopySha: () => void;
+  onCherryPick: () => void;
 }) {
   const t = useT();
   return (
@@ -147,6 +150,13 @@ function CommitRow({
             <Tag className="size-3.5" />
             {t('Bu commit’i etiketle…')}
           </ContextMenu.Item>
+          <ContextMenu.Item
+            onSelect={onCherryPick}
+            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
+          >
+            <GitGraph className="size-3.5" />
+            {t('Bu commit’i buraya uygula (cherry-pick)')}
+          </ContextMenu.Item>
           <ContextMenu.Separator className="my-1 h-px bg-line-soft" />
           <ContextMenu.Item
             onSelect={onRevert}
@@ -186,6 +196,8 @@ export function HistoryView({ repoId }: { repoId: string }) {
   const [resetMode, setResetMode] = useState<ResetMode>('mixed');
   const [revertTarget, setRevertTarget] = useState<Commit | null>(null);
   const [tagTarget, setTagTarget] = useState<Commit | null>(null);
+  const [cherryTarget, setCherryTarget] = useState<Commit | null>(null);
+  const [blameTarget, setBlameTarget] = useState<string | null>(null);
 
   const commits = useMemo(() => data?.pages.flat() ?? [], [data]);
   // Grafik düzeni yüklenen bütün commit'lere bakarak hesaplanıyor: yeni sayfa
@@ -196,7 +208,11 @@ export function HistoryView({ repoId }: { repoId: string }) {
   const selectedPath = selection.kind === 'commit' ? selection.path : null;
 
   const { data: detail, isLoading: detailLoading } = useCommitDetail(repoId, selectedSha);
-  const { data: diff, isLoading: diffLoading } = useCommitFileDiff(repoId, selectedSha, selectedPath);
+  const { data: diff, isLoading: diffLoading } = useCommitFileDiff(
+    repoId,
+    selectedSha,
+    selectedPath,
+  );
 
   const virtualizer = useVirtualizer({
     count: commits.length,
@@ -231,6 +247,30 @@ export function HistoryView({ repoId }: { repoId: string }) {
     },
     onError: (error) =>
       toast({ kind: 'error', title: t('Geri alınamadı'), description: errorMessage(error) }),
+  });
+
+  const cherryPick = useMutation({
+    mutationFn: (sha: string) => invoke('git:cherry-pick', { repoId, sha }),
+    onSuccess: (result) => {
+      invalidate(repoId);
+      toast({
+        kind:
+          result.outcome === 'merged'
+            ? 'success'
+            : result.outcome === 'conflict'
+              ? 'warning'
+              : 'error',
+        title: t('Cherry-pick'),
+        description: result.message,
+      });
+      setCherryTarget(null);
+    },
+    onError: (error) =>
+      toast({
+        kind: 'error',
+        title: t('Cherry-pick yapılamadı'),
+        description: errorMessage(error),
+      }),
   });
 
   const reset = useMutation({
@@ -302,6 +342,7 @@ export function HistoryView({ repoId }: { repoId: string }) {
                           setResetTarget(commit);
                         }}
                         onTag={() => setTagTarget(commit)}
+                        onCherryPick={() => setCherryTarget(commit)}
                         onCopySha={() => {
                           void navigator.clipboard.writeText(commit.sha);
                           toast({ kind: 'success', title: t('SHA kopyalandı') });
@@ -329,10 +370,18 @@ export function HistoryView({ repoId }: { repoId: string }) {
                 </div>
               ) : (
                 <>
-                  <div className="border-b border-line-soft p-3">
-                    <p className="selectable text-[13px] font-semibold text-ink">{detail.subject}</p>
+                  {/*
+                    Commit gövdesi uzun olduğunda dosya listesini ekranın dışına
+                    itiyordu: uzun mesajlı bir commit'te hangi dosyaların
+                    değiştiğini hiç göremiyordun. Mesaj artık kendi içinde
+                    kaydırılıyor ve listeye her zaman yer kalıyor.
+                  */}
+                  <div className="shrink-0 border-b border-line-soft p-3">
+                    <p className="selectable text-[13px] font-semibold text-ink">
+                      {detail.subject}
+                    </p>
                     {detail.body && (
-                      <p className="selectable mt-1 text-[12px] whitespace-pre-wrap text-ink-2">
+                      <p className="selectable mt-1 max-h-40 overflow-y-auto text-[12px] whitespace-pre-wrap text-ink-2">
                         {detail.body}
                       </p>
                     )}
@@ -352,8 +401,10 @@ export function HistoryView({ repoId }: { repoId: string }) {
                     </div>
                   </div>
 
-                  <div className="px-3 py-2">
-                    <SectionLabel>{t('{count} dosya', { count: detail.files.length })}</SectionLabel>
+                  <div className="shrink-0 px-3 py-2">
+                    <SectionLabel>
+                      {t('{count} dosya', { count: detail.files.length })}
+                    </SectionLabel>
                   </div>
 
                   <div className="min-h-0 flex-1 overflow-y-auto pb-2">
@@ -361,34 +412,52 @@ export function HistoryView({ repoId }: { repoId: string }) {
                       const mark = KIND_MARKS[file.kind];
                       const directory = directoryName(file.path);
                       return (
-                        <button
-                          key={file.path}
-                          type="button"
-                          onClick={() => select({ kind: 'commit', sha: detail.sha, path: file.path })}
-                          className={cn(
-                            'flex h-8 w-full items-center gap-2 px-3 text-left',
-                            selectedPath === file.path ? 'bg-accent-tint' : 'hover:bg-surface-2',
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              'shrink-0 font-mono text-[11px] font-semibold',
-                              mark.className,
-                            )}
-                          >
-                            {mark.mark}
-                          </span>
-                          <span className="flex min-w-0 flex-1 items-baseline gap-1">
-                            {directory && (
-                              <span className="shrink-0 truncate text-[12px] text-ink-3">
-                                {directory}/
+                        <ContextMenu.Root key={file.path}>
+                          <ContextMenu.Trigger asChild>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                select({ kind: 'commit', sha: detail.sha, path: file.path })
+                              }
+                              className={cn(
+                                'flex h-8 w-full items-center gap-2 px-3 text-left',
+                                selectedPath === file.path
+                                  ? 'bg-accent-tint'
+                                  : 'hover:bg-surface-2',
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'shrink-0 font-mono text-[11px] font-semibold',
+                                  mark.className,
+                                )}
+                              >
+                                {mark.mark}
                               </span>
-                            )}
-                            <span className="truncate text-[12px] text-ink">
-                              {fileName(file.path)}
-                            </span>
-                          </span>
-                        </button>
+                              <span className="flex min-w-0 flex-1 items-baseline gap-1">
+                                {directory && (
+                                  <span className="shrink-0 truncate text-[12px] text-ink-3">
+                                    {directory}/
+                                  </span>
+                                )}
+                                <span className="truncate text-[12px] text-ink">
+                                  {fileName(file.path)}
+                                </span>
+                              </span>
+                            </button>
+                          </ContextMenu.Trigger>
+                          <ContextMenu.Portal>
+                            <ContextMenu.Content className="z-50 min-w-52 rounded-lg border border-line bg-surface p-1 shadow-xl">
+                              <ContextMenu.Item
+                                onSelect={() => setBlameTarget(file.path)}
+                                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
+                              >
+                                <HistoryIcon className="size-3.5" />
+                                {t('Satır geçmişi (blame)')}
+                              </ContextMenu.Item>
+                            </ContextMenu.Content>
+                          </ContextMenu.Portal>
+                        </ContextMenu.Root>
                       );
                     })}
                   </div>
@@ -403,10 +472,10 @@ export function HistoryView({ repoId }: { repoId: string }) {
                 isLoading={!!selectedPath && diffLoading}
                 title={selectedPath ?? ''}
                 subtitle={
-                selectedPath
-                  ? t('{sha} içindeki hâli', { sha: detail?.shortSha ?? '' })
-                  : undefined
-              }
+                  selectedPath
+                    ? t('{sha} içindeki hâli', { sha: detail?.shortSha ?? '' })
+                    : undefined
+                }
                 sideBySide={settings?.sideBySideDiff ?? false}
               />
             </div>
@@ -415,7 +484,9 @@ export function HistoryView({ repoId }: { repoId: string }) {
           <div className="min-w-0 flex-1">
             <EmptyState
               title={t('Commit seç')}
-              description={t('Soldaki listeden bir commit’e tıklayarak içindeki değişiklikleri gör. Sağ tıkla revert, reset ve etiket seçeneklerine ulaşabilirsin.')}
+              description={t(
+                'Soldaki listeden bir commit’e tıklayarak içindeki değişiklikleri gör. Sağ tıkla revert, reset ve etiket seçeneklerine ulaşabilirsin.',
+              )}
             />
           </div>
         )}
@@ -430,7 +501,9 @@ export function HistoryView({ repoId }: { repoId: string }) {
       >
         <p className="text-[13px] text-ink-2">
           <span className="font-mono text-ink">{revertTarget?.shortSha}</span>{' '}
-          {t('commit’inin değişikliklerini geri alan yeni bir commit oluşturulacak. Geçmiş silinmez, bu yüzden paylaşılmış dallarda güvenlidir.')}
+          {t(
+            'commit’inin değişikliklerini geri alan yeni bir commit oluşturulacak. Geçmiş silinmez, bu yüzden paylaşılmış dallarda güvenlidir.',
+          )}
         </p>
       </ConfirmDialog>
 
@@ -445,7 +518,9 @@ export function HistoryView({ repoId }: { repoId: string }) {
         <div className="flex flex-col gap-3">
           <p className="text-[13px] text-ink-2">
             HEAD <span className="font-mono text-ink">{resetTarget?.shortSha}</span>{' '}
-            {t('commit’ine taşınacak. Bu dal başkalarıyla paylaşıldıysa dikkatli ol: karşı tarafta ayrılmış bir geçmiş bırakır.')}
+            {t(
+              'commit’ine taşınacak. Bu dal başkalarıyla paylaşıldıysa dikkatli ol: karşı tarafta ayrılmış bir geçmiş bırakır.',
+            )}
           </p>
           <div className="flex flex-col gap-1.5">
             {RESET_MODES.map((option) => (
@@ -473,6 +548,28 @@ export function HistoryView({ repoId }: { repoId: string }) {
             ))}
           </div>
         </div>
+      </ConfirmDialog>
+
+      <BlameDialog
+        repoId={repoId}
+        path={blameTarget}
+        open={blameTarget !== null}
+        onOpenChange={(next) => !next && setBlameTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={cherryTarget !== null}
+        onOpenChange={(next) => !next && setCherryTarget(null)}
+        title={t('Commit’i buraya uygula')}
+        confirmLabel={t('Uygula')}
+        onConfirm={() => cherryTarget && cherryPick.mutate(cherryTarget.sha)}
+      >
+        <p className="text-[13px] text-ink-2">
+          <span className="font-mono text-ink">{cherryTarget?.shortSha}</span>{' '}
+          {t(
+            'commit’indeki değişiklikler bu dala yeni bir commit olarak uygulanacak. Aynı satırlara dokunulmuşsa çakışma çıkabilir; çakışmayı çözüp işleme devam edebilirsin.',
+          )}
+        </p>
       </ConfirmDialog>
 
       <TagDialog

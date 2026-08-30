@@ -8,6 +8,7 @@ import type {
   CommitDetail,
   AiStatus,
   AutostartStatus,
+  BlameResult,
   BranchRenameResult,
   CommitSuggestion,
   ConflictFile,
@@ -140,6 +141,8 @@ export const inputSchemas = {
   }),
   'git:commit-detail': repoId.extend({ sha: z.string().min(1) }),
   'git:commit-file-diff': repoId.extend({ sha: z.string().min(1), path: z.string().min(1) }),
+  'git:blame': repoId.extend({ path: z.string().min(1), ref: z.string().optional() }),
+  'git:cherry-pick': repoId.extend({ sha: z.string().min(1) }),
 
   // --- Geçmiş işlemleri ---
   'git:revert': repoId.extend({ sha: z.string().min(1) }),
@@ -208,19 +211,27 @@ export const inputSchemas = {
     autoFetchIntervalMinutes: z.number().int().min(1).max(1440).optional(),
     sideBySideDiff: z.boolean().optional(),
     lastOpenedRepoId: z.string().nullable().optional(),
-    defaultAutoPull: z
+    defaults: z
       .object({
-        enabled: z.boolean(),
-        intervalMinutes: z.number().int().min(1).max(1440),
-        onlyWhenClean: z.boolean(),
-        fastForwardOnly: z.boolean(),
+        autoPull: z.object({
+          enabled: z.boolean(),
+          intervalMinutes: z.number().int().min(1).max(1440),
+          onlyWhenClean: z.boolean(),
+          fastForwardOnly: z.boolean(),
+        }),
+        autoFetch: z.boolean(),
+        allowCloudAi: z.boolean(),
       })
       .optional(),
   }),
   'settings:repo-get': repoId,
+  /**
+   * `null` verilen alan depo kaydından siliniyor ve depo yeniden genel ayarı
+   * izlemeye başlıyor. Alanın hiç verilmemesi "dokunma" demek.
+   */
   'settings:repo-set': repoId.extend({
-    autoFetch: z.boolean().optional(),
-    allowCloudAi: z.boolean().optional(),
+    autoFetch: z.boolean().nullable().optional(),
+    allowCloudAi: z.boolean().nullable().optional(),
     autoPull: z
       .object({
         enabled: z.boolean(),
@@ -228,6 +239,7 @@ export const inputSchemas = {
         onlyWhenClean: z.boolean(),
         fastForwardOnly: z.boolean(),
       })
+      .nullable()
       .optional(),
   }),
 
@@ -329,6 +341,8 @@ export interface IpcOutputs {
   'git:log': Commit[];
   'git:commit-detail': CommitDetail;
   'git:commit-file-diff': FileDiff;
+  'git:blame': BlameResult;
+  'git:cherry-pick': MergeResult;
 
   'git:remotes': Remote[];
   'git:remote-add': void;

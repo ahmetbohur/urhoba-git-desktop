@@ -247,6 +247,14 @@ const handlers: Handlers = {
     const repo = activateRepo(repoId);
     return history.getCommitFileDiff(repo.id, repo.path, sha, path);
   },
+  'git:blame': ({ repoId, path, ref }) => {
+    const repo = activateRepo(repoId);
+    return history.getBlame(repo.id, repo.path, path, ref);
+  },
+  'git:cherry-pick': ({ repoId, sha }) => {
+    const repo = activateRepo(repoId);
+    return merge.cherryPick(repo.id, repo.path, sha);
+  },
 
   // --- Uzak sunucular ---
   'git:remotes': ({ repoId }) => {
@@ -297,6 +305,8 @@ const handlers: Handlers = {
     if (patch.theme) nativeTheme.themeSource = patch.theme;
     // Electron menüyü canlı güncellemiyor; dil değişince baştan kuruyoruz.
     if (patch.language) buildMenu(patch.language);
+    // Genel varsayılan değiştiğinde onu izleyen depoların zamanlayıcıları da
+    // yeniden kurulmalı.
     autopull.reconcileSchedules();
     return next;
   },

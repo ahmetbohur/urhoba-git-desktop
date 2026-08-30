@@ -1,4 +1,5 @@
 import type {
+  BlameLine,
   Branch,
   BranchList,
   Commit,
@@ -307,4 +308,58 @@ export function parseRefLines(raw: string): BranchList {
   list.local.sort((a, b) => b.lastCommitAt.localeCompare(a.lastCommitAt));
   list.remote.sort((a, b) => a.fullName.localeCompare(b.fullName));
   return list;
+}
+
+
+/**
+ * `git blame --porcelain` çıktısını satır satır çözer.
+ *
+ * Biçim yer kazanmak için tekrar etmiyor: bir commit'in başlık bilgisi (yazar,
+ * tarih, özet) yalnızca o commit ilk görüldüğünde yazılıyor, sonraki satırlarda
+ * yalnızca sha geçiyor. Bu yüzden gördüğümüz commit'leri biriktirip sonraki
+ * satırlarda oradan okumak zorundayız — aksi hâlde ilk satır dışındaki her şey
+ * yazarsız kalır.
+ */
+export function parseBlame(raw: string): BlameLine[] {
+  const lines = raw.split('\n');
+  const commits = new Map<string, { author: string; authorMail: string; time: string; summary: string }>();
+  const result: BlameLine[] = [];
+
+  let current: { sha: string; finalLine: number } | null = null;
+  let pending = { author: '', authorMail: '', time: '', summary: '' };
+
+  for (const line of lines) {
+    // Başlık satırı: "<sha> <kaynak satır> <sonuç satır> [<grup boyu>]"
+    const header = /^([0-9a-f]{40}) (\d+) (\d+)(?: (\d+))?$/.exec(line);
+    if (header) {
+      current = { sha: header[1], finalLine: Number(header[3]) };
+      pending = commits.get(header[1]) ?? { author: '', authorMail: '', time: '', summary: '' };
+      continue;
+    }
+    if (!current) continue;
+
+    if (line.startsWith('author ')) pending.author = line.slice('author '.length);
+    else if (line.startsWith('author-mail ')) {
+      pending.authorMail = line.slice('author-mail '.length).replace(/^<|>$/g, '');
+    } else if (line.startsWith('author-time ')) {
+      pending.time = new Date(Number(line.slice('author-time '.length)) * 1000).toISOString();
+    } else if (line.startsWith('summary ')) pending.summary = line.slice('summary '.length);
+    else if (line.startsWith('\t')) {
+      // İçerik satırı: bu commit'in bilgisi artık tam, önbelleğe alıp kaydediyoruz.
+      commits.set(current.sha, { ...pending });
+      result.push({
+        sha: current.sha,
+        shortSha: current.sha.slice(0, 8),
+        lineNumber: current.finalLine,
+        content: line.slice(1),
+        authorName: pending.author,
+        authorEmail: pending.authorMail,
+        authoredAt: pending.time,
+        summary: pending.summary,
+      });
+      current = null;
+    }
+  }
+
+  return result;
 }

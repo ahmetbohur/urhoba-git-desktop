@@ -47,9 +47,13 @@ listeden geldiği için gösterilen tuş her zaman çalışan tuş.
 sayfa yüklenen liste, commit detayı, commit içindeki her dosyanın diff'i.
 Yazara, mesaja, dosya yoluna ve tarih aralığına göre filtreleme.
 
-**Geçmişi değiştirme** — Commit'e sağ tıkla revert (geçmişi koruyan geri alma)
-veya reset (soft / mixed / hard, her birinin ne yaptığı yazılı). SHA kopyalama
-ve commit'i etiketleme aynı menüde.
+**Geçmişi değiştirme** — Commit'e sağ tıkla revert (geçmişi koruyan geri alma),
+reset (soft / mixed / hard, her birinin ne yaptığı yazılı) veya cherry-pick.
+SHA kopyalama ve commit'i etiketleme aynı menüde.
+
+**Satır geçmişi (blame)** — Bir dosyanın her satırını kimin, hangi commit'te
+yazdığını gösterir. Aynı commit'ten gelen ardışık satırlarda bilgi
+tekrarlanmaz; bir satıra tıklayınca o commit geçmişte açılır.
 
 **Etiketler** — Açıklamalı ve hafif etiket oluşturma, listeleme, silme ve uzak
 sunucuya gönderme.
@@ -67,6 +71,10 @@ yalnızca fast-forward yapar, yani arka planda haberin olmadan merge commit'i
 **GitHub** — Kişisel erişim jetonuyla bağlanma, açık pull request listesi, PR
 dalına geçme (fork'tan gelenler dahil), mevcut daldan PR açma ve GitHub
 depolarını arayıp klonlama.
+
+**Genel ve depo bazlı ayarlar** — Arka planda fetch, otomatik pull ve bulut AI
+izni hem bütün depolar için hem tek bir depo için ayarlanabilir. Geçersiz
+kılınmayan ayar genel varsayılanı izlemeye devam eder.
 
 **AI yardımı (isteğe bağlı)** — Commit mesajı önerisi ve gruplama önerisi;
 Ollama (yerel), OpenAI veya Claude ile. Varsayılan olarak kapalı ve yerel.
@@ -150,6 +158,17 @@ bozuk arayüz üretmiyor.
 çağrılarını tarayıp sözlükte karşılığı olmayanları isim isim rapor ediyor; ayrıca
 `{ad}` yer tutucularının çeviride korunduğunu doğruluyor. Yeni bir metin ekleyip
 çevirisini unutmak bu yüzden testte kırmızı veriyor, üretimde sessiz kalmıyor.
+
+### Genel ve depo ayarları
+
+Bir depo için geçerli ayar, genel varsayılanların üstüne o deponun kendi seçtiği
+alanların binmesiyle çözülür. Depo kaydında yalnızca **genel ayardan ayrılan
+alanlar** tutulur: dokunulmamış bir alan genel ayarı izlemeye devam eder ve genel
+ayar değiştiğinde o depo da kendiliğinden güncellenir.
+
+Çözülmüş değeri kaydetseydik depo genel ayardan sessizce kopardı — kullanıcı
+genel ayarı değiştirip "ama bu depo eskisi gibi davranıyor" derdi. Arayüzde her
+depo ayarı üç durumlu: *Genel (açık/kapalı)*, *Açık*, *Kapalı*.
 
 ### AI ve gizlilik
 
