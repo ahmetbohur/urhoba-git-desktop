@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Columns2, FileWarning, Rows3 } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { pairLinesForSideBySide } from '../lib/diff-layout';
 import { languageForPath, tokenizeLines, type HighlightToken } from '../lib/highlight';
@@ -199,6 +200,7 @@ export function DiffView({
   onApplyLines,
   staged = false,
 }: DiffViewProps) {
+  const t = useT();
   const dark = useDarkMode();
   const [highlight, setHighlight] = useState<{
     key: string;
@@ -322,8 +324,8 @@ export function DiffView({
   if (!diff) {
     return (
       <EmptyState
-        title="Dosya seçilmedi"
-        description="Değişiklikleri görmek için soldaki listeden bir dosyaya tıkla."
+        title={t('Dosya seçilmedi')}
+        description={t('Değişiklikleri görmek için soldaki listeden bir dosyaya tıkla.')}
       />
     );
   }
@@ -341,10 +343,10 @@ export function DiffView({
         {diff.additions > 0 && <Badge tone="ok">+{formatCount(diff.additions)}</Badge>}
         {diff.deletions > 0 && <Badge tone="crit">−{formatCount(diff.deletions)}</Badge>}
         {onToggleSideBySide && (
-          <Tooltip label={sideBySide ? 'Tek sütuna geç' : 'Yan yana göster'}>
+          <Tooltip label={sideBySide ? t('Tek sütuna geç') : t('Yan yana göster')}>
             <button
               type="button"
-              aria-label={sideBySide ? 'Tek sütuna geç' : 'Yan yana göster'}
+              aria-label={sideBySide ? t('Tek sütuna geç') : t('Yan yana göster')}
               onClick={onToggleSideBySide}
               className="rounded-md p-1.5 text-ink-2 hover:bg-surface-2 hover:text-ink"
             >
@@ -357,23 +359,23 @@ export function DiffView({
       {selected.size > 0 && onApplyLines && (
         <div className="flex shrink-0 items-center gap-2 border-b border-line bg-accent-tint px-3 py-1.5">
           <span className="text-[12px] font-medium text-accent-ink">
-            {formatCount(selected.size)} satır seçili
+            {t('{count} satır seçili', { count: formatCount(selected.size) })}
           </span>
           <div className="flex-1" />
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-            Seçimi temizle
+            {t('Seçimi temizle')}
           </Button>
           {staged ? (
             <Button size="sm" variant="primary" onClick={() => apply('unstage')}>
-              Hazırlıktan çıkar
+              {t('Hazırlıktan çıkar')}
             </Button>
           ) : (
             <>
               <Button size="sm" variant="secondary" onClick={() => apply('discard')}>
-                Geri al
+                {t('Geri al')}
               </Button>
               <Button size="sm" variant="primary" onClick={() => apply('stage')}>
-                Hazırla
+                {t('Hazırla')}
               </Button>
             </>
           )}
@@ -384,17 +386,20 @@ export function DiffView({
         {diff.isBinary ? (
           <EmptyState
             icon={<FileWarning className="size-5" />}
-            title="İkili dosya"
-            description="Bu dosyanın içeriği metin olarak karşılaştırılamıyor."
+            title={t('İkili dosya')}
+            description={t('Bu dosyanın içeriği metin olarak karşılaştırılamıyor.')}
           />
         ) : diff.isTooLarge ? (
           <EmptyState
             icon={<FileWarning className="size-5" />}
-            title="Diff çok büyük"
-            description="Bu dosyanın farkı arayüzde gösterilemeyecek kadar büyük."
+            title={t('Diff çok büyük')}
+            description={t('Bu dosyanın farkı arayüzde gösterilemeyecek kadar büyük.')}
           />
         ) : diff.hunks.length === 0 ? (
-          <EmptyState title="Fark yok" description="Bu dosyada gösterilecek bir değişiklik yok." />
+          <EmptyState
+            title={t('Fark yok')}
+            description={t('Bu dosyada gösterilecek bir değişiklik yok.')}
+          />
         ) : (
           diff.hunks.map((hunk, hunkIndex) => (
             <HunkBlock
@@ -437,6 +442,7 @@ function HunkBlock({
   onExtend: (lineIndex: number) => void;
   onSelectHunk: () => void;
 }) {
+  const t = useT();
   const pairs = useMemo(
     () => (sideBySide ? pairLinesForSideBySide(hunk.lines) : []),
     [sideBySide, hunk.lines],
@@ -452,7 +458,7 @@ function HunkBlock({
             onClick={onSelectHunk}
             className="ml-auto rounded px-1.5 py-0.5 text-[11px] text-accent-ink hover:bg-accent-tint"
           >
-            Bu bloğu seç
+            {t('Bu bloğu seç')}
           </button>
         )}
       </div>

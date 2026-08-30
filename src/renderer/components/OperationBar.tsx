@@ -1,4 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
+import { useT } from '../i18n';
 import { errorMessage, invoke } from '../lib/ipc';
 import { useInvalidateRepo, useMutation, useStatus } from '../lib/queries';
 import { useUi } from '../stores/ui';
@@ -21,6 +22,7 @@ const LABELS: Partial<Record<RepoOperation, string>> = {
  * sürekli görünür tutuyor.
  */
 export function OperationBar({ repoId }: { repoId: string }) {
+  const t = useT();
   const { data: status } = useStatus(repoId);
   const invalidate = useInvalidateRepo();
   const toast = useUi((s) => s.toast);
@@ -31,10 +33,14 @@ export function OperationBar({ repoId }: { repoId: string }) {
     onSuccess: () => {
       invalidate(repoId);
       select({ kind: 'none' });
-      toast({ kind: 'info', title: 'İşlem iptal edildi', description: 'Depo önceki hâline döndü.' });
+      toast({
+        kind: 'info',
+        title: t('İşlem iptal edildi'),
+        description: t('Depo önceki hâline döndü.'),
+      });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'İptal edilemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('İptal edilemedi'), description: errorMessage(error) }),
   });
 
   const continueOperation = useMutation({
@@ -43,32 +49,37 @@ export function OperationBar({ repoId }: { repoId: string }) {
       invalidate(repoId);
       toast({
         kind: result.outcome === 'conflict' ? 'warning' : result.outcome === 'error' ? 'error' : 'success',
-        title: 'İşlem',
+        title: t('İşlem'),
         description: result.message,
       });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Devam edilemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Devam edilemedi'), description: errorMessage(error) }),
   });
 
   if (!status || status.operation === 'none') return null;
 
   const remaining = status.conflicted.length;
-  const label = LABELS[status.operation] ?? 'İşlem';
+  const label = t(LABELS[status.operation] ?? 'İşlem');
 
   return (
     <div className="flex shrink-0 items-center gap-2 border-b border-line bg-warn-tint px-3 py-2">
       <TriangleAlert className="size-4 shrink-0 text-warn" />
       <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-semibold text-ink">{label} yarıda kaldı</p>
+        <p className="text-[12px] font-semibold text-ink">
+          {t('{label} yarıda kaldı', { label })}
+        </p>
         <p className="text-[11px] text-ink-2">
           {remaining > 0
-            ? `${remaining} dosyada çakışma çözülmeyi bekliyor. Her birini çözüp hazırladıktan sonra devam et.`
-            : 'Bütün çakışmalar çözüldü. İşlemi tamamlayabilirsin.'}
+            ? t(
+                '{count} dosyada çakışma çözülmeyi bekliyor. Her birini çözüp hazırladıktan sonra devam et.',
+                { count: remaining },
+              )
+            : t('Bütün çakışmalar çözüldü. İşlemi tamamlayabilirsin.')}
         </p>
       </div>
       <Button size="sm" variant="ghost" loading={abort.isPending} onClick={() => abort.mutate()}>
-        İptal et
+        {t('İptal et')}
       </Button>
       <Button
         size="sm"
@@ -77,7 +88,7 @@ export function OperationBar({ repoId }: { repoId: string }) {
         loading={continueOperation.isPending}
         onClick={() => continueOperation.mutate()}
       >
-        Devam et
+        {t('Devam et')}
       </Button>
     </div>
   );

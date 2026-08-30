@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useT } from '../../i18n';
 import { Button } from '../primitives';
 import { DialogShell } from './DialogShell';
 
@@ -22,6 +23,7 @@ export function ConfirmDialog({
   onConfirm: () => void;
   children?: ReactNode;
 }) {
+  const t = useT();
   return (
     <DialogShell
       open={open}
@@ -31,7 +33,7 @@ export function ConfirmDialog({
       footer={
         <>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Vazgeç
+            {t('Vazgeç')}
           </Button>
           <Button
             variant={destructive ? 'danger' : 'primary'}
@@ -45,7 +47,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      {children ?? <p className="text-[13px] text-ink-2">Bu işlem geri alınamaz.</p>}
+      {children ?? <p className="text-[13px] text-ink-2">{t('Bu işlem geri alınamaz.')}</p>}
     </DialogShell>
   );
 }

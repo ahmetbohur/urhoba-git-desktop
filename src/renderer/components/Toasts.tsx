@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { useUi, type Toast } from '../stores/ui';
 
@@ -19,6 +20,7 @@ const ICON_COLORS = {
 
 /** Hata bildirimleri elle kapatılana kadar durur; diğerleri kendiliğinden kaybolur. */
 function ToastCard({ toast }: { toast: Toast }) {
+  const t = useT();
   const dismiss = useUi((s) => s.dismissToast);
   const { icon: Icon, className } = TONES[toast.kind];
 
@@ -48,7 +50,7 @@ function ToastCard({ toast }: { toast: Toast }) {
       <button
         type="button"
         onClick={() => dismiss(toast.id)}
-        aria-label="Bildirimi kapat"
+        aria-label={t('Bildirimi kapat')}
         className="rounded p-0.5 text-ink-3 hover:bg-surface-2 hover:text-ink"
       >
         <X className="size-3.5" />

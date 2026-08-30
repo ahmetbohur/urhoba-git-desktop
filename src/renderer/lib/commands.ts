@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useT } from '../i18n';
 import { errorMessage, invoke, platform } from './ipc';
 import { keys, useBranches, useQueryClient, useRepos, useStatus } from './queries';
 import { useUi } from '../stores/ui';
@@ -61,6 +62,7 @@ export function useCommands(activeRepo: Repo | null): Command[] {
   const { data: branches } = useBranches(activeRepo?.id ?? null);
   const { data: status } = useStatus(activeRepo?.id ?? null);
 
+  const t = useT();
   const setActiveRepo = useUi((s) => s.setActiveRepo);
   const setTab = useUi((s) => s.setTab);
   const toggleCommandLog = useUi((s) => s.toggleCommandLog);
@@ -83,11 +85,15 @@ export function useCommands(activeRepo: Repo | null): Command[] {
         invalidate();
         toast({
           kind: result.ok === false ? 'error' : 'success',
-          title,
+          title: t(title),
           description: result.message,
         });
       } catch (error) {
-        toast({ kind: 'error', title: `${title} başarısız`, description: errorMessage(error) });
+        toast({
+          kind: 'error',
+          title: t('{action} başarısız', { action: t(title) }),
+          description: errorMessage(error),
+        });
       }
     };
 
@@ -135,8 +141,8 @@ export function useCommands(activeRepo: Repo | null): Command[] {
             return {
               message:
                 result.behind > 0
-                  ? `Uzak dalda ${result.behind} yeni commit var.`
-                  : 'Yeni commit yok.',
+                  ? t('Uzak dalda {count} yeni commit var.', { count: result.behind })
+                  : t('Yeni commit yok.'),
             };
           }),
         },
@@ -145,7 +151,7 @@ export function useCommands(activeRepo: Repo | null): Command[] {
           label: 'Pull',
           group: 'Uzak sunucu',
           shortcut: 'mod+shift+l',
-          hint: status?.behind ? `${status.behind} commit geride` : undefined,
+          hint: status?.behind ? t('{count} commit geride', { count: status.behind }) : undefined,
           run: remoteAction('Pull', async () => {
             const result = await invoke('git:pull', { repoId, fastForwardOnly: false });
             return { message: result.message, ok: result.outcome !== 'error' };
@@ -156,7 +162,7 @@ export function useCommands(activeRepo: Repo | null): Command[] {
           label: 'Push',
           group: 'Uzak sunucu',
           shortcut: 'mod+shift+p',
-          hint: status?.ahead ? `${status.ahead} commit ileride` : undefined,
+          hint: status?.ahead ? t('{count} commit ileride', { count: status.ahead }) : undefined,
           run: remoteAction('Push', async () => {
             const result = await invoke('git:push', { repoId });
             return { message: result.message, ok: result.ok };
@@ -188,7 +194,7 @@ export function useCommands(activeRepo: Repo | null): Command[] {
         if (branch.isCurrent) continue;
         commands.push({
           id: `branch.checkout.${branch.fullName}`,
-          label: `${branch.fullName} dalına geç`,
+          label: t('{branch} dalına geç', { branch: branch.fullName }),
           group: 'Dallar',
           hint: branch.lastCommitSubject,
           run: async () => {
@@ -197,13 +203,13 @@ export function useCommands(activeRepo: Repo | null): Command[] {
               invalidate();
               toast({
                 kind: result.outcome === 'switched' ? 'success' : 'warning',
-                title: 'Dal değiştirme',
+                title: t('Dal değiştirme'),
                 description: result.message,
               });
             } catch (error) {
               toast({
                 kind: 'error',
-                title: 'Dal değiştirilemedi',
+                title: t('Dal değiştirilemedi'),
                 description: errorMessage(error),
               });
             }
@@ -216,7 +222,7 @@ export function useCommands(activeRepo: Repo | null): Command[] {
       if (repo.id === repoId) continue;
       commands.push({
         id: `repo.open.${repo.id}`,
-        label: `${repo.name} deposunu aç`,
+        label: t('{name} deposunu aç', { name: repo.name }),
         group: 'Depolar',
         hint: repo.path,
         run: () => setActiveRepo(repo.id),
@@ -234,11 +240,11 @@ export function useCommands(activeRepo: Repo | null): Command[] {
           void client.invalidateQueries({ queryKey: keys.repos });
           setActiveRepo(repo.id);
         } catch (error) {
-          toast({ kind: 'error', title: 'Depo eklenemedi', description: errorMessage(error) });
+          toast({ kind: 'error', title: t('Depo eklenemedi'), description: errorMessage(error) });
         }
       },
     });
 
     return commands;
-  }, [activeRepo, branches, repos, status, client, setActiveRepo, setTab, toggleCommandLog, toast]);
+  }, [activeRepo, branches, repos, status, client, setActiveRepo, setTab, toggleCommandLog, toast, t]);
 }

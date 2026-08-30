@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog } from 'radix-ui';
 import { CornerDownLeft, Search } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { formatShortcut, type Command } from '../lib/commands';
 
@@ -40,6 +41,7 @@ function PaletteContent({
   commands: Command[];
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   /*
    * Arama metni ve seçili satır tek bir durumda: metin değiştiğinde seçimin
    * başa dönmesi aynı güncellemede oluyor, arada tutarsız bir render olmuyor.
@@ -102,7 +104,7 @@ function PaletteContent({
             }
           }}
         >
-          <Dialog.Title className="sr-only">Komut paleti</Dialog.Title>
+          <Dialog.Title className="sr-only">{t('Komut paleti')}</Dialog.Title>
 
           <div className="flex items-center gap-2 border-b border-line px-3">
             <Search className="size-4 shrink-0 text-ink-3" />
@@ -110,20 +112,20 @@ function PaletteContent({
               value={query}
               autoFocus
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Komut, depo veya dal ara"
-              aria-label="Komut ara"
+              placeholder={t('Komut, depo veya dal ara')}
+              aria-label={t('Komut ara')}
               className="selectable h-11 w-full bg-transparent text-[14px] text-ink outline-none placeholder:text-ink-3"
             />
           </div>
 
           <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-1.5">
             {filtered.length === 0 ? (
-              <p className="py-10 text-center text-[13px] text-ink-3">Eşleşen komut yok.</p>
+              <p className="py-10 text-center text-[13px] text-ink-3">{t('Eşleşen komut yok.')}</p>
             ) : (
               groups.map(([group, entries]) => (
                 <div key={group} className="mb-1">
                   <p className="px-2 py-1 text-[10px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
-                    {group}
+                    {t(group)}
                   </p>
                   {entries.map(({ command, index }) => (
                     <button
@@ -146,7 +148,7 @@ function PaletteContent({
                             index === activeIndex ? 'text-accent-ink' : 'text-ink',
                           )}
                         >
-                          {command.label}
+                          {t(command.label)}
                         </span>
                         {command.hint && (
                           <span className="block truncate text-[11px] text-ink-3">

@@ -1,5 +1,6 @@
 import { Popover, Switch } from 'radix-ui';
 import { RefreshCcwDot } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { errorMessage, invoke } from '../lib/ipc';
 import {
@@ -68,6 +69,7 @@ function ToggleRow({
  * yaptığını değiştirmek isteyen buradan iki tıkla açıyor.
  */
 export function AutoPullPopover({ repoId }: { repoId: string }) {
+  const t = useT();
   const { data: settings } = useRepoSettings(repoId);
   const client = useQueryClient();
   const invalidate = useInvalidateRepo();
@@ -79,7 +81,7 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
       invoke('settings:repo-set', { repoId, autoPull }),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.repoSettings(repoId) }),
     onError: (error) =>
-      toast({ kind: 'error', title: 'Ayar kaydedilemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Ayar kaydedilemedi'), description: errorMessage(error) }),
   });
 
   const pullNow = useMutation({
@@ -93,7 +95,7 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
             : result.outcome.startsWith('skipped')
               ? 'warning'
               : 'success',
-        title: 'Otomatik pull',
+        title: t('Otomatik pull'),
         description: result.message,
       });
     },
@@ -116,7 +118,9 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
           )}
         >
           <RefreshCcwDot className={cn('size-3.5', autoPull.enabled && 'animate-pulse')} />
-          {autoPull.enabled ? `Oto pull · ${autoPull.intervalMinutes} dk` : 'Oto pull kapalı'}
+          {autoPull.enabled
+            ? t('Oto pull · {minutes} dk', { minutes: autoPull.intervalMinutes })
+            : t('Oto pull kapalı')}
         </button>
       </Popover.Trigger>
 
@@ -128,22 +132,21 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
         >
           <div className="flex flex-col gap-3">
             <div>
-              <SectionLabel>Otomatik pull</SectionLabel>
+              <SectionLabel>{t('Otomatik pull')}</SectionLabel>
               <p className="mt-1 text-[11px] text-ink-2">
-                Uzak sunucudaki değişiklikleri arka planda çeker. Bu ayar yalnızca bu depo için
-                geçerlidir.
+                {t('Uzak sunucudaki değişiklikleri arka planda çeker. Bu ayar yalnızca bu depo için geçerlidir.')}
               </p>
             </div>
 
             <ToggleRow
-              label="Açık"
-              hint="Belirlenen aralıkta uzak dalı kontrol et."
+              label={t('Açık')}
+              hint={t('Belirlenen aralıkta uzak dalı kontrol et.')}
               checked={autoPull.enabled}
               onCheckedChange={(enabled) => update({ enabled })}
             />
 
             <div className={cn(!autoPull.enabled && 'opacity-50')}>
-              <p className="mb-1.5 text-[12px] font-medium text-ink">Aralık</p>
+              <p className="mb-1.5 text-[12px] font-medium text-ink">{t('Aralık')}</p>
               <div className="flex flex-wrap gap-1">
                 {INTERVALS.map((minutes) => (
                   <button
@@ -158,23 +161,23 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
                         : 'border-line bg-surface text-ink-2 hover:bg-surface-2',
                     )}
                   >
-                    {minutes} dk
+                    {t('{minutes} dk', { minutes })}
                   </button>
                 ))}
               </div>
             </div>
 
             <ToggleRow
-              label="Sadece çalışma dizini temizken"
-              hint="Kaydedilmemiş değişiklik varsa dokunma."
+              label={t('Sadece çalışma dizini temizken')}
+              hint={t('Kaydedilmemiş değişiklik varsa dokunma.')}
               checked={autoPull.onlyWhenClean}
               disabled={!autoPull.enabled}
               onCheckedChange={(onlyWhenClean) => update({ onlyWhenClean })}
             />
 
             <ToggleRow
-              label="Sadece fast-forward"
-              hint="Geçmişler ayrıldıysa birleştirme yapma, kararı sana bırak."
+              label={t('Sadece fast-forward')}
+              hint={t('Geçmişler ayrıldıysa birleştirme yapma, kararı sana bırak.')}
               checked={autoPull.fastForwardOnly}
               disabled={!autoPull.enabled}
               onCheckedChange={(fastForwardOnly) => update({ fastForwardOnly })}
@@ -187,7 +190,7 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
                   <span className="text-ink-3"> · {relativeTime(lastResult.at)}</span>
                 </p>
               ) : (
-                <p className="text-[11px] text-ink-3">Bu oturumda henüz otomatik pull çalışmadı.</p>
+                <p className="text-[11px] text-ink-3">{t('Bu oturumda henüz otomatik pull çalışmadı.')}</p>
               )}
             </div>
 
@@ -197,7 +200,7 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
               loading={pullNow.isPending}
               onClick={() => pullNow.mutate()}
             >
-              Şimdi çek
+              {t('Şimdi çek')}
             </Button>
           </div>
         </Popover.Content>

@@ -12,6 +12,7 @@ import {
   Terminal,
   TriangleAlert,
 } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { errorMessage, invoke } from '../lib/ipc';
 import {
@@ -41,6 +42,7 @@ const OPERATION_LABELS: Record<string, string> = {
 };
 
 export function TopBar({ repo }: { repo: Repo }) {
+  const t = useT();
   const { data: status } = useStatus(repo.id);
   const { data: repoSettings } = useRepoSettings(repo.id);
   const invalidate = useInvalidateRepo();
@@ -60,15 +62,15 @@ export function TopBar({ repo }: { repo: Repo }) {
       invalidate(repo.id);
       toast({
         kind: 'info',
-        title: 'Fetch tamamlandı',
+        title: t('Fetch tamamlandı'),
         description:
           result.behind > 0
-            ? `Uzak dalda ${result.behind} yeni commit var.`
-            : 'Yeni commit yok.',
+            ? t('Uzak dalda {count} yeni commit var.', { count: result.behind })
+            : t('Yeni commit yok.'),
       });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Fetch başarısız', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Fetch başarısız'), description: errorMessage(error) }),
   });
 
   const pullMutation = useMutation({
@@ -78,12 +80,12 @@ export function TopBar({ repo }: { repo: Repo }) {
       const failed = result.outcome === 'error' || result.outcome === 'conflict';
       toast({
         kind: failed ? 'error' : result.outcome.startsWith('skipped') ? 'warning' : 'success',
-        title: failed ? 'Pull başarısız' : 'Pull',
+        title: failed ? t('Pull başarısız') : t('Pull'),
         description: result.message,
       });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Pull başarısız', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Pull başarısız'), description: errorMessage(error) }),
   });
 
   const pushMutation = useMutation({
@@ -93,19 +95,19 @@ export function TopBar({ repo }: { repo: Repo }) {
       invalidate(repo.id);
       toast({
         kind: result.ok ? 'success' : 'error',
-        title: result.ok ? 'Push tamamlandı' : 'Push başarısız',
+        title: result.ok ? t('Push tamamlandı') : t('Push başarısız'),
         description: result.ok
           ? result.message
-          : `${result.message} Uzak dalda senin görmediğin commit’ler varsa önce fetch et.`,
+          : `${result.message} ${t('Uzak dalda senin görmediğin commit’ler varsa önce fetch et.')}`,
       });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Push başarısız', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Push başarısız'), description: errorMessage(error) }),
   });
 
   const ahead = status?.ahead ?? 0;
   const behind = status?.behind ?? 0;
-  const operationLabel = status && status.operation !== 'none' ? OPERATION_LABELS[status.operation] : null;
+  const operationLabel = status && status.operation !== 'none' ? t(OPERATION_LABELS[status.operation]) : null;
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-surface px-3">
@@ -149,7 +151,7 @@ export function TopBar({ repo }: { repo: Repo }) {
           onClick={() => fetchMutation.mutate()}
         >
           <RefreshCw className="size-3.5" />
-          Fetch
+          {t('Fetch')}
         </Button>
         <Button
           size="sm"
@@ -158,7 +160,7 @@ export function TopBar({ repo }: { repo: Repo }) {
           onClick={() => pullMutation.mutate()}
         >
           <ArrowDownToLine className="size-3.5" />
-          Pull
+          {t('Pull')}
           {behind > 0 && <span className="tabular-nums">{behind}</span>}
         </Button>
         <div className="flex items-center">
@@ -170,7 +172,7 @@ export function TopBar({ repo }: { repo: Repo }) {
             className="rounded-r-none"
           >
             <ArrowUpFromLine className="size-3.5" />
-            Push
+            {t('Push')}
             {ahead > 0 && <span className="tabular-nums">{ahead}</span>}
           </Button>
           <DropdownMenu.Root>
@@ -178,7 +180,7 @@ export function TopBar({ repo }: { repo: Repo }) {
               <Button
                 size="sm"
                 variant={ahead > 0 ? 'primary' : 'ghost'}
-                aria-label="Push seçenekleri"
+                aria-label={t('Push seçenekleri')}
                 className="rounded-l-none border-l border-white/20 px-1"
               >
                 <ChevronDown className="size-3.5" />
@@ -194,9 +196,9 @@ export function TopBar({ repo }: { repo: Repo }) {
                   onSelect={() => setForcePushOpen(true)}
                   className="cursor-pointer rounded px-2 py-1.5 outline-none data-[highlighted]:bg-surface-2"
                 >
-                  <span className="block text-[13px] text-ink">Zorlamalı push</span>
+                  <span className="block text-[13px] text-ink">{t('Zorlamalı push')}</span>
                   <span className="block text-[11px] text-ink-3">
-                    Geçmişi yeniden yazdıysan gerekir
+                    {t('Geçmişi yeniden yazdıysan gerekir')}
                   </span>
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
@@ -207,10 +209,10 @@ export function TopBar({ repo }: { repo: Repo }) {
 
       <div className="mx-1 h-6 w-px bg-line" />
 
-      <Tooltip label="GitHub bağlantısı">
+      <Tooltip label={t('GitHub bağlantısı')}>
         <button
           type="button"
-          aria-label="GitHub bağlantısı"
+          aria-label={t('GitHub bağlantısı')}
           onClick={() => setGithubOpen(true)}
           className="rounded-md p-1.5 text-ink-2 hover:bg-surface-2 hover:text-ink"
         >
@@ -218,10 +220,10 @@ export function TopBar({ repo }: { repo: Repo }) {
         </button>
       </Tooltip>
 
-      <Tooltip label="Etiketler">
+      <Tooltip label={t('Etiketler')}>
         <button
           type="button"
-          aria-label="Etiketler"
+          aria-label={t('Etiketler')}
           onClick={() => setTagsOpen(true)}
           className="rounded-md p-1.5 text-ink-2 hover:bg-surface-2 hover:text-ink"
         >
@@ -229,10 +231,10 @@ export function TopBar({ repo }: { repo: Repo }) {
         </button>
       </Tooltip>
 
-      <Tooltip label="SSH kurulumu">
+      <Tooltip label={t('SSH kurulumu')}>
         <button
           type="button"
-          aria-label="SSH kurulumu"
+          aria-label={t('SSH kurulumu')}
           onClick={() => setSshOpen(true)}
           className="rounded-md p-1.5 text-ink-2 hover:bg-surface-2 hover:text-ink"
         >
@@ -240,10 +242,10 @@ export function TopBar({ repo }: { repo: Repo }) {
         </button>
       </Tooltip>
 
-      <Tooltip label="Git komut günlüğü">
+      <Tooltip label={t('Git komut günlüğü')}>
         <button
           type="button"
-          aria-label="Git komut günlüğü"
+          aria-label={t('Git komut günlüğü')}
           onClick={toggleCommandLog}
           className={cn(
             'rounded-md p-1.5 hover:bg-surface-2 hover:text-ink',
@@ -254,10 +256,10 @@ export function TopBar({ repo }: { repo: Repo }) {
         </button>
       </Tooltip>
 
-      <Tooltip label="Ayarlar">
+      <Tooltip label={t('Ayarlar')}>
         <button
           type="button"
-          aria-label="Ayarlar"
+          aria-label={t('Ayarlar')}
           onClick={() => setSettingsOpen(true)}
           className="rounded-md p-1.5 text-ink-2 hover:bg-surface-2 hover:text-ink"
         >
@@ -278,15 +280,14 @@ export function TopBar({ repo }: { repo: Repo }) {
       <ConfirmDialog
         open={forcePushOpen}
         onOpenChange={setForcePushOpen}
-        title="Zorlamalı push"
-        confirmLabel="Zorlamalı gönder"
+        title={t('Zorlamalı push')}
+        confirmLabel={t('Zorlamalı gönder')}
         destructive
         onConfirm={() => pushMutation.mutate(true)}
       >
         <div className="flex flex-col gap-2 text-[13px] text-ink-2">
           <p>
-            Uzak daldaki commit’lerin üzerine yazılacak. Bu yalnızca geçmişi yeniden yazdıysan
-            (amend, rebase, reset) gerekir.
+            {t('Uzak daldaki commit’lerin üzerine yazılacak. Bu yalnızca geçmişi yeniden yazdıysan (amend, rebase, reset) gerekir.')}
           </p>
           <p>
             Gönderim <span className="font-mono text-ink">--force-with-lease</span> ile yapılıyor:

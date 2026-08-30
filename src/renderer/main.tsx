@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from './app/App';
+import { AppShell } from './app/AppShell';
 import './index.css';
 
 /**
@@ -26,7 +27,9 @@ if (!container) throw new Error('#root bulunamadı');
 createRoot(container).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <AppShell>
+        <App />
+      </AppShell>
     </QueryClientProvider>
   </StrictMode>,
 );

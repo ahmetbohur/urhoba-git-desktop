@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Tag as TagIcon, Trash2, Upload } from 'lucide-react';
+import { useT } from '../../i18n';
 import { errorMessage, invoke } from '../../lib/ipc';
 import { keys, useInvalidateRepo, useMutation, useQueryClient, useTags } from '../../lib/queries';
 import { relativeTime } from '../../lib/format';
@@ -27,6 +28,7 @@ export function TagDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const { data: tags } = useTags(repoId);
@@ -49,12 +51,12 @@ export function TagDialog({
       }),
     onSuccess: () => {
       refresh();
-      toast({ kind: 'success', title: `${name.trim()} etiketi oluşturuldu` });
+      toast({ kind: 'success', title: t('{name} etiketi oluşturuldu', { name: name.trim() }) });
       setName('');
       setMessage('');
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Etiket oluşturulamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Etiket oluşturulamadı'), description: errorMessage(error) }),
   });
 
   const remove = useMutation({
@@ -62,35 +64,35 @@ export function TagDialog({
       invoke('git:tag-delete', { repoId, name: tagName, remote: false }),
     onSuccess: () => {
       refresh();
-      toast({ kind: 'info', title: 'Etiket silindi' });
+      toast({ kind: 'info', title: t('Etiket silindi') });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Etiket silinemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Etiket silinemedi'), description: errorMessage(error) }),
   });
 
   const pushTag = useMutation({
     mutationFn: (tagName: string) => invoke('git:tag-push', { repoId, name: tagName }),
     onSuccess: (_result, tagName) =>
-      toast({ kind: 'success', title: `${tagName} uzak sunucuya gönderildi` }),
+      toast({ kind: 'success', title: t('{name} uzak sunucuya gönderildi', { name: tagName }) }),
     onError: (error) =>
-      toast({ kind: 'error', title: 'Etiket gönderilemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Etiket gönderilemedi'), description: errorMessage(error) }),
   });
 
   return (
     <DialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title="Etiketler"
+      title={t('Etiketler')}
       description={
         commit
-          ? `Yeni etiket ${commit.shortSha} commit’ine takılacak.`
-          : 'Yeni etiket geçerli HEAD’e takılacak.'
+          ? t('Yeni etiket {sha} commit’ine takılacak.', { sha: commit.shortSha })
+          : t('Yeni etiket geçerli HEAD’e takılacak.')
       }
       width="lg"
       footer={
         <>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Kapat
+            {t('Kapat')}
           </Button>
           <Button
             variant="primary"
@@ -99,7 +101,7 @@ export function TagDialog({
             onClick={() => create.mutate()}
           >
             <TagIcon className="size-3.5" />
-            Etiketle
+            {t('Etiketle')}
           </Button>
         </>
       }
@@ -112,21 +114,21 @@ export function TagDialog({
           </div>
         )}
 
-        <Field label="Etiket adı" hint="Örnek: v1.0.0">
+        <Field label={t('Etiket adı')} hint={t('Örnek: v1.0.0')}>
           <TextInput value={name} onChange={setName} placeholder="v1.0.0" mono autoFocus />
         </Field>
 
         <Field
-          label="Mesaj"
-          hint="Doldurursan açıklamalı etiket oluşur — sürüm notu için doğru olan bu. Boş bırakırsan hafif etiket olur."
+          label={t('Mesaj')}
+          hint={t('Doldurursan açıklamalı etiket oluşur — sürüm notu için doğru olan bu. Boş bırakırsan hafif etiket olur.')}
         >
-          <TextInput value={message} onChange={setMessage} placeholder="Sürüm notu" />
+          <TextInput value={message} onChange={setMessage} placeholder={t('Sürüm notu')} />
         </Field>
 
         <div className="flex flex-col gap-2 border-t border-line-soft pt-3">
-          <SectionLabel>Mevcut etiketler ({tags?.length ?? 0})</SectionLabel>
+          <SectionLabel>{t('Mevcut etiketler ({count})', { count: tags?.length ?? 0 })}</SectionLabel>
           {(tags?.length ?? 0) === 0 ? (
-            <p className="py-4 text-center text-[12px] text-ink-3">Bu depoda etiket yok.</p>
+            <p className="py-4 text-center text-[12px] text-ink-3">{t('Bu depoda etiket yok.')}</p>
           ) : (
             <ul className="flex max-h-56 flex-col gap-1.5 overflow-y-auto">
               {tags?.map((tag) => (
@@ -138,22 +140,22 @@ export function TagDialog({
                     <span className="flex items-center gap-1.5">
                       <span className="truncate font-mono text-[12px] text-ink">{tag.name}</span>
                       {tag.isAnnotated ? (
-                        <Badge tone="accent">açıklamalı</Badge>
+                        <Badge tone="accent">{t('açıklamalı')}</Badge>
                       ) : (
-                        <Badge tone="neutral">hafif</Badge>
+                        <Badge tone="neutral">{t('hafif')}</Badge>
                       )}
                     </span>
                     <span className="block truncate text-[11px] text-ink-3">
-                      {tag.message || 'mesaj yok'} · {relativeTime(tag.taggedAt)}
+                      {tag.message || t('mesaj yok')} · {relativeTime(tag.taggedAt)}
                     </span>
                   </span>
                   <Button size="sm" variant="ghost" onClick={() => pushTag.mutate(tag.name)}>
                     <Upload className="size-3.5" />
-                    Gönder
+                    {t('Gönder')}
                   </Button>
                   <button
                     type="button"
-                    aria-label={`${tag.name} etiketini sil`}
+                    aria-label={t('{name} etiketini sil', { name: tag.name })}
                     onClick={() => remove.mutate(tag.name)}
                     className="rounded p-1 text-ink-3 hover:bg-crit-tint hover:text-crit"
                   >

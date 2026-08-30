@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle2, ExternalLink, LogOut, ShieldAlert } from 'lucide-react';
+import { useT } from '../../i18n';
 import { errorMessage, invoke } from '../../lib/ipc';
 import { keys, useGithubStatus, useMutation, useQueryClient } from '../../lib/queries';
 import { useUi } from '../../stores/ui';
@@ -25,6 +26,7 @@ export function GithubDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const { data: status, isLoading } = useGithubStatus({ enabled: open });
   const [token, setToken] = useState('');
   const client = useQueryClient();
@@ -37,19 +39,19 @@ export function GithubDialog({
       setToken('');
       toast({
         kind: result.persisted ? 'success' : 'warning',
-        title: `${result.user?.login} olarak bağlanıldı`,
+        title: t('{login} olarak bağlanıldı', { login: result.user?.login ?? '' }),
         description: result.message,
       });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Giriş başarısız', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Giriş başarısız'), description: errorMessage(error) }),
   });
 
   const signOut = useMutation({
     mutationFn: () => invoke('github:sign-out', undefined),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.github });
-      toast({ kind: 'info', title: 'GitHub bağlantısı kaldırıldı' });
+      toast({ kind: 'info', title: t('GitHub bağlantısı kaldırıldı') });
     },
   });
 
@@ -62,8 +64,8 @@ export function GithubDialog({
     <DialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title="GitHub bağlantısı"
-      description="Pull request'leri görmek ve açmak için bir kişisel erişim jetonu gerekiyor."
+      title={t('GitHub bağlantısı')}
+      description={t('Pull request’leri görmek ve açmak için bir kişisel erişim jetonu gerekiyor.')}
       width="lg"
     >
       {isLoading ? (
@@ -88,12 +90,12 @@ export function GithubDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <SectionLabel>Jeton durumu</SectionLabel>
+            <SectionLabel>{t('Jeton durumu')}</SectionLabel>
             <div className="flex flex-wrap items-center gap-2">
               {status.persisted ? (
-                <Badge tone="ok">anahtarlıkta şifreli</Badge>
+                <Badge tone="ok">{t('anahtarlıkta şifreli')}</Badge>
               ) : (
-                <Badge tone="warn">yalnızca bu oturumda</Badge>
+                <Badge tone="warn">{t('yalnızca bu oturumda')}</Badge>
               )}
               {status.scopes.length > 0 ? (
                 status.scopes.map((scope) => (
@@ -102,20 +104,18 @@ export function GithubDialog({
                   </Badge>
                 ))
               ) : (
-                <Badge tone="neutral">ince ayarlı jeton</Badge>
+                <Badge tone="neutral">{t('ince ayarlı jeton')}</Badge>
               )}
             </div>
             {!status.persisted && (
               <p className="text-[11px] text-ink-2">
-                İşletim sisteminde anahtarlık bulunamadı. Jetonu korumasız diske yazmak yerine
-                yalnızca bellekte tutuyoruz; uygulama kapanınca yeniden girmen gerekecek.
+                {t('İşletim sisteminde anahtarlık bulunamadı. Jetonu korumasız diske yazmak yerine yalnızca bellekte tutuyoruz; uygulama kapanınca yeniden girmen gerekecek.')}
               </p>
             )}
             {!canCreatePulls && (
               <p className="flex items-start gap-1.5 text-[11px] text-warn">
                 <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
-                Jetonda <code className="font-mono">repo</code> yetkisi görünmüyor; özel depoları
-                okumak ve PR açmak için gerekebilir.
+                {t('Jetonda repo yetkisi görünmüyor; özel depoları okumak ve PR açmak için gerekebilir.')}
               </p>
             )}
           </div>
@@ -123,7 +123,7 @@ export function GithubDialog({
           <div className="flex justify-end border-t border-line-soft pt-3">
             <Button variant="secondary" loading={signOut.isPending} onClick={() => signOut.mutate()}>
               <LogOut className="size-3.5" />
-              Bağlantıyı kaldır
+              {t('Bağlantıyı kaldır')}
             </Button>
           </div>
         </div>
@@ -133,13 +133,12 @@ export function GithubDialog({
             <li className="flex gap-2">
               <span className="font-mono text-[11px] text-ink-3">1</span>
               <span>
-                GitHub’da <code className="font-mono">repo</code> yetkili bir kişisel erişim jetonu
-                oluştur.
+                {t('GitHub’da repo yetkili bir kişisel erişim jetonu oluştur.')}
               </span>
             </li>
             <li className="flex gap-2">
               <span className="font-mono text-[11px] text-ink-3">2</span>
-              <span>Jetonu aşağıya yapıştır.</span>
+              <span>{t('Jetonu aşağıya yapıştır.')}</span>
             </li>
           </ol>
 
@@ -150,12 +149,12 @@ export function GithubDialog({
             className="inline-flex w-fit items-center gap-1.5 text-[12px] font-medium text-accent-ink hover:underline"
           >
             <ExternalLink className="size-3.5" />
-            Jeton oluşturma sayfasını aç
+            {t('Jeton oluşturma sayfasını aç')}
           </a>
 
           <Field
-            label="Kişisel erişim jetonu"
-            hint="Jeton yalnızca ana süreçte tutulur ve arayüze hiç aktarılmaz."
+            label={t('Kişisel erişim jetonu')}
+            hint={t('Jeton yalnızca ana süreçte tutulur ve arayüze hiç aktarılmaz.')}
           >
             <TextInput
               value={token}
@@ -175,7 +174,7 @@ export function GithubDialog({
               disabled={token.trim().length === 0}
               onClick={() => signIn.mutate()}
             >
-              Bağlan
+              {t('Bağlan')}
             </Button>
           </div>
         </div>

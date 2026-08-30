@@ -353,6 +353,8 @@ export interface GitLogEntry {
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
+export type LanguagePreference = 'tr' | 'en';
+
 export interface AutoPullSettings {
   enabled: boolean;
   /** Dakika cinsinden aralık. */
@@ -374,6 +376,7 @@ export interface RepoSettings {
 
 export interface AppSettings {
   theme: ThemePreference;
+  language: LanguagePreference;
   /** Tüm depolar için varsayılan; depo bazlı ayar bunu ezer. */
   defaultAutoPull: AutoPullSettings;
   autoFetchIntervalMinutes: number;

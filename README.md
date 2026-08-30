@@ -29,6 +29,9 @@ iki çıkışı (devam et / iptal et) gösterir. Çakışan dosyada her blok iç
 "bizimki / onlarki / ikisi" seçimi; karmaşık durumlar için "editörde aç" kaçış
 kapısı.
 
+**Türkçe ve İngilizce arayüz** — Ayarlardan tek tıkla değişir; tarih ve sayı
+biçimleri de dile uyar.
+
 **Komut paleti ve kısayollar** — `Ctrl/Cmd + K` ile her şey tek arama kutusundan:
 depo değiştir, dal değiştir, fetch/pull/push, stash. Kısayollar paletle aynı
 listeden geldiği için gösterilen tuş her zaman çalışan tuş.
@@ -121,6 +124,18 @@ kırılgan yeri olduğu için bu fonksiyonlar Electron'a hiç ihtiyaç duymadan 
 ediliyor; ayrıca `__tests__/integration.test.ts` her çalıştığında geçici depolar
 kurup komutları gerçekten çalıştırıyor.
 
+### Çeviri
+
+Çeviri anahtarı olarak Türkçe metnin kendisi kullanılıyor: `t('Vazgeç')`. Böylece
+her metin için ayrı bir anahtar icat etmek gerekmiyor ve sözlükte karşılığı
+olmayan bir cümle boş dize yerine anlamlı Türkçe hâliyle görünüyor — eksik çeviri
+bozuk arayüz üretmiyor.
+
+`src/renderer/i18n/__tests__/coverage.test.ts` kaynak koddaki bütün `t()`
+çağrılarını tarayıp sözlükte karşılığı olmayanları isim isim rapor ediyor; ayrıca
+`{ad}` yer tutucularının çeviride korunduğunu doğruluyor. Yeni bir metin ekleyip
+çevirisini unutmak bu yüzden testte kırmızı veriyor, üretimde sessiz kalmıyor.
+
 ### Gömülü git
 
 Uygulama git'i kendisi taşıyor (dugite). Bunun iki faydası var: kullanıcının
@@ -206,10 +221,8 @@ Faz 0–5 tamamlandı. Faz 5'te gömülü git'e geçildi, tanılama ve günlük 
 uygulama ikonu, azaltılmış hareket desteği, uçtan uca testler ve dağıtım
 yapılandırması eklendi.
 
-Kalanlar:
+Planın tamamı kodlandı. Kalanlar:
 
-- **İngilizce arayüz (i18n)** — 29 dosyada yaklaşık 650 metnin çeviri katmanına
-  taşınmasını gerektiriyor; kendi başına bir çalışma turu
 - **Kod imzalama** — ücretli sertifika bekliyor (yukarıya bakın)
 - **Büyük depo profillemesi** — sayfalama ve sanallaştırma var ama 50.000
   commit'lik bir depoda ölçüm yapılmadı

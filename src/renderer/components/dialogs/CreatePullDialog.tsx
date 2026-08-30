@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GitPullRequest } from 'lucide-react';
+import { useT } from '../../i18n';
 import { cn } from '../../lib/cn';
 import { errorMessage, invoke } from '../../lib/ipc';
 import {
@@ -37,6 +38,7 @@ export function CreatePullDialog({
   onOpenChange: (open: boolean) => void;
   currentBranch: string | null;
 }) {
+  const t = useT();
   const { data: branches } = useBranches(repoId);
   const { data: status } = useStatus(repoId);
   const [title, setTitle] = useState('');
@@ -72,7 +74,7 @@ export function CreatePullDialog({
       void client.invalidateQueries({ queryKey: keys.pulls(repoId) });
       toast({
         kind: 'success',
-        title: `#${pull.number} açıldı`,
+        title: t('#{number} açıldı', { number: pull.number }),
         description: pull.title,
       });
       setTitle('');
@@ -80,7 +82,7 @@ export function CreatePullDialog({
       onOpenChange(false);
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'PR açılamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('PR açılamadı'), description: errorMessage(error) }),
   });
 
   const unpushed = (status?.ahead ?? 0) > 0 || !status?.upstream;
@@ -89,17 +91,17 @@ export function CreatePullDialog({
     <DialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title="Pull request oluştur"
+      title={t('Pull request oluştur')}
       description={
         currentBranch
-          ? `${currentBranch} dalındaki değişiklikler için.`
-          : 'Önce bir dala geçmen gerekiyor.'
+          ? t('{branch} dalındaki değişiklikler için.', { branch: currentBranch })
+          : t('Önce bir dala geçmen gerekiyor.')
       }
       width="lg"
       footer={
         <>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Vazgeç
+            {t('Vazgeç')}
           </Button>
           <Button
             variant="primary"
@@ -108,7 +110,7 @@ export function CreatePullDialog({
             onClick={() => create.mutate()}
           >
             <GitPullRequest className="size-3.5" />
-            {draft ? 'Taslak olarak aç' : 'Aç'}
+            {draft ? t('Taslak olarak aç') : t('Aç')}
           </Button>
         </>
       }
@@ -122,36 +124,35 @@ export function CreatePullDialog({
 
         {unpushed && currentBranch && (
           <p className="rounded-md bg-warn-tint px-2.5 py-2 text-[11px] text-ink">
-            Bu dalda gönderilmemiş commit’ler var. PR açılmadan önce dal otomatik olarak
-            gönderilecek.
+            {t('Bu dalda gönderilmemiş commit’ler var. PR açılmadan önce dal otomatik olarak gönderilecek.')}
           </p>
         )}
 
-        <Field label="Başlık">
+        <Field label={t('Başlık')}>
           <TextInput
             value={title}
             onChange={setTitle}
-            placeholder="Neyi değiştiriyor?"
+            placeholder={t('Neyi değiştiriyor?')}
             autoFocus
           />
         </Field>
 
         <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-ink">Açıklama</span>
+          <span className="text-[12px] font-medium text-ink">{t('Açıklama')}</span>
           <textarea
             value={body}
             onChange={(event) => setBody(event.target.value)}
             rows={6}
-            placeholder="Ne yaptığını ve neden yaptığını anlat."
+            placeholder={t('Ne yaptığını ve neden yaptığını anlat.')}
             className="selectable w-full resize-none rounded-md border border-line bg-ground px-2 py-1.5 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
           />
         </label>
 
         <div className="flex flex-col gap-1.5">
-          <SectionLabel>Hedef dal</SectionLabel>
+          <SectionLabel>{t('Hedef dal')}</SectionLabel>
           {baseOptions.length === 0 ? (
             <p className="rounded-md bg-surface-2 px-2.5 py-2 text-[11px] text-ink-2">
-              Uzak sunucuda başka dal görünmüyor. Önce fetch etmeyi dene.
+              {t('Uzak sunucuda başka dal görünmüyor. Önce fetch etmeyi dene.')}
             </p>
           ) : (
             <div className="flex flex-wrap gap-1">
@@ -181,7 +182,7 @@ export function CreatePullDialog({
             onChange={(event) => setDraft(event.target.checked)}
             className="size-3.5 accent-[var(--accent)]"
           />
-          Taslak olarak aç — henüz incelenmeye hazır değil
+          {t('Taslak olarak aç — henüz incelenmeye hazır değil')}
         </label>
       </div>
     </DialogShell>

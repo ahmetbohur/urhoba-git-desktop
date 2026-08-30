@@ -168,6 +168,7 @@ export const inputSchemas = {
   'settings:get': z.undefined(),
   'settings:set': z.object({
     theme: z.enum(['system', 'light', 'dark']).optional(),
+    language: z.enum(['tr', 'en']).optional(),
     autoFetchIntervalMinutes: z.number().int().min(1).max(1440).optional(),
     sideBySideDiff: z.boolean().optional(),
     lastOpenedRepoId: z.string().nullable().optional(),

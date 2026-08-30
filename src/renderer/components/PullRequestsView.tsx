@@ -7,6 +7,7 @@ import {
   Plus,
   RefreshCw,
 } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { relativeTime } from '../lib/format';
 import { errorMessage, invoke } from '../lib/ipc';
@@ -42,6 +43,7 @@ function PullRow({
   onCheckout: () => void;
   isCheckingOut: boolean;
 }) {
+  const t = useT();
   const Icon = pull.isDraft ? GitPullRequestDraft : GitPullRequest;
 
   return (
@@ -55,8 +57,8 @@ function PullRow({
           <span className="font-mono text-ink-3">#{pull.number}</span>
           <span>@{pull.authorLogin}</span>
           <span className="text-ink-3">{relativeTime(pull.updatedAt)}</span>
-          {pull.isDraft && <Badge tone="neutral">taslak</Badge>}
-          {pull.headRepoFullName && <Badge tone="warn">fork</Badge>}
+          {pull.isDraft && <Badge tone="neutral">{t('taslak')}</Badge>}
+          {pull.headRepoFullName && <Badge tone="warn">{t('fork')}</Badge>}
           {pull.commentCount > 0 && (
             <span className="flex items-center gap-0.5 text-ink-3">
               <MessageSquare className="size-3" />
@@ -74,7 +76,7 @@ function PullRow({
           <ExternalLink className="size-3.5" />
         </Button>
         <Button size="sm" variant="secondary" loading={isCheckingOut} onClick={onCheckout}>
-          Bu dala geç
+          {t('Bu dala geç')}
         </Button>
       </div>
     </div>
@@ -82,6 +84,7 @@ function PullRow({
 }
 
 export function PullRequestsView({ repoId }: { repoId: string }) {
+  const t = useT();
   const { data: auth, isLoading: authLoading } = useGithubStatus();
   const { data: context, isLoading: contextLoading } = useRepoContext(repoId);
   const { data: status } = useStatus(repoId);
@@ -107,12 +110,12 @@ export function PullRequestsView({ repoId }: { repoId: string }) {
       invalidate(repoId);
       toast({
         kind: result.outcome === 'switched' ? 'success' : 'warning',
-        title: 'PR dalı',
+        title: t('PR dalı'),
         description: result.message,
       });
     },
     onError: (error_) =>
-      toast({ kind: 'error', title: 'PR dalına geçilemedi', description: errorMessage(error_) }),
+      toast({ kind: 'error', title: t('PR dalına geçilemedi'), description: errorMessage(error_) }),
   });
 
   if (authLoading || contextLoading) {
@@ -128,11 +131,11 @@ export function PullRequestsView({ repoId }: { repoId: string }) {
       <>
         <EmptyState
           icon={<GitPullRequest className="size-6" />}
-          title="GitHub hesabı bağlı değil"
-          description="Pull request’leri görmek ve açmak için bir kişisel erişim jetonuyla bağlan."
+          title={t('GitHub hesabı bağlı değil')}
+          description={t('Pull request’leri görmek ve açmak için bir kişisel erişim jetonuyla bağlan.')}
           action={
             <Button variant="primary" onClick={() => setSignInOpen(true)}>
-              GitHub’a bağlan
+              {t('GitHub’a bağlan')}
             </Button>
           }
         />
@@ -145,11 +148,14 @@ export function PullRequestsView({ repoId }: { repoId: string }) {
     return (
       <EmptyState
         icon={<GitPullRequest className="size-6" />}
-        title="Bu depo GitHub’da değil"
+        title={t('Bu depo GitHub’da değil')}
         description={
           context
-            ? `Uzak sunucu ${context.host} adresini gösteriyor. Pull request desteği şimdilik yalnızca github.com için var.`
-            : 'Depoda tanımlı bir uzak sunucu yok. Ayarlardan bir remote ekleyebilirsin.'
+            ? t(
+                'Uzak sunucu {host} adresini gösteriyor. Pull request desteği şimdilik yalnızca github.com için var.',
+                { host: context.host },
+              )
+            : t('Depoda tanımlı bir uzak sunucu yok. Ayarlardan bir remote ekleyebilirsin.')
         }
       />
     );
@@ -161,7 +167,7 @@ export function PullRequestsView({ repoId }: { repoId: string }) {
         <SectionLabel>
           {context?.owner}/{context?.name}
         </SectionLabel>
-        {pulls && <Badge tone="accent">{pulls.length} açık</Badge>}
+        {pulls && <Badge tone="accent">{t('{count} açık', { count: pulls.length })}</Badge>}
         <div className="flex-1" />
         <Button
           size="sm"
@@ -170,7 +176,7 @@ export function PullRequestsView({ repoId }: { repoId: string }) {
           onClick={() => void client.invalidateQueries({ queryKey: keys.pulls(repoId) })}
         >
           <RefreshCw className="size-3.5" />
-          Tazele
+          {t('Tazele')}
         </Button>
         <Button
           size="sm"
@@ -179,7 +185,7 @@ export function PullRequestsView({ repoId }: { repoId: string }) {
           onClick={() => setCreateOpen(true)}
         >
           <Plus className="size-3.5" />
-          PR oluştur
+          {t('PR oluştur')}
         </Button>
       </div>
 
@@ -190,21 +196,21 @@ export function PullRequestsView({ repoId }: { repoId: string }) {
           </div>
         ) : error ? (
           <EmptyState
-            title="Pull request’ler alınamadı"
+            title={t('Pull request’ler alınamadı')}
             description={errorMessage(error)}
             action={
               <Button
                 variant="secondary"
                 onClick={() => void client.invalidateQueries({ queryKey: keys.pulls(repoId) })}
               >
-                Tekrar dene
+                {t('Tekrar dene')}
               </Button>
             }
           />
         ) : (pulls?.length ?? 0) === 0 ? (
           <EmptyState
-            title="Açık pull request yok"
-            description="Bir özellik dalında çalışıyorsan yukarıdan yeni bir PR açabilirsin."
+            title={t('Açık pull request yok')}
+            description={t('Bir özellik dalında çalışıyorsan yukarıdan yeni bir PR açabilirsin.')}
           />
         ) : (
           pulls?.map((pull) => (

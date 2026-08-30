@@ -104,6 +104,33 @@ test('depo eklenince değişiklikler ve geçmiş görünüyor', async () => {
   await expect(page.getByText('İlk commit')).toBeVisible({ timeout: 15_000 });
 });
 
+test('arayüz dili İngilizceye çevrilebiliyor', async () => {
+  // Dil ayarı doğrudan ayar kanalından değiştiriliyor; amacımız çeviri
+  // katmanının gerçekten devreye girdiğini görmek, ayar penceresini tıklamak değil.
+  await page.evaluate(() => window.urhoba.invoke('settings:set', { language: 'en' }));
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+
+  await expect(page.getByRole('tab', { name: 'Changes' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('tab', { name: 'History' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Pull requests' })).toBeVisible();
+
+  // Değişken içeren metinler de çevrilmeli.
+  await expect(page.getByText(/1 changes/)).toBeVisible();
+
+  // Komut paleti de İngilizce.
+  await page.keyboard.press('Control+k');
+  await expect(page.getByPlaceholder('Search commands, repositories or branches')).toBeVisible();
+  await expect(page.getByText('Go to History')).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  // Türkçeye geri dön ki sonraki testler etkilenmesin.
+  await page.evaluate(() => window.urhoba.invoke('settings:set', { language: 'tr' }));
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await expect(page.getByRole('tab', { name: 'Değişiklikler' })).toBeVisible({ timeout: 15_000 });
+});
+
 test('git komut günlüğü çalışan komutları gösteriyor', async () => {
   await page.keyboard.press('Control+Shift+G');
   await expect(page.getByText('Git komutları')).toBeVisible();

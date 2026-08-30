@@ -1,0 +1,542 @@
+/**
+ * İngilizce sözlük.
+ *
+ * Anahtarlar arayüzdeki Türkçe metinlerin kendisi. Bir anahtar burada yoksa
+ * arayüz Türkçe metni gösterir — yani eksik çeviri bozuk arayüz üretmiyor,
+ * yalnızca o cümle çevrilmemiş kalıyor.
+ *
+ * `{ad}` biçimindeki yer tutucular korunmak zorunda; çeviride cümle sırası
+ * değişebilir ama yer tutucunun adı aynı kalmalı.
+ */
+export const en: Record<string, string> = {
+  // --- Genel eylemler ---
+  'Vazgeç': 'Cancel',
+  'Kapat': 'Close',
+  'Kaydet': 'Save',
+  'Ekle': 'Add',
+  'Sil': 'Delete',
+  'Seç': 'Choose',
+  'Aç': 'Open',
+  'Açık': 'Light',
+  'Koyu': 'Dark',
+  'Sistem': 'System',
+  'Kopyala': 'Copy',
+  'Gönder': 'Push',
+  'Uygula': 'Apply',
+  'Uygula ve sil': 'Apply and drop',
+  'Temizle': 'Clear',
+  'Tekrar dene': 'Try again',
+  'Tazele': 'Refresh',
+  'Devam et': 'Continue',
+  'İptal et': 'Abort',
+  'Geri al': 'Discard',
+  'Hazırla': 'Stage',
+  'Hazırlıktan çıkar': 'Unstage',
+  'Üret': 'Generate',
+  'Bağlan': 'Connect',
+  'Etiketle': 'Create tag',
+  'Sıfırla': 'Reset',
+  'Sakla': 'Stash',
+  'Klonla': 'Clone',
+  'Bu işlem geri alınamaz.': 'This cannot be undone.',
+  'Bildirimi kapat': 'Dismiss notification',
+  'İçeriğe atla': 'Skip to content',
+
+  // --- Kenar çubuğu ve depolar ---
+  'Depolar': 'Repositories',
+  'Depolarda ara': 'Search repositories',
+  'Henüz depo yok': 'No repositories yet',
+  'Eşleşen depo yok': 'No matching repository',
+  'Eşleşen depo yok.': 'No matching repository.',
+  'Farklı bir arama dene.': 'Try a different search.',
+  'Diskteki bir klasörü ekle ya da uzak bir depoyu klonla.':
+    'Add a folder from disk or clone a remote repository.',
+  'Klasörü aç': 'Open folder',
+  'Listeden çıkar': 'Remove from list',
+  'Depo eklenemedi': 'Could not add repository',
+  'Otomatik pull açık': 'Auto pull is on',
+  '{name} için işlemler': 'Actions for {name}',
+  '{name} deposunu aç': 'Open {name}',
+  'Depo ekle…': 'Add repository…',
+  'Depo görünümleri': 'Repository views',
+  'Başlamak için soldan bir depo ekle ya da uzak bir depoyu klonla. Komut paletini Ctrl/Cmd + K ile açabilirsin.':
+    'To get started, add a repository from the left or clone a remote one. Press Ctrl/Cmd + K for the command palette.',
+
+  // --- Sekmeler ---
+  'Değişiklikler': 'Changes',
+  'Geçmiş': 'History',
+  'Pull request’ler': 'Pull requests',
+
+  // --- Üst çubuk ---
+  'Fetch': 'Fetch',
+  'Pull': 'Pull',
+  'Push': 'Push',
+  'Fetch tamamlandı': 'Fetch complete',
+  'Fetch başarısız': 'Fetch failed',
+  'Pull başarısız': 'Pull failed',
+  'Push tamamlandı': 'Push complete',
+  'Push başarısız': 'Push failed',
+  'Push seçenekleri': 'Push options',
+  'Zorlamalı push': 'Force push',
+  'Zorlamalı gönder': 'Force push',
+  'Geçmişi yeniden yazdıysan gerekir': 'Needed if you rewrote history',
+  'Uzak dalda {count} yeni commit var.': 'The remote branch has {count} new commits.',
+  'Yeni commit yok.': 'No new commits.',
+  'Uzak dalda senin görmediğin commit’ler varsa önce fetch et.':
+    'If the remote branch has commits you have not seen, fetch first.',
+  'Uzak daldaki commit’lerin üzerine yazılacak. Bu yalnızca geçmişi yeniden yazdıysan (amend, rebase, reset) gerekir.':
+    'Commits on the remote branch will be overwritten. You only need this after rewriting history (amend, rebase, reset).',
+  'ayrık HEAD': 'detached HEAD',
+  'Birleştirme sürüyor': 'Merge in progress',
+  'Rebase sürüyor': 'Rebase in progress',
+  'Cherry-pick sürüyor': 'Cherry-pick in progress',
+  'Revert sürüyor': 'Revert in progress',
+  'Bisect sürüyor': 'Bisect in progress',
+  'GitHub bağlantısı': 'GitHub connection',
+  'Etiketler': 'Tags',
+  'SSH kurulumu': 'SSH setup',
+  'Git komut günlüğü': 'Git command log',
+  'Ayarlar': 'Settings',
+
+  // --- Dallar ---
+  'Yerel': 'Local',
+  'Uzak': 'Remote',
+  'Dal ara': 'Search branches',
+  'Dal ara veya yeni dal adı yaz': 'Search branches or type a new name',
+  'Eşleşen dal yok.': 'No matching branch.',
+  'commit yok': 'no commits',
+  'dalını oluştur ve geç': 'and switch to it',
+  'dalını buraya birleştir': 'into this branch',
+  'Dalı sil': 'Delete branch',
+  'Dal değiştirilemedi': 'Could not switch branch',
+  'Dal değiştirme': 'Switch branch',
+  'Dal silinemedi': 'Could not delete branch',
+  'Birleştirilemedi': 'Could not merge',
+  'Birleştirme': 'Merge',
+  'Rebase': 'Rebase',
+  'Rebase yapılamadı': 'Could not rebase',
+  'Saklandı ve geçildi': 'Stashed and switched',
+  'Geçiş yapılamadı': 'Could not switch',
+  'Sakla ve geç': 'Stash and switch',
+  'Kaydedilmemiş değişiklikler engelliyor': 'Uncommitted changes are in the way',
+  'Birleştirilmemiş commit’ler varsa silmeyi zorlaman gerekir.':
+    'If it has unmerged commits you will need to force the deletion.',
+  '{name} dalı silindi': 'Deleted branch {name}',
+  '{name} dalı oluşturuldu': 'Created branch {name}',
+  'Dal oluşturulamadı': 'Could not create branch',
+  '{name} dalına geçmeden önce': 'before switching to {name}',
+  '{branch} dalına geç': 'Switch to {branch}',
+
+  // --- Değişiklikler ---
+  'Değişiklik yok': 'No changes',
+  '{count} değişiklik': '{count} changes',
+  'Tümünü hazırla': 'Stage all',
+  'Tümünü çıkar': 'Unstage all',
+  'Çakışan dosyalar': 'Conflicted files',
+  'Commit için hazır': 'Staged for commit',
+  'Hazırlanmamış değişiklikler': 'Unstaged changes',
+  'Commit için hazırla': 'Stage for commit',
+  'Sistemde aç': 'Open in system',
+  '.gitignore’a ekle': 'Add to .gitignore',
+  'Değişiklikleri geri al': 'Discard changes',
+  'Çalışma dizini temiz': 'Working tree is clean',
+  'Dosyaları düzenlediğinde değişiklikler burada belirir.':
+    'Changes appear here as you edit files.',
+  'Çalışma dizini': 'Working tree',
+  'Hazırlanmış hâli': 'Staged version',
+  '{path} dosyasını hazırla': 'Stage {path}',
+  '{path} dosyasını hazırlıktan çıkar': 'Unstage {path}',
+  'dosyasındaki kaydedilmemiş değişiklikler kalıcı olarak silinecek. Bu işlem geri alınamaz.':
+    'will lose its uncommitted changes permanently. This cannot be undone.',
+  '{count} dosyanın değişiklikleri geri alındı': 'Discarded changes in {count} files',
+  '{path} .gitignore’a eklendi': 'Added {path} to .gitignore',
+  'Hazırlanamadı': 'Could not stage',
+  'Çıkarılamadı': 'Could not unstage',
+  'Geri alınamadı': 'Could not discard',
+  'Eklenemedi': 'Could not add',
+  'Dosya açılamadı': 'Could not open file',
+  'Satırlar uygulanamadı': 'Could not apply lines',
+  'Seçili satırlar hazırlandı': 'Selected lines staged',
+  'Seçili satırlar hazırlıktan çıkarıldı': 'Selected lines unstaged',
+  'Seçili satırlar geri alındı': 'Selected lines discarded',
+
+  // --- Dosya durumları ---
+  'eklendi': 'added',
+  'değişti': 'modified',
+  'silindi': 'deleted',
+  'yeniden adlandırıldı': 'renamed',
+  'kopyalandı': 'copied',
+  'takip edilmiyor': 'untracked',
+  'çakışma': 'conflict',
+  'tür değişti': 'type changed',
+
+  // --- Commit kutusu ---
+  'Özet (zorunlu)': 'Summary (required)',
+  'Son commit mesajını düzenle': 'Edit the last commit message',
+  'Commit özeti': 'Commit summary',
+  'Açıklama (isteğe bağlı)': 'Description (optional)',
+  'Commit açıklaması': 'Commit description',
+  'Son commit’i düzelt': 'Amend last commit',
+  'Commit’i düzelt': 'Amend commit',
+  'Commit’le': 'Commit',
+  '{count} dosyayı commit’le': 'Commit {count} files',
+  'Commit oluşturuldu': 'Commit created',
+  'Commit başarısız': 'Commit failed',
+
+  // --- Diff ---
+  'Dosya seçilmedi': 'No file selected',
+  'Değişiklikleri görmek için soldaki listeden bir dosyaya tıkla.':
+    'Click a file in the list to see its changes.',
+  'Yan yana göster': 'Side by side',
+  'Tek sütuna geç': 'Single column',
+  '{count} satır seçili': '{count} lines selected',
+  'Seçimi temizle': 'Clear selection',
+  'Bu bloğu seç': 'Select this hunk',
+  'İkili dosya': 'Binary file',
+  'Bu dosyanın içeriği metin olarak karşılaştırılamıyor.':
+    'This file cannot be compared as text.',
+  'Diff çok büyük': 'Diff is too large',
+  'Bu dosyanın farkı arayüzde gösterilemeyecek kadar büyük.':
+    'This diff is too large to display.',
+  'Fark yok': 'No differences',
+  'Bu dosyada gösterilecek bir değişiklik yok.': 'This file has no changes to show.',
+
+  // --- Geçmiş ---
+  'Geçmiş boş': 'History is empty',
+  'Filtreye uyan commit yok': 'No commits match the filter',
+  'Filtreyi gevşetmeyi dene.': 'Try relaxing the filter.',
+  'Bu depoda henüz commit yok. İlk commit’ini oluşturduğunda burada görünecek.':
+    'No commits yet. Your first commit will show up here.',
+  'Commit seç': 'Select a commit',
+  'Soldaki listeden bir commit’e tıklayarak içindeki değişiklikleri gör. Sağ tıkla revert, reset ve etiket seçeneklerine ulaşabilirsin.':
+    'Click a commit to see its changes. Right-click for revert, reset and tag options.',
+  'merge': 'merge',
+  'SHA’yı kopyala': 'Copy SHA',
+  'SHA kopyalandı': 'SHA copied',
+  'Bu commit’i etiketle…': 'Tag this commit…',
+  'Bu commit’i geri al (revert)': 'Revert this commit',
+  'Bu commit’e sıfırla (reset)…': 'Reset to this commit…',
+  'Bu commit’e sıfırla': 'Reset to this commit',
+  'Commit’i geri al': 'Revert commit',
+  'Revert': 'Revert',
+  'commit’inin değişikliklerini geri alan yeni bir commit oluşturulacak. Geçmiş silinmez, bu yüzden paylaşılmış dallarda güvenlidir.':
+    'will get a new commit that undoes its changes. History is preserved, so this is safe on shared branches.',
+  'commit’ine taşınacak. Bu dal başkalarıyla paylaşıldıysa dikkatli ol: karşı tarafta ayrılmış bir geçmiş bırakır.':
+    '. Be careful if this branch is shared: it leaves others with diverged history.',
+  'Yumuşak': 'Soft',
+  'Karışık': 'Mixed',
+  'Sert': 'Hard',
+  'Commit’ler geri alınır, değişiklikler hazırlıkta kalır.':
+    'Commits are undone; changes stay staged.',
+  'Commit’ler geri alınır, değişiklikler hazırlık dışında kalır.':
+    'Commits are undone; changes stay unstaged.',
+  'Commit’ler ve çalışma dizinindeki değişiklikler silinir. Geri dönüşü yok.':
+    'Commits and working tree changes are deleted. No way back.',
+  'Sıfırlanamadı': 'Could not reset',
+  'HEAD {sha} commit’ine taşındı': 'HEAD moved to {sha}',
+  '{count} dosya': '{count} files',
+  '{sha} içindeki hâli': 'as of {sha}',
+
+  // --- Geçmiş filtresi ---
+  'Filtre': 'Filter',
+  'Geçmişi süz': 'Filter history',
+  'Mesaj': 'Message',
+  'Commit mesajında ara': 'Search commit messages',
+  'Yazar': 'Author',
+  'Ad veya e-posta': 'Name or email',
+  'Dosya yolu': 'File path',
+  'Başlangıç': 'From',
+  'Bitiş': 'To',
+  'mesaj': 'message',
+  'yazar': 'author',
+  'yol': 'path',
+  'başlangıç': 'from',
+  'bitiş': 'to',
+  '{label} filtresini kaldır': 'Remove {label} filter',
+  '{count} commit yüklendi': '{count} commits loaded',
+  'Sonuç yok': 'No results',
+
+  // --- Çakışma çözümü ---
+  'Çakışma': 'Conflict',
+  '(boş)': '(empty)',
+  'ile': 'and',
+  'arasında çakışma': 'are in conflict',
+  'Bizimki': 'Ours',
+  'Onlarki': 'Theirs',
+  'İkisi': 'Both',
+  'Editörde aç': 'Open in editor',
+  'Çözüldü olarak işaretle': 'Mark as resolved',
+  'Çözülemedi': 'Could not resolve',
+  '{path} çözüldü ve hazırlandı': 'Resolved and staged {path}',
+  '{count} çakışma bloğu — her biri için bir taraf seç':
+    '{count} conflict blocks — pick a side for each',
+  'Bu dosyada çakışma işareti kalmamış': 'No conflict markers left in this file',
+  'İkili dosyada çakışma': 'Conflict in a binary file',
+  'Bu dosya metin olarak birleştirilemiyor. Hangi sürümü tutacağına karar verip dosyayı elle düzenle.':
+    'This file cannot be merged as text. Decide which version to keep and edit it yourself.',
+
+  // --- Yarım kalmış işlem ---
+  'İşlem': 'Operation',
+  '{label} yarıda kaldı': '{label} is unfinished',
+  '{count} dosyada çakışma çözülmeyi bekliyor. Her birini çözüp hazırladıktan sonra devam et.':
+    '{count} files have conflicts waiting. Resolve and stage each, then continue.',
+  'Bütün çakışmalar çözüldü. İşlemi tamamlayabilirsin.':
+    'All conflicts are resolved. You can finish the operation.',
+  'İşlem iptal edildi': 'Operation aborted',
+  'Depo önceki hâline döndü.': 'The repository is back to its previous state.',
+  'İptal edilemedi': 'Could not abort',
+  'Devam edilemedi': 'Could not continue',
+
+  // --- Stash ---
+  'Stash': 'Stash',
+  'Değişiklikleri sakla': 'Stash changes',
+  'Çalışma dizinini temizler, değişiklikleri kenara alır. Dal değiştirmeden önce işine yarar.':
+    'Clears the working tree and sets your changes aside. Useful before switching branches.',
+  'Stash açıklaması': 'Stash description',
+  'Takip edilmeyen dosyalar da dahil olsun': 'Include untracked files',
+  'Saklanacak değişiklik yok': 'Nothing to stash',
+  'Saklananlar ({count})': 'Stashes ({count})',
+  'Henüz stash yok.': 'No stashes yet.',
+  'Stash’i sil': 'Drop stash',
+  'Değişiklikler saklandı': 'Changes stashed',
+  'Saklanamadı': 'Could not stash',
+  'Stash uygulandı': 'Stash applied',
+  'Uygulanamadı': 'Could not apply',
+  'Stash silindi': 'Stash dropped',
+  'Silinemedi': 'Could not delete',
+
+  // --- Otomatik pull ---
+  'Otomatik pull': 'Auto pull',
+  'Otomatik pull başarısız': 'Auto pull failed',
+  'Oto pull kapalı': 'Auto pull off',
+  'Oto pull · {minutes} dk': 'Auto pull · {minutes} min',
+  'Uzak sunucudaki değişiklikleri arka planda çeker. Bu ayar yalnızca bu depo için geçerlidir.':
+    'Pulls remote changes in the background. This setting applies to this repository only.',
+  'Belirlenen aralıkta uzak dalı kontrol et.': 'Check the remote branch on this interval.',
+  'Aralık': 'Interval',
+  '{minutes} dk': '{minutes} min',
+  'Sadece çalışma dizini temizken': 'Only when the working tree is clean',
+  'Kaydedilmemiş değişiklik varsa dokunma.': 'Do nothing if there are uncommitted changes.',
+  'Sadece fast-forward': 'Fast-forward only',
+  'Geçmişler ayrıldıysa birleştirme yapma, kararı sana bırak.':
+    'Do not merge when histories diverge; leave the decision to you.',
+  'Bu oturumda henüz otomatik pull çalışmadı.': 'Auto pull has not run yet this session.',
+  'Şimdi çek': 'Pull now',
+  'Ayar kaydedilemedi': 'Could not save setting',
+
+  // --- Ayarlar ---
+  'Görünüm ve dil': 'Appearance and language',
+  'Arayüz dili': 'Interface language',
+  'Diff’i yan yana göster': 'Show diffs side by side',
+  'Kapalıyken eski ve yeni satırlar tek sütunda alt alta gösterilir.':
+    'When off, old and new lines are shown stacked in one column.',
+  'Bu depo': 'This repository',
+  'Arka planda fetch': 'Background fetch',
+  'Uzak dalın kaç commit ilerde olduğunu tazeler; yerel dosyalara dokunmaz.':
+    'Refreshes how far ahead the remote branch is; never touches local files.',
+  'Bu deponun otomatik pull ayarları üst çubuktaki “Oto pull” düğmesinde.':
+    'Auto pull settings for this repository live in the “Auto pull” button in the top bar.',
+  'Yeni depolar için varsayılan otomatik pull': 'Default auto pull for new repositories',
+  'Açık gelsin': 'Enabled by default',
+  'Yeni eklenen depolarda otomatik pull baştan etkin olsun.':
+    'Turn auto pull on for newly added repositories.',
+  'Kaydedilmemiş değişiklik varken otomatik pull denenmesin.':
+    'Skip auto pull when there are uncommitted changes.',
+  'Arka planda merge commit’i üretilmesin.': 'Never create a merge commit in the background.',
+
+  // --- Uzak sunucular ---
+  'Uzak sunucular': 'Remotes',
+  'Tanımlı uzak sunucu yok. Push edebilmek için bir tane eklemen gerekiyor.':
+    'No remotes configured. You need one before you can push.',
+  '{name} adresini düzenle': 'Edit {name} URL',
+  '{name} sunucusunu kaldır': 'Remove remote {name}',
+  'Uzak sunucu eklendi': 'Remote added',
+  'Uzak sunucu kaldırıldı': 'Remote removed',
+  'Adres güncellendi': 'URL updated',
+  'Güncellenemedi': 'Could not update',
+  'Kaldırılamadı': 'Could not remove',
+
+  // --- Klonlama ---
+  'Depo klonla': 'Clone repository',
+  'SSH adresi kullanman önerilir; HTTPS’te her işlemde kimlik doğrulaması gerekir.':
+    'Prefer an SSH URL; HTTPS asks for credentials on every operation.',
+  'Depo adresi': 'Repository URL',
+  'Örnek: git@github.com:kullanici/depo.git': 'Example: git@github.com:user/repo.git',
+  'Hedef konum': 'Destination',
+  'Klasör seç': 'Choose a folder',
+  'Klasör adı': 'Folder name',
+  'Boş bırakırsan adres son parçasından türetilir.':
+    'Left empty, it is derived from the last part of the URL.',
+  'GitHub depolarım': 'My GitHub repositories',
+  'Depo ara': 'Search repositories',
+  'GitHub depolarında ara': 'Search GitHub repositories',
+  'açıklama yok': 'no description',
+  '{name} klonlandı': 'Cloned {name}',
+  'Klonlama başarısız': 'Clone failed',
+  '{phase} — %{percent}': '{phase} — {percent}%',
+  'Nesneler sayılıyor': 'Counting objects',
+  'Nesneler sıkıştırılıyor': 'Compressing objects',
+  'İndiriliyor': 'Downloading',
+  'Değişiklikler çözülüyor': 'Resolving deltas',
+  'Dosyalar yazılıyor': 'Writing files',
+
+  // --- Etiketler ---
+  'Etiket': 'Label',
+  'Etiket adı': 'Tag name',
+  'Örnek: v1.0.0': 'Example: v1.0.0',
+  'Doldurursan açıklamalı etiket oluşur — sürüm notu için doğru olan bu. Boş bırakırsan hafif etiket olur.':
+    'Filling this creates an annotated tag — the right choice for release notes. Left empty you get a lightweight tag.',
+  'Sürüm notu': 'Release note',
+  'Mevcut etiketler ({count})': 'Existing tags ({count})',
+  'Bu depoda etiket yok.': 'No tags in this repository.',
+  'açıklamalı': 'annotated',
+  'hafif': 'lightweight',
+  'mesaj yok': 'no message',
+  '{name} etiketini sil': 'Delete tag {name}',
+  '{name} etiketi oluşturuldu': 'Created tag {name}',
+  '{name} uzak sunucuya gönderildi': 'Pushed {name} to the remote',
+  'Etiket oluşturulamadı': 'Could not create tag',
+  'Etiket silindi': 'Tag deleted',
+  'Etiket silinemedi': 'Could not delete tag',
+  'Etiket gönderilemedi': 'Could not push tag',
+  'Yeni etiket {sha} commit’ine takılacak.': 'The new tag will point at {sha}.',
+  'Yeni etiket geçerli HEAD’e takılacak.': 'The new tag will point at the current HEAD.',
+
+  // --- SSH ---
+  'GitHub’a SSH ile bağlanmak için sistemdeki anahtarlar kullanılır. Uygulama hiçbir özel anahtarı kendi saklamaz.':
+    'Your system SSH keys are used to reach GitHub. The app never stores a private key itself.',
+  'ssh-agent': 'ssh-agent',
+  'çalışıyor': 'running',
+  'çalışmıyor': 'not running',
+  'Parolalı anahtarlar agent olmadan arka planda kullanılamaz.':
+    'Passphrase-protected keys cannot be used in the background without an agent.',
+  'Yeni anahtar': 'New key',
+  'GitHub bağlantısını sına': 'Test GitHub connection',
+  'Anahtarlar ({count})': 'Keys ({count})',
+  '~/.ssh içinde anahtar yok': 'No keys in ~/.ssh',
+  '“Yeni anahtar” ile bir tane üret, public key’i GitHub hesabına ekle, sonra bağlantıyı sına.':
+    'Generate one with “New key”, add the public key to your GitHub account, then test the connection.',
+  'agent’ta yüklü': 'loaded in agent',
+  'agent’ta değil': 'not in agent',
+  'Public key kopyalandı': 'Public key copied',
+  'GitHub → Settings → SSH and GPG keys → New SSH key ekranına yapıştır.':
+    'Paste it into GitHub → Settings → SSH and GPG keys → New SSH key.',
+  'Parolasız bir ed25519 anahtarı üretilir ve mümkünse ssh-agent’a eklenir. Parolasız anahtar, arka plandaki otomatik pull’un takılmadan çalışmasını sağlar; anahtar dosyasını koruma sorumluluğu sende.':
+    'A passphrase-free ed25519 key is generated and added to ssh-agent when possible. No passphrase keeps background auto pull from stalling; protecting the key file is up to you.',
+  'Genelde e-posta adresin — anahtarı tanımana yarar.':
+    'Usually your email address — it helps you recognise the key.',
+  'Dosya adı': 'File name',
+  '~/.ssh içinde bu adla oluşturulur.': 'Created under ~/.ssh with this name.',
+  'Sistemde ssh-keygen bulunamadı; anahtarı elle üretmen gerekiyor.':
+    'ssh-keygen was not found; you will need to generate the key yourself.',
+  'Anahtar üretildi': 'Key generated',
+  'Anahtar üretilemedi': 'Could not generate key',
+  '{path} — public key’i GitHub hesabına eklemeyi unutma.':
+    '{path} — remember to add the public key to your GitHub account.',
+
+  // --- GitHub ---
+  'Pull request’leri görmek ve açmak için bir kişisel erişim jetonu gerekiyor.':
+    'A personal access token is required to see and open pull requests.',
+  'Jeton durumu': 'Token status',
+  'anahtarlıkta şifreli': 'encrypted in keychain',
+  'yalnızca bu oturumda': 'this session only',
+  'ince ayarlı jeton': 'fine-grained token',
+  'İşletim sisteminde anahtarlık bulunamadı. Jetonu korumasız diske yazmak yerine yalnızca bellekte tutuyoruz; uygulama kapanınca yeniden girmen gerekecek.':
+    'No system keychain was found. Rather than writing the token to disk unprotected we keep it in memory only; you will need to sign in again after restarting.',
+  'Jetonda repo yetkisi görünmüyor; özel depoları okumak ve PR açmak için gerekebilir.':
+    'The token does not appear to have the repo scope; you may need it to read private repositories and open PRs.',
+  'Bağlantıyı kaldır': 'Disconnect',
+  'GitHub’da repo yetkili bir kişisel erişim jetonu oluştur.':
+    'Create a personal access token with the repo scope on GitHub.',
+  'Jetonu aşağıya yapıştır.': 'Paste the token below.',
+  'Jeton oluşturma sayfasını aç': 'Open the token creation page',
+  'Kişisel erişim jetonu': 'Personal access token',
+  'Jeton yalnızca ana süreçte tutulur ve arayüze hiç aktarılmaz.':
+    'The token stays in the main process and never reaches the interface.',
+  '{login} olarak bağlanıldı': 'Connected as {login}',
+  'Giriş başarısız': 'Sign-in failed',
+  'GitHub bağlantısı kaldırıldı': 'GitHub disconnected',
+
+  // --- Pull request'ler ---
+  'GitHub hesabı bağlı değil': 'No GitHub account connected',
+  'Pull request’leri görmek ve açmak için bir kişisel erişim jetonuyla bağlan.':
+    'Connect with a personal access token to see and open pull requests.',
+  'GitHub’a bağlan': 'Connect to GitHub',
+  'Bu depo GitHub’da değil': 'This repository is not on GitHub',
+  'Uzak sunucu {host} adresini gösteriyor. Pull request desteği şimdilik yalnızca github.com için var.':
+    'The remote points at {host}. Pull request support currently covers github.com only.',
+  'Depoda tanımlı bir uzak sunucu yok. Ayarlardan bir remote ekleyebilirsin.':
+    'The repository has no remote configured. You can add one in settings.',
+  '{count} açık': '{count} open',
+  'PR oluştur': 'New PR',
+  'Pull request’ler alınamadı': 'Could not load pull requests',
+  'Açık pull request yok': 'No open pull requests',
+  'Bir özellik dalında çalışıyorsan yukarıdan yeni bir PR açabilirsin.':
+    'If you are on a feature branch you can open a new PR above.',
+  'taslak': 'draft',
+  'fork': 'fork',
+  'Bu dala geç': 'Check out',
+  'PR dalı': 'PR branch',
+  'PR dalına geçilemedi': 'Could not check out the PR branch',
+  'Pull request oluştur': 'Create pull request',
+  '{branch} dalındaki değişiklikler için.': 'For the changes on {branch}.',
+  'Önce bir dala geçmen gerekiyor.': 'You need to switch to a branch first.',
+  'Bu dalda gönderilmemiş commit’ler var. PR açılmadan önce dal otomatik olarak gönderilecek.':
+    'This branch has unpushed commits. It will be pushed automatically before the PR is opened.',
+  'Başlık': 'Title',
+  'Neyi değiştiriyor?': 'What does it change?',
+  'Açıklama': 'Description',
+  'Ne yaptığını ve neden yaptığını anlat.': 'Explain what you did and why.',
+  'Hedef dal': 'Base branch',
+  'Uzak sunucuda başka dal görünmüyor. Önce fetch etmeyi dene.':
+    'No other branches on the remote. Try fetching first.',
+  'Taslak olarak aç': 'Open as draft',
+  'Taslak olarak aç — henüz incelenmeye hazır değil':
+    'Open as draft — not ready for review yet',
+  '#{number} açıldı': 'Opened #{number}',
+  'PR açılamadı': 'Could not open PR',
+
+  // --- Komut paleti ---
+  'Komut paleti': 'Command palette',
+  'Komut, depo veya dal ara': 'Search commands, repositories or branches',
+  'Komut ara': 'Search commands',
+  'Eşleşen komut yok.': 'No matching command.',
+  'Görünüm': 'View',
+  'Uzak sunucu': 'Remote',
+  'Dallar': 'Branches',
+  'Değişiklikler sekmesine geç': 'Go to Changes',
+  'Geçmiş sekmesine geç': 'Go to History',
+  'Pull request’ler sekmesine geç': 'Go to Pull requests',
+  'Git komut günlüğünü aç/kapat': 'Toggle the git command log',
+  'Uzak dalların durumunu tazeler': 'Refreshes the state of remote branches',
+  'Değişiklikleri sakla (stash)': 'Stash changes',
+  'Otomatik pull’u şimdi çalıştır': 'Run auto pull now',
+  '{count} commit geride': '{count} commits behind',
+  '{count} commit ileride': '{count} commits ahead',
+  '{action} başarısız': '{action} failed',
+
+  // --- Komut günlüğü ---
+  'Git komutları': 'Git commands',
+  '{count} kayıt': '{count} entries',
+  'Henüz komut çalışmadı. Bir işlem yaptığında burada belirir.':
+    'No commands have run yet. They appear here as you work.',
+
+  // --- Tanılama ---
+  'Tanılama': 'Diagnostics',
+  'Günlükleri aç': 'Open logs',
+  'Tanılama bilgisi kopyalandı': 'Diagnostics copied',
+  'gömülü git': 'bundled git',
+  'sistem git’i': 'system git',
+  'Uygulama kendi git sürümünü taşıyor; sistemde git kurulu olması gerekmiyor.':
+    'The app ships its own git; you do not need git installed.',
+  'Gömülü git bulunamadı; sistemde kurulu git kullanılıyor.':
+    'Bundled git was not found; the system git is being used.',
+  'Uygulama': 'Application',
+  'Platform': 'Platform',
+  'Git': 'Git',
+  'Electron': 'Electron',
+  'Chromium': 'Chromium',
+  'Node': 'Node',
+  'Ayar klasörü': 'Settings folder',
+  'Günlük dosyası': 'Log file',
+};

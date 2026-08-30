@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ContextMenu, DropdownMenu } from 'radix-ui';
 import { Check, GitBranch, GitMerge, Plus, Search, Trash2 } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { errorMessage, invoke } from '../lib/ipc';
 import { useBranches, useInvalidateRepo, useMutation } from '../lib/queries';
@@ -17,6 +18,7 @@ import type { Branch } from '@shared/types';
  * yerel izleme dalı oluşturur — insanların beklediği davranış bu.
  */
 export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentBranch: string | null }) {
+  const t = useT();
   const { data: branches } = useBranches(repoId);
   const invalidate = useInvalidateRepo();
   const toast = useUi((s) => s.toast);
@@ -40,10 +42,10 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
         setBlocked({ branch: name, paths: result.blockingPaths });
         return;
       }
-      toast({ kind: 'error', title: 'Dal değiştirilemedi', description: result.message });
+      toast({ kind: 'error', title: t('Dal değiştirilemedi'), description: result.message });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Dal değiştirilemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Dal değiştirilemedi'), description: errorMessage(error) }),
   });
 
   /** Engellenen geçişte: önce sakla, sonra tekrar dene. */
@@ -51,7 +53,7 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
     mutationFn: async (name: string) => {
       await invoke('git:stash-create', {
         repoId,
-        message: `${name} dalına geçmeden önce`,
+        message: t('{name} dalına geçmeden önce', { name }),
         includeUntracked: true,
       });
       return invoke('git:checkout', { repoId, name });
@@ -60,13 +62,13 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
       invalidate(repoId);
       toast({
         kind: result.outcome === 'switched' ? 'success' : 'error',
-        title: result.outcome === 'switched' ? 'Saklandı ve geçildi' : 'Geçiş yapılamadı',
+        title: result.outcome === 'switched' ? t('Saklandı ve geçildi') : t('Geçiş yapılamadı'),
         description: result.message,
       });
       setBlocked(null);
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Saklanamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Saklanamadı'), description: errorMessage(error) }),
   });
 
   const mergeBranch = useMutation({
@@ -80,13 +82,13 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
             : result.outcome === 'error'
               ? 'error'
               : 'success',
-        title: 'Birleştirme',
+        title: t('Birleştirme'),
         description: result.message,
       });
       setOpen(false);
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Birleştirilemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Birleştirilemedi'), description: errorMessage(error) }),
   });
 
   const rebaseOnto = useMutation({
@@ -100,13 +102,13 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
             : result.outcome === 'error'
               ? 'error'
               : 'success',
-        title: 'Rebase',
+        title: t('Rebase'),
         description: result.message,
       });
       setOpen(false);
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Rebase yapılamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Rebase yapılamadı'), description: errorMessage(error) }),
   });
 
   const deleteBranch = useMutation({
@@ -114,14 +116,14 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
       invoke('git:branch-delete', { repoId, name, force }),
     onSuccess: (_result, variables) => {
       invalidate(repoId);
-      toast({ kind: 'info', title: `${variables.name} dalı silindi` });
+      toast({ kind: 'info', title: t('{name} dalı silindi', { name: variables.name }) });
       setDeleteTarget(null);
     },
     onError: (error) =>
       toast({
         kind: 'error',
-        title: 'Dal silinemedi',
-        description: `${errorMessage(error)} Birleştirilmemiş commit’ler varsa silmeyi zorlaman gerekir.`,
+        title: t('Dal silinemedi'),
+        description: `${errorMessage(error)} ${t('Birleştirilmemiş commit’ler varsa silmeyi zorlaman gerekir.')}`,
       }),
   });
 
@@ -130,12 +132,12 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
       invoke('git:branch-create', { repoId, name, checkout: true }),
     onSuccess: (_result, name) => {
       invalidate(repoId);
-      toast({ kind: 'success', title: `${name} dalı oluşturuldu` });
+      toast({ kind: 'success', title: t('{name} dalı oluşturuldu', { name }) });
       setOpen(false);
       setFilter('');
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Dal oluşturulamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Dal oluşturulamadı'), description: errorMessage(error) }),
   });
 
   const needle = filter.trim().toLocaleLowerCase('tr');
@@ -167,7 +169,7 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[13px] text-ink">{branch.fullName}</span>
             <span className="block truncate text-[11px] text-ink-3">
-              {branch.lastCommitSubject || 'commit yok'} · {relativeTime(branch.lastCommitAt)}
+              {branch.lastCommitSubject || t('commit yok')} · {relativeTime(branch.lastCommitAt)}
             </span>
           </span>
           {branch.ahead > 0 && <Badge tone="accent">↑{branch.ahead}</Badge>}
@@ -184,7 +186,7 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
           >
             <GitMerge className="size-3.5" />
             <span className="truncate">
-              <strong className="font-mono">{branch.fullName}</strong> dalını buraya birleştir
+              <strong className="font-mono">{branch.fullName}</strong> {t('dalını buraya birleştir')}
             </span>
           </ContextMenu.Item>
           <ContextMenu.Item
@@ -205,7 +207,7 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
                 className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] text-crit outline-none data-[highlighted]:bg-crit-tint"
               >
                 <Trash2 className="size-3.5" />
-                Dalı sil
+                {t('Dalı sil')}
               </ContextMenu.Item>
             </>
           )}
@@ -223,7 +225,7 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
           className="flex h-8 max-w-56 items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[13px] font-medium text-ink hover:bg-surface-2"
         >
           <GitBranch className="size-3.5 shrink-0 text-ink-3" />
-          <span className="truncate">{currentBranch ?? 'ayrık HEAD'}</span>
+          <span className="truncate">{currentBranch ?? t('ayrık HEAD')}</span>
         </button>
       </DropdownMenu.Trigger>
 
@@ -238,8 +240,8 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
             <input
               value={filter}
               onChange={(event) => setFilter(event.target.value)}
-              placeholder="Dal ara veya yeni dal adı yaz"
-              aria-label="Dal ara"
+              placeholder={t('Dal ara veya yeni dal adı yaz')}
+              aria-label={t('Dal ara')}
               // Radix aksi hâlde yazılan her harfi menü gezinme kısayolu sanıyor.
               onKeyDown={(event) => event.stopPropagation()}
               className="selectable h-7 w-full rounded border border-line bg-ground pr-2 pl-7 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
@@ -254,27 +256,27 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
               >
                 <Plus className="size-3.5" />
                 <span className="truncate">
-                  <strong className="font-mono">{filter.trim()}</strong> dalını oluştur ve geç
+                  <strong className="font-mono">{filter.trim()}</strong> {t('dalını oluştur ve geç')}
                 </span>
               </DropdownMenu.Item>
             )}
 
             {local.length > 0 && (
               <>
-                <SectionLabel className="block px-2 pt-2 pb-1">Yerel</SectionLabel>
+                <SectionLabel className="block px-2 pt-2 pb-1">{t('Yerel')}</SectionLabel>
                 {local.map(renderBranch)}
               </>
             )}
 
             {remote.length > 0 && (
               <>
-                <SectionLabel className="block px-2 pt-2 pb-1">Uzak</SectionLabel>
+                <SectionLabel className="block px-2 pt-2 pb-1">{t('Uzak')}</SectionLabel>
                 {remote.map(renderBranch)}
               </>
             )}
 
             {local.length === 0 && remote.length === 0 && !canCreate && (
-              <p className="px-2 py-6 text-center text-[12px] text-ink-3">Eşleşen dal yok.</p>
+              <p className="px-2 py-6 text-center text-[12px] text-ink-3">{t('Eşleşen dal yok.')}</p>
             )}
           </div>
         </DropdownMenu.Content>
@@ -284,8 +286,8 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
       <ConfirmDialog
         open={blocked !== null}
         onOpenChange={(next) => !next && setBlocked(null)}
-        title="Kaydedilmemiş değişiklikler engelliyor"
-        confirmLabel="Sakla ve geç"
+        title={t('Kaydedilmemiş değişiklikler engelliyor')}
+        confirmLabel={t('Sakla ve geç')}
         onConfirm={() => blocked && stashAndCheckout.mutate(blocked.branch)}
       >
         <div className="flex flex-col gap-2 text-[13px] text-ink-2">
@@ -310,8 +312,8 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
       <ConfirmDialog
         open={deleteTarget !== null}
         onOpenChange={(next) => !next && setDeleteTarget(null)}
-        title="Dalı sil"
-        confirmLabel="Sil"
+        title={t('Dalı sil')}
+        confirmLabel={t('Sil')}
         destructive
         onConfirm={() =>
           deleteTarget && deleteBranch.mutate({ name: deleteTarget.fullName, force: false })

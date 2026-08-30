@@ -11,6 +11,7 @@ import type { AppSettings, Repo, RepoSettings } from '@shared/types';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
+  language: 'tr',
   defaultAutoPull: {
     enabled: false,
     intervalMinutes: 10,

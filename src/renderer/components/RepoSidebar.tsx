@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
 import { FolderGit2, MoreVertical, Plus, RefreshCcwDot, Search, Trash2 } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { errorMessage, invoke } from '../lib/ipc';
 import { keys, useMutation, useQueryClient, useRepos } from '../lib/queries';
@@ -23,6 +24,7 @@ function RepoRow({
   onSelect: () => void;
   onRemove: () => void;
 }) {
+  const t = useT();
   return (
     <div
       className={cn(
@@ -49,7 +51,7 @@ function RepoRow({
             {autoPullOn && (
               <RefreshCcwDot
                 className="size-3 shrink-0 text-ok"
-                aria-label="Otomatik pull açık"
+                aria-label={t('Otomatik pull açık')}
               />
             )}
           </span>
@@ -63,7 +65,7 @@ function RepoRow({
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
-            aria-label={`${repo.name} için işlemler`}
+            aria-label={t('{name} için işlemler', { name: repo.name })}
             className="rounded p-1 text-ink-3 opacity-0 group-hover:opacity-100 hover:bg-surface-3 hover:text-ink focus-visible:opacity-100"
           >
             <MoreVertical className="size-3.5" />
@@ -79,7 +81,7 @@ function RepoRow({
               onSelect={() => void invoke('repo:reveal', { repoId: repo.id })}
               className="cursor-pointer rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
             >
-              Klasörü aç
+              {t('Klasörü aç')}
             </DropdownMenu.Item>
             <DropdownMenu.Separator className="my-1 h-px bg-line-soft" />
             <DropdownMenu.Item
@@ -87,7 +89,7 @@ function RepoRow({
               className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] text-crit outline-none data-[highlighted]:bg-crit-tint"
             >
               <Trash2 className="size-3.5" />
-              Listeden çıkar
+              {t('Listeden çıkar')}
             </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
@@ -97,6 +99,7 @@ function RepoRow({
 }
 
 export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> }) {
+  const t = useT();
   const { data: repos, isLoading } = useRepos();
   const activeRepoId = useUi((s) => s.activeRepoId);
   const setActiveRepo = useUi((s) => s.setActiveRepo);
@@ -113,7 +116,7 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
       setActiveRepo(repo.id);
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Depo eklenemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Depo eklenemedi'), description: errorMessage(error) }),
   });
 
   const removeRepo = useMutation({
@@ -138,10 +141,10 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-line bg-surface">
       <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
-        <SectionLabel>Depolar</SectionLabel>
+        <SectionLabel>{t('Depolar')}</SectionLabel>
         <div className="flex items-center gap-1">
           <Button size="sm" variant="ghost" onClick={() => setCloneOpen(true)}>
-            Klonla
+            {t('Klonla')}
           </Button>
           <Button
             size="sm"
@@ -150,7 +153,7 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
             onClick={() => addRepo.mutate()}
           >
             <Plus className="size-3.5" />
-            Ekle
+            {t('Ekle')}
           </Button>
         </div>
       </div>
@@ -161,8 +164,8 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
           <input
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="Depolarda ara"
-            aria-label="Depolarda ara"
+            placeholder={t('Depolarda ara')}
+            aria-label={t('Depolarda ara')}
             className="selectable h-7 w-full rounded-md border border-line bg-ground pr-2 pl-7 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
           />
         </div>
@@ -176,11 +179,11 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
         ) : filtered.length === 0 ? (
           <div className="px-2 py-8">
             <EmptyState
-              title={repos?.length ? 'Eşleşen depo yok' : 'Henüz depo yok'}
+              title={repos?.length ? t('Eşleşen depo yok') : t('Henüz depo yok')}
               description={
                 repos?.length
-                  ? 'Farklı bir arama dene.'
-                  : 'Diskteki bir klasörü ekle ya da uzak bir depoyu klonla.'
+                  ? t('Farklı bir arama dene.')
+                  : t('Diskteki bir klasörü ekle ya da uzak bir depoyu klonla.')
               }
             />
           </div>

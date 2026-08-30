@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ContextMenu } from 'radix-ui';
 import { EyeOff, ExternalLink, GitCommitHorizontal, TriangleAlert } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { directoryName, fileName, formatCount } from '../lib/format';
 import { errorMessage, invoke } from '../lib/ipc';
@@ -57,6 +58,7 @@ function FileRow({
   onIgnore: () => void;
   onOpenExternal: () => void;
 }) {
+  const t = useT();
   const { file, staged, conflicted } = row;
   const mark = KIND_MARKS[file.kind];
   const directory = directoryName(file.path);
@@ -75,7 +77,11 @@ function FileRow({
             checked={staged}
             disabled={conflicted}
             onChange={onToggle}
-            aria-label={`${file.path} dosyasını ${staged ? 'çıkar' : 'hazırla'}`}
+            aria-label={
+              staged
+                ? t('{path} dosyasını hazırlıktan çıkar', { path: file.path })
+                : t('{path} dosyasını hazırla', { path: file.path })
+            }
             className="size-3.5 shrink-0 accent-[var(--accent)]"
           />
           <button
@@ -89,7 +95,7 @@ function FileRow({
             <span className="truncate text-[12px] text-ink">{fileName(file.path)}</span>
           </button>
           <span
-            title={mark.label}
+            title={t(mark.label)}
             className={cn('shrink-0 font-mono text-[11px] font-semibold', mark.className)}
           >
             {mark.mark}
@@ -103,14 +109,14 @@ function FileRow({
             onSelect={onToggle}
             className="cursor-pointer rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
           >
-            {staged ? 'Hazırlıktan çıkar' : 'Commit için hazırla'}
+            {staged ? t('Hazırlıktan çıkar') : t('Commit için hazırla')}
           </ContextMenu.Item>
           <ContextMenu.Item
             onSelect={onOpenExternal}
             className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
           >
             <ExternalLink className="size-3.5" />
-            Sistemde aç
+            {t('Sistemde aç')}
           </ContextMenu.Item>
           {file.kind === 'untracked' && (
             <ContextMenu.Item
@@ -118,7 +124,7 @@ function FileRow({
               className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
             >
               <EyeOff className="size-3.5" />
-              .gitignore’a ekle
+              {t('.gitignore’a ekle')}
             </ContextMenu.Item>
           )}
           <ContextMenu.Separator className="my-1 h-px bg-line-soft" />
@@ -126,7 +132,7 @@ function FileRow({
             onSelect={onDiscard}
             className="cursor-pointer rounded px-2 py-1.5 text-[13px] text-crit outline-none data-[highlighted]:bg-crit-tint"
           >
-            Değişiklikleri geri al
+            {t('Değişiklikleri geri al')}
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
@@ -135,6 +141,7 @@ function FileRow({
 }
 
 function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: number }) {
+  const t = useT();
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [amend, setAmend] = useState(false);
@@ -148,10 +155,10 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
       setSubject('');
       setBody('');
       setAmend(false);
-      toast({ kind: 'success', title: 'Commit oluşturuldu', description: result.sha.slice(0, 8) });
+      toast({ kind: 'success', title: t('Commit oluşturuldu'), description: result.sha.slice(0, 8) });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Commit başarısız', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Commit başarısız'), description: errorMessage(error) }),
   });
 
   const loadLastMessage = useMutation({
@@ -175,15 +182,15 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
             commit.mutate();
           }
         }}
-        placeholder={amend ? 'Son commit mesajını düzenle' : 'Özet (zorunlu)'}
-        aria-label="Commit özeti"
+        placeholder={amend ? t('Son commit mesajını düzenle') : t('Özet (zorunlu)')}
+        aria-label={t('Commit özeti')}
         className="selectable h-8 w-full rounded-md border border-line bg-ground px-2 text-[13px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
       />
       <textarea
         value={body}
         onChange={(event) => setBody(event.target.value)}
-        placeholder="Açıklama (isteğe bağlı)"
-        aria-label="Commit açıklaması"
+        placeholder={t('Açıklama (isteğe bağlı)')}
+        aria-label={t('Commit açıklaması')}
         rows={3}
         className="selectable w-full resize-none rounded-md border border-line bg-ground px-2 py-1.5 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
       />
@@ -198,7 +205,7 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
             }}
             className="size-3.5 accent-[var(--accent)]"
           />
-          Son commit’i düzelt
+          {t('Son commit’i düzelt')}
         </label>
         <Button
           variant="primary"
@@ -208,10 +215,10 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
         >
           <GitCommitHorizontal className="size-3.5" />
           {amend
-            ? 'Commit’i düzelt'
+            ? t('Commit’i düzelt')
             : stagedCount > 0
-              ? `${formatCount(stagedCount)} dosyayı commit’le`
-              : 'Commit’le'}
+              ? t('{count} dosyayı commit’le', { count: formatCount(stagedCount) })
+              : t('Commit’le')}
         </Button>
       </div>
     </div>
@@ -219,6 +226,7 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
 }
 
 export function ChangesView({ repoId }: { repoId: string }) {
+  const t = useT();
   const { data: status } = useStatus(repoId);
   const { data: settings } = useSettings();
   const selection = useUi((s) => s.selection);
@@ -247,45 +255,45 @@ export function ChangesView({ repoId }: { repoId: string }) {
     }) => invoke('git:stage-lines', { repoId, path, mode, selections }),
     onSuccess: (_result, variables) => {
       invalidate(repoId);
-      const labels: Record<LineStageMode, string> = {
-        stage: 'hazırlandı',
-        unstage: 'hazırlıktan çıkarıldı',
-        discard: 'geri alındı',
+      const titles: Record<LineStageMode, string> = {
+        stage: 'Seçili satırlar hazırlandı',
+        unstage: 'Seçili satırlar hazırlıktan çıkarıldı',
+        discard: 'Seçili satırlar geri alındı',
       };
-      toast({ kind: 'success', title: `Seçili satırlar ${labels[variables.mode]}` });
+      toast({ kind: 'success', title: t(titles[variables.mode]) });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Satırlar uygulanamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Satırlar uygulanamadı'), description: errorMessage(error) }),
   });
 
   const ignorePath = useMutation({
     mutationFn: (path: string) => invoke('git:ignore-path', { repoId, path }),
     onSuccess: (_result, path) => {
       invalidate(repoId);
-      toast({ kind: 'success', title: `${path} .gitignore’a eklendi` });
+      toast({ kind: 'success', title: t('{path} .gitignore’a eklendi', { path }) });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Eklenemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Eklenemedi'), description: errorMessage(error) }),
   });
 
   const openExternal = useMutation({
     mutationFn: (path: string) => invoke('git:open-external', { repoId, path }),
     onError: (error) =>
-      toast({ kind: 'error', title: 'Dosya açılamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Dosya açılamadı'), description: errorMessage(error) }),
   });
 
   const stageMutation = useMutation({
     mutationFn: (paths: string[]) => invoke('git:stage', { repoId, paths }),
     onSuccess: () => invalidate(repoId),
     onError: (error) =>
-      toast({ kind: 'error', title: 'Hazırlanamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Hazırlanamadı'), description: errorMessage(error) }),
   });
 
   const unstageMutation = useMutation({
     mutationFn: (paths: string[]) => invoke('git:unstage', { repoId, paths }),
     onSuccess: () => invalidate(repoId),
     onError: (error) =>
-      toast({ kind: 'error', title: 'Çıkarılamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Çıkarılamadı'), description: errorMessage(error) }),
   });
 
   const discardMutation = useMutation({
@@ -293,10 +301,10 @@ export function ChangesView({ repoId }: { repoId: string }) {
     onSuccess: (_result, paths) => {
       invalidate(repoId);
       select({ kind: 'none' });
-      toast({ kind: 'info', title: `${paths.length} dosyanın değişiklikleri geri alındı` });
+      toast({ kind: 'info', title: t('{count} dosyanın değişiklikleri geri alındı', { count: paths.length }) });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Geri alınamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Geri alınamadı'), description: errorMessage(error) }),
   });
 
   // Bölüm başlıkları ve dosyalar tek düz listede: sanallaştırıcı tek bir
@@ -362,13 +370,15 @@ export function ChangesView({ repoId }: { repoId: string }) {
       <div className="flex w-80 shrink-0 flex-col border-r border-line bg-surface">
         <div className="flex items-center justify-between gap-2 border-b border-line-soft px-3 py-2">
           <SectionLabel>
-            {totalChanges > 0 ? `${formatCount(totalChanges)} değişiklik` : 'Değişiklik yok'}
+            {totalChanges > 0
+              ? t('{count} değişiklik', { count: formatCount(totalChanges) })
+              : t('Değişiklik yok')}
           </SectionLabel>
           {totalChanges > 0 && (
             <div className="flex gap-1">
               {unstagedPaths.length > 0 && (
                 <Button size="sm" variant="ghost" onClick={() => stageMutation.mutate(unstagedPaths)}>
-                  Tümünü hazırla
+                  {t('Tümünü hazırla')}
                 </Button>
               )}
               {stagedPaths.length > 0 && (
@@ -377,7 +387,7 @@ export function ChangesView({ repoId }: { repoId: string }) {
                   variant="ghost"
                   onClick={() => unstageMutation.mutate(stagedPaths)}
                 >
-                  Tümünü çıkar
+                  {t('Tümünü çıkar')}
                 </Button>
               )}
             </div>
@@ -387,8 +397,8 @@ export function ChangesView({ repoId }: { repoId: string }) {
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
           {rows.length === 0 ? (
             <EmptyState
-              title="Çalışma dizini temiz"
-              description="Dosyaları düzenlediğinde değişiklikler burada belirir."
+              title={t('Çalışma dizini temiz')}
+              description={t('Dosyaları düzenlediğinde değişiklikler burada belirir.')}
             />
           ) : (
             <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
@@ -408,7 +418,7 @@ export function ChangesView({ repoId }: { repoId: string }) {
                   >
                     {row.type === 'header' ? (
                       <div className="flex h-7 items-center gap-1.5 bg-ground px-3">
-                        <SectionLabel>{row.label}</SectionLabel>
+                        <SectionLabel>{t(row.label)}</SectionLabel>
                         <Badge tone={row.id === 'h-conflict' ? 'crit' : 'neutral'}>
                           {row.id === 'h-conflict' && <TriangleAlert className="size-3" />}
                           {row.count}
@@ -459,7 +469,11 @@ export function ChangesView({ repoId }: { repoId: string }) {
             isLoading={!!selectedPath && diffLoading}
             title={selectedPath ?? ''}
             subtitle={
-              selectedPath ? (selectedStaged ? 'Hazırlanmış hâli' : 'Çalışma dizini') : undefined
+              selectedPath
+                ? selectedStaged
+                  ? t('Hazırlanmış hâli')
+                  : t('Çalışma dizini')
+                : undefined
             }
             sideBySide={sideBySide}
             onToggleSideBySide={() => toggleSideBySide.mutate(!sideBySide)}
@@ -477,14 +491,14 @@ export function ChangesView({ repoId }: { repoId: string }) {
       <ConfirmDialog
         open={discardTarget !== null}
         onOpenChange={(open) => !open && setDiscardTarget(null)}
-        title="Değişiklikleri geri al"
-        confirmLabel="Geri al"
+        title={t('Değişiklikleri geri al')}
+        confirmLabel={t('Geri al')}
         destructive
         onConfirm={() => discardTarget && discardMutation.mutate([discardTarget])}
       >
         <p className="text-[13px] text-ink-2">
-          <span className="font-mono text-ink">{discardTarget}</span> dosyasındaki kaydedilmemiş
-          değişiklikler kalıcı olarak silinecek. Bu işlem geri alınamaz.
+          <span className="font-mono text-ink">{discardTarget}</span>{' '}
+          {t('dosyasındaki kaydedilmemiş değişiklikler kalıcı olarak silinecek. Bu işlem geri alınamaz.')}
         </p>
       </ConfirmDialog>
     </div>

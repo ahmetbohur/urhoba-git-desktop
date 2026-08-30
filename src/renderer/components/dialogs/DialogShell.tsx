@@ -1,6 +1,7 @@
 import { Dialog } from 'radix-ui';
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useT } from '../../i18n';
 import { cn } from '../../lib/cn';
 
 /**
@@ -25,6 +26,7 @@ export function DialogShell({
   footer?: ReactNode;
   width?: 'md' | 'lg';
 }) {
+  const t = useT();
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -45,7 +47,7 @@ export function DialogShell({
               )}
             </div>
             <Dialog.Close
-              aria-label="Kapat"
+              aria-label={t('Kapat')}
               className="rounded p-1 text-ink-3 hover:bg-surface-2 hover:text-ink"
             >
               <X className="size-4" />

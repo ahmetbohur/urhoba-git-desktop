@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Popover } from 'radix-ui';
 import { Filter, X } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { Badge, Button, SectionLabel } from './primitives';
 import type { LogFilter } from '@shared/types';
@@ -38,6 +39,7 @@ export function HistoryFilterBar({
   onChange: (filter: LogFilter) => void;
   resultCount: number;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState<LogFilter>(filter);
   const [open, setOpen] = useState(false);
 
@@ -80,7 +82,7 @@ export function HistoryFilterBar({
             )}
           >
             <Filter className="size-3.5" />
-            Filtre
+            {t('Filtre')}
           </button>
         </Popover.Trigger>
 
@@ -90,14 +92,14 @@ export function HistoryFilterBar({
             sideOffset={6}
             className="z-50 flex w-80 flex-col gap-3 rounded-lg border border-line bg-surface p-3 shadow-xl"
           >
-            <SectionLabel>Geçmişi süz</SectionLabel>
+            <SectionLabel>{t('Geçmişi süz')}</SectionLabel>
             {FIELDS.map((field) => (
               <label key={field.key} className="flex flex-col gap-1">
-                <span className="text-[12px] font-medium text-ink">{field.label}</span>
+                <span className="text-[12px] font-medium text-ink">{t(field.label)}</span>
                 <input
                   type={field.type ?? 'text'}
                   value={draft[field.key] ?? ''}
-                  placeholder={field.placeholder}
+                  placeholder={t(field.placeholder)}
                   onChange={(event) =>
                     setDraft((previous) => ({ ...previous, [field.key]: event.target.value }))
                   }
@@ -110,10 +112,10 @@ export function HistoryFilterBar({
             ))}
             <div className="flex justify-end gap-2 border-t border-line-soft pt-2">
               <Button size="sm" variant="ghost" onClick={clearAll}>
-                Temizle
+                {t('Temizle')}
               </Button>
               <Button size="sm" variant="primary" onClick={apply}>
-                Uygula
+                {t('Uygula')}
               </Button>
             </div>
           </Popover.Content>
@@ -122,10 +124,10 @@ export function HistoryFilterBar({
 
       {activeEntries.map(([key, value]) => (
         <Badge key={key} tone="accent">
-          {LABELS[key]}: {value}
+          {t(LABELS[key])}: {value}
           <button
             type="button"
-            aria-label={`${LABELS[key]} filtresini kaldır`}
+            aria-label={t('{label} filtresini kaldır', { label: t(LABELS[key]) })}
             onClick={() => {
               const next = { ...filter };
               delete next[key];
@@ -140,7 +142,7 @@ export function HistoryFilterBar({
 
       <div className="flex-1" />
       <span className="text-[11px] tabular-nums text-ink-3">
-        {resultCount > 0 ? `${resultCount} commit yüklendi` : 'Sonuç yok'}
+        {resultCount > 0 ? t('{count} commit yüklendi', { count: resultCount }) : t('Sonuç yok')}
       </span>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ExternalLink, TriangleAlert } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { errorMessage, invoke } from '../lib/ipc';
 import { keys, useConflict, useInvalidateRepo, useMutation, useQueryClient } from '../lib/queries';
@@ -23,8 +24,9 @@ const CHOICE_LABELS: Record<ConflictChoice, string> = {
 };
 
 function SectionLines({ lines, tone }: { lines: string[]; tone: 'ours' | 'theirs' | 'stable' }) {
+  const t = useT();
   if (lines.length === 0) {
-    return <p className="px-3 py-1.5 font-mono text-[11px] text-ink-3 italic">(boş)</p>;
+    return <p className="px-3 py-1.5 font-mono text-[11px] text-ink-3 italic">{t('(boş)')}</p>;
   }
   return (
     <div
@@ -52,13 +54,15 @@ function ConflictBlock({
   choice: ConflictChoice;
   onChoose: (choice: ConflictChoice) => void;
 }) {
+  const t = useT();
   return (
     <div className="my-2 overflow-hidden rounded-lg border border-crit">
       <div className="flex items-center gap-2 border-b border-line-soft bg-crit-tint px-3 py-1.5">
         <TriangleAlert className="size-3.5 shrink-0 text-crit" />
         <span className="text-[11px] text-ink-2">
-          <span className="font-medium text-ink">{section.oursLabel}</span> ile{' '}
-          <span className="font-medium text-ink">{section.theirsLabel}</span> arasında çakışma
+          <span className="font-medium text-ink">{section.oursLabel}</span> {t('ile')}{' '}
+          <span className="font-medium text-ink">{section.theirsLabel}</span>{' '}
+          {t('arasında çakışma')}
         </span>
         <div className="ml-auto flex gap-1">
           {(['ours', 'theirs', 'both'] as const).map((option) => (
@@ -73,7 +77,7 @@ function ConflictBlock({
                   : 'border border-line bg-surface text-ink-2 hover:bg-surface-2',
               )}
             >
-              {CHOICE_LABELS[option]}
+              {t(CHOICE_LABELS[option])}
             </button>
           ))}
         </div>
@@ -96,6 +100,7 @@ function ConflictBlock({
 }
 
 export function ConflictView({ repoId, path }: { repoId: string; path: string }) {
+  const t = useT();
   const { data: conflict, isLoading } = useConflict(repoId, path);
   /*
    * Seçimler blok sırasına göre bir sözlükte: dosya yeniden okunduğunda dizinin
@@ -134,16 +139,16 @@ export function ConflictView({ repoId, path }: { repoId: string; path: string })
       invalidate(repoId);
       void client.invalidateQueries({ queryKey: keys.conflict(repoId, path) });
       select({ kind: 'none' });
-      toast({ kind: 'success', title: `${path} çözüldü ve hazırlandı` });
+      toast({ kind: 'success', title: t('{path} çözüldü ve hazırlandı', { path }) });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Çözülemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Çözülemedi'), description: errorMessage(error) }),
   });
 
   const openExternal = useMutation({
     mutationFn: () => invoke('git:open-external', { repoId, path }),
     onError: (error) =>
-      toast({ kind: 'error', title: 'Dosya açılamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Dosya açılamadı'), description: errorMessage(error) }),
   });
 
   if (isLoading || !conflict) {
@@ -158,12 +163,12 @@ export function ConflictView({ repoId, path }: { repoId: string; path: string })
     return (
       <EmptyState
         icon={<FileIcon />}
-        title="İkili dosyada çakışma"
-        description="Bu dosya metin olarak birleştirilemiyor. Hangi sürümü tutacağına karar verip dosyayı elle düzenle."
+        title={t('İkili dosyada çakışma')}
+        description={t('Bu dosya metin olarak birleştirilemiyor. Hangi sürümü tutacağına karar verip dosyayı elle düzenle.')}
         action={
           <Button variant="secondary" onClick={() => openExternal.mutate()}>
             <ExternalLink className="size-3.5" />
-            Sistemde aç
+            {t('Sistemde aç')}
           </Button>
         }
       />
@@ -177,14 +182,14 @@ export function ConflictView({ repoId, path }: { repoId: string; path: string })
           <p className="truncate font-mono text-[12px] text-ink">{path}</p>
           <p className="text-[11px] text-ink-3">
             {conflictCount > 0
-              ? `${conflictCount} çakışma bloğu — her biri için bir taraf seç`
-              : 'Bu dosyada çakışma işareti kalmamış'}
+              ? t('{count} çakışma bloğu — her biri için bir taraf seç', { count: conflictCount })
+              : t('Bu dosyada çakışma işareti kalmamış')}
           </p>
         </div>
-        <Badge tone="crit">Çakışma</Badge>
+        <Badge tone="crit">{t('Çakışma')}</Badge>
         <Button size="sm" variant="ghost" onClick={() => openExternal.mutate()}>
           <ExternalLink className="size-3.5" />
-          Editörde aç
+          {t('Editörde aç')}
         </Button>
         <Button
           size="sm"
@@ -192,7 +197,7 @@ export function ConflictView({ repoId, path }: { repoId: string; path: string })
           loading={resolve.isPending}
           onClick={() => resolve.mutate()}
         >
-          Çözüldü olarak işaretle
+          {t('Çözüldü olarak işaretle')}
         </Button>
       </div>
 

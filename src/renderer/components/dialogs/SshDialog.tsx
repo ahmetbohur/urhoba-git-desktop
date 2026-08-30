@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle2, Copy, KeyRound, Plus, XCircle } from 'lucide-react';
+import { useT } from '../../i18n';
 import { cn } from '../../lib/cn';
 import { errorMessage, invoke } from '../../lib/ipc';
 import { keys, useMutation, useQueryClient, useSshEnvironment } from '../../lib/queries';
@@ -16,14 +17,15 @@ import type { SshKey, SshTestResult } from '@shared/types';
  * agent'a yüklü mü, GitHub bunları kabul ediyor mu.
  */
 function KeyCard({ sshKey }: { sshKey: SshKey }) {
+  const t = useT();
   const toast = useUi((s) => s.toast);
   const copy = useMutation({
     mutationFn: () => invoke('ssh:copy-public-key', { publicKeyPath: sshKey.publicKeyPath }),
     onSuccess: () =>
       toast({
         kind: 'success',
-        title: 'Public key kopyalandı',
-        description: 'GitHub → Settings → SSH and GPG keys → New SSH key ekranına yapıştır.',
+        title: t('Public key kopyalandı'),
+        description: t('GitHub → Settings → SSH and GPG keys → New SSH key ekranına yapıştır.'),
       }),
   });
 
@@ -40,13 +42,13 @@ function KeyCard({ sshKey }: { sshKey: SshKey }) {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {sshKey.loadedInAgent ? (
-            <Badge tone="ok">agent’ta yüklü</Badge>
+            <Badge tone="ok">{t('agent’ta yüklü')}</Badge>
           ) : (
-            <Badge tone="warn">agent’ta değil</Badge>
+            <Badge tone="warn">{t('agent’ta değil')}</Badge>
           )}
           <Button size="sm" variant="secondary" onClick={() => copy.mutate()}>
             <Copy className="size-3.5" />
-            Kopyala
+            {t('Kopyala')}
           </Button>
         </div>
       </div>
@@ -67,6 +69,7 @@ export function SshDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const { data: environment, isLoading } = useSshEnvironment({ enabled: open });
   const client = useQueryClient();
   const toast = useUi((s) => s.toast);
@@ -83,12 +86,14 @@ export function SshDialog({
       setShowGenerate(false);
       toast({
         kind: 'success',
-        title: 'Anahtar üretildi',
-        description: `${key.publicKeyPath} — public key’i GitHub hesabına eklemeyi unutma.`,
+        title: t('Anahtar üretildi'),
+        description: t('{path} — public key’i GitHub hesabına eklemeyi unutma.', {
+          path: key.publicKeyPath,
+        }),
       });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Anahtar üretilemedi', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Anahtar üretilemedi'), description: errorMessage(error) }),
   });
 
   const test = useMutation({
@@ -100,17 +105,17 @@ export function SshDialog({
     <DialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title="SSH kurulumu"
-      description="GitHub’a SSH ile bağlanmak için sistemdeki anahtarlar kullanılır. Uygulama hiçbir özel anahtarı kendi saklamaz."
+      title={t('SSH kurulumu')}
+      description={t('GitHub’a SSH ile bağlanmak için sistemdeki anahtarlar kullanılır. Uygulama hiçbir özel anahtarı kendi saklamaz.')}
       width="lg"
       footer={
         <>
           <Button variant="ghost" onClick={() => setShowGenerate((value) => !value)}>
             <Plus className="size-3.5" />
-            Yeni anahtar
+            {t('Yeni anahtar')}
           </Button>
           <Button variant="primary" loading={test.isPending} onClick={() => test.mutate()}>
-            GitHub bağlantısını sına
+            {t('GitHub bağlantısını sına')}
           </Button>
         </>
       }
@@ -138,15 +143,15 @@ export function SshDialog({
           )}
 
           <div className="flex items-center gap-2">
-            <SectionLabel>ssh-agent</SectionLabel>
+            <SectionLabel>{t('ssh-agent')}</SectionLabel>
             {environment.agentRunning ? (
-              <Badge tone="ok">çalışıyor</Badge>
+              <Badge tone="ok">{t('çalışıyor')}</Badge>
             ) : (
-              <Badge tone="warn">çalışmıyor</Badge>
+              <Badge tone="warn">{t('çalışmıyor')}</Badge>
             )}
             {!environment.agentRunning && (
               <span className="text-[11px] text-ink-2">
-                Parolalı anahtarlar agent olmadan arka planda kullanılamaz.
+                {t('Parolalı anahtarlar agent olmadan arka planda kullanılamaz.')}
               </span>
             )}
           </div>
@@ -154,11 +159,9 @@ export function SshDialog({
           {showGenerate && (
             <div className="flex flex-col gap-3 rounded-lg border border-accent bg-accent-tint p-3">
               <p className="text-[12px] text-ink">
-                Parolasız bir ed25519 anahtarı üretilir ve mümkünse ssh-agent’a eklenir. Parolasız
-                anahtar, arka plandaki otomatik pull’un takılmadan çalışmasını sağlar; anahtar
-                dosyasını koruma sorumluluğu sende.
+                {t('Parolasız bir ed25519 anahtarı üretilir ve mümkünse ssh-agent’a eklenir. Parolasız anahtar, arka plandaki otomatik pull’un takılmadan çalışmasını sağlar; anahtar dosyasını koruma sorumluluğu sende.')}
               </p>
-              <Field label="Etiket" hint="Genelde e-posta adresin — anahtarı tanımana yarar.">
+              <Field label={t('Etiket')} hint={t('Genelde e-posta adresin — anahtarı tanımana yarar.')}>
                 <TextInput
                   value={comment}
                   onChange={setComment}
@@ -166,12 +169,12 @@ export function SshDialog({
                   autoFocus
                 />
               </Field>
-              <Field label="Dosya adı" hint="~/.ssh içinde bu adla oluşturulur.">
+              <Field label={t('Dosya adı')} hint={t('~/.ssh içinde bu adla oluşturulur.')}>
                 <TextInput value={fileName} onChange={setFileName} mono />
               </Field>
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setShowGenerate(false)}>
-                  Vazgeç
+                  {t('Vazgeç')}
                 </Button>
                 <Button
                   variant="primary"
@@ -183,26 +186,25 @@ export function SshDialog({
                   }
                   onClick={() => generate.mutate()}
                 >
-                  Üret
+                  {t('Üret')}
                 </Button>
               </div>
               {!environment.sshKeygenAvailable && (
                 <p className="text-[11px] text-crit">
-                  Sistemde ssh-keygen bulunamadı; anahtarı elle üretmen gerekiyor.
+                  {t('Sistemde ssh-keygen bulunamadı; anahtarı elle üretmen gerekiyor.')}
                 </p>
               )}
             </div>
           )}
 
           <div className="flex flex-col gap-2">
-            <SectionLabel>Anahtarlar ({environment.keys.length})</SectionLabel>
+            <SectionLabel>{t('Anahtarlar ({count})', { count: environment.keys.length })}</SectionLabel>
             {environment.keys.length === 0 ? (
               <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-line py-8 text-center">
                 <KeyRound className="size-5 text-ink-3" />
-                <p className="text-[13px] font-medium text-ink">~/.ssh içinde anahtar yok</p>
+                <p className="text-[13px] font-medium text-ink">{t('~/.ssh içinde anahtar yok')}</p>
                 <p className="max-w-sm text-[12px] text-ink-2">
-                  “Yeni anahtar” ile bir tane üret, public key’i GitHub hesabına ekle, sonra
-                  bağlantıyı sına.
+                  {t('“Yeni anahtar” ile bir tane üret, public key’i GitHub hesabına ekle, sonra bağlantıyı sına.')}
                 </p>
               </div>
             ) : (

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CloudDownload, FolderOpen, Lock, Search } from 'lucide-react';
+import { useT } from '../../i18n';
 import { cn } from '../../lib/cn';
 import { relativeTime } from '../../lib/format';
 import { errorMessage, invoke } from '../../lib/ipc';
@@ -28,6 +29,7 @@ export function CloneDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const [url, setUrl] = useState('');
   const [parentDir, setParentDir] = useState('');
   const [name, setName] = useState('');
@@ -59,7 +61,12 @@ export function CloneDialog({
       // dinleyici bunları toplayıp buraya durum metni olarak yansıtıyor.
       const unsubscribe = window.urhoba.onEvent((event) => {
         if (event.type === 'clone:progress' && event.progress.taskId === taskId) {
-          setProgress(`${event.progress.phase} — %${Math.round(event.progress.percent)}`);
+          setProgress(
+            t('{phase} — %{percent}', {
+              phase: t(event.progress.phase),
+              percent: Math.round(event.progress.percent),
+            }),
+          );
         }
       });
       try {
@@ -76,13 +83,13 @@ export function CloneDialog({
     onSuccess: (repo) => {
       void client.invalidateQueries({ queryKey: keys.repos });
       setActiveRepo(repo.id);
-      toast({ kind: 'success', title: `${repo.name} klonlandı` });
+      toast({ kind: 'success', title: t('{name} klonlandı', { name: repo.name }) });
       onOpenChange(false);
       reset();
     },
     onError: (error) => {
       setProgress(null);
-      toast({ kind: 'error', title: 'Klonlama başarısız', description: errorMessage(error) });
+      toast({ kind: 'error', title: t('Klonlama başarısız'), description: errorMessage(error) });
     },
   });
 
@@ -101,13 +108,13 @@ export function CloneDialog({
         onOpenChange(next);
         if (!next) reset();
       }}
-      title="Depo klonla"
-      description="SSH adresi kullanman önerilir; HTTPS'te her işlemde kimlik doğrulaması gerekir."
+      title={t('Depo klonla')}
+      description={t('SSH adresi kullanman önerilir; HTTPS’te her işlemde kimlik doğrulaması gerekir.')}
       width="lg"
       footer={
         <>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={clone.isPending}>
-            Vazgeç
+            {t('Vazgeç')}
           </Button>
           <Button
             variant="primary"
@@ -115,7 +122,7 @@ export function CloneDialog({
             disabled={!canSubmit}
             onClick={() => clone.mutate()}
           >
-            Klonla
+            {t('Klonla')}
           </Button>
         </>
       }
@@ -125,15 +132,15 @@ export function CloneDialog({
           <div className="flex flex-col gap-2 rounded-lg border border-line bg-ground p-2.5">
             <div className="flex items-center gap-2">
               <CloudDownload className="size-3.5 text-ink-2" />
-              <SectionLabel>GitHub depolarım</SectionLabel>
+              <SectionLabel>{t('GitHub depolarım')}</SectionLabel>
             </div>
             <div className="relative">
               <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-ink-3" />
               <input
                 value={repoSearch}
                 onChange={(event) => setRepoSearch(event.target.value)}
-                placeholder="Depo ara"
-                aria-label="GitHub depolarında ara"
+                placeholder={t('Depo ara')}
+                aria-label={t('GitHub depolarında ara')}
                 className="selectable h-7 w-full rounded-md border border-line bg-surface pr-2 pl-7 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
               />
             </div>
@@ -142,7 +149,7 @@ export function CloneDialog({
                 <Spinner />
               </div>
             ) : (githubRepos?.length ?? 0) === 0 ? (
-              <p className="py-3 text-center text-[11px] text-ink-3">Eşleşen depo yok.</p>
+              <p className="py-3 text-center text-[11px] text-ink-3">{t('Eşleşen depo yok.')}</p>
             ) : (
               <ul className="flex max-h-44 flex-col gap-0.5 overflow-y-auto">
                 {githubRepos?.slice(0, 60).map((repo) => (
@@ -171,10 +178,10 @@ export function CloneDialog({
                             {repo.fullName}
                           </span>
                           {repo.isPrivate && <Lock className="size-2.5 shrink-0 text-ink-3" />}
-                          {repo.isFork && <Badge tone="neutral">fork</Badge>}
+                          {repo.isFork && <Badge tone="neutral">{t('fork')}</Badge>}
                         </span>
                         <span className="block truncate text-[10px] text-ink-3">
-                          {repo.description || 'açıklama yok'} · {relativeTime(repo.updatedAt)}
+                          {repo.description || t('açıklama yok')} · {relativeTime(repo.updatedAt)}
                         </span>
                       </span>
                     </button>
@@ -185,7 +192,7 @@ export function CloneDialog({
           </div>
         )}
 
-        <Field label="Depo adresi" hint="Örnek: git@github.com:kullanici/depo.git">
+        <Field label={t('Depo adresi')} hint={t('Örnek: git@github.com:kullanici/depo.git')}>
           <TextInput
             value={url}
             autoFocus
@@ -198,17 +205,17 @@ export function CloneDialog({
           />
         </Field>
 
-        <Field label="Hedef konum">
+        <Field label={t('Hedef konum')}>
           <div className="flex gap-2">
-            <TextInput value={parentDir} onChange={setParentDir} placeholder="Klasör seç" />
+            <TextInput value={parentDir} onChange={setParentDir} placeholder={t('Klasör seç')} />
             <Button variant="secondary" onClick={() => void pickDirectory()}>
               <FolderOpen className="size-3.5" />
-              Seç
+              {t('Seç')}
             </Button>
           </div>
         </Field>
 
-        <Field label="Klasör adı" hint="Boş bırakırsan adres son parçasından türetilir.">
+        <Field label={t('Klasör adı')} hint={t('Boş bırakırsan adres son parçasından türetilir.')}>
           <TextInput value={name} onChange={setName} placeholder={suggestName(url)} />
         </Field>
 

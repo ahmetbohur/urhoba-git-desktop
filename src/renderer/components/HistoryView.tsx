@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ContextMenu } from 'radix-ui';
 import { Copy, GitBranch, Tag, Undo2 } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { buildGraph } from '../lib/commit-graph';
 import { absoluteTime, directoryName, fileName, formatCount, relativeTime } from '../lib/format';
@@ -85,6 +86,7 @@ function CommitRow({
   onTag: () => void;
   onCopySha: () => void;
 }) {
+  const t = useT();
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>
@@ -113,7 +115,7 @@ function CommitRow({
               >
                 {commit.subject}
               </span>
-              {commit.parents.length > 1 && <Badge tone="neutral">merge</Badge>}
+              {commit.parents.length > 1 && <Badge tone="neutral">{t('merge')}</Badge>}
             </span>
             <span className="flex items-center gap-1.5 overflow-hidden">
               <span className="shrink-0 font-mono text-[11px] text-ink-3">{commit.shortSha}</span>
@@ -136,14 +138,14 @@ function CommitRow({
             className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
           >
             <Copy className="size-3.5" />
-            SHA’yı kopyala
+            {t('SHA’yı kopyala')}
           </ContextMenu.Item>
           <ContextMenu.Item
             onSelect={onTag}
             className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
           >
             <Tag className="size-3.5" />
-            Bu commit’i etiketle…
+            {t('Bu commit’i etiketle…')}
           </ContextMenu.Item>
           <ContextMenu.Separator className="my-1 h-px bg-line-soft" />
           <ContextMenu.Item
@@ -151,13 +153,13 @@ function CommitRow({
             className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
           >
             <Undo2 className="size-3.5" />
-            Bu commit’i geri al (revert)
+            {t('Bu commit’i geri al (revert)')}
           </ContextMenu.Item>
           <ContextMenu.Item
             onSelect={onReset}
             className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] text-crit outline-none data-[highlighted]:bg-crit-tint"
           >
-            Bu commit’e sıfırla (reset)…
+            {t('Bu commit’e sıfırla (reset)…')}
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
@@ -166,6 +168,7 @@ function CommitRow({
 }
 
 export function HistoryView({ repoId }: { repoId: string }) {
+  const t = useT();
   const [filter, setFilter] = useState<LogFilter>({});
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useLog(
     repoId,
@@ -222,12 +225,12 @@ export function HistoryView({ repoId }: { repoId: string }) {
             : result.outcome === 'conflict'
               ? 'warning'
               : 'error',
-        title: 'Revert',
+        title: t('Revert'),
         description: result.message,
       });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Geri alınamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Geri alınamadı'), description: errorMessage(error) }),
   });
 
   const reset = useMutation({
@@ -237,10 +240,13 @@ export function HistoryView({ repoId }: { repoId: string }) {
       invalidate(repoId);
       void client.invalidateQueries({ queryKey: keys.log(repoId) });
       select({ kind: 'none' });
-      toast({ kind: 'info', title: `HEAD ${variables.sha.slice(0, 8)} commit’ine taşındı` });
+      toast({
+        kind: 'info',
+        title: t('HEAD {sha} commit’ine taşındı', { sha: variables.sha.slice(0, 8) }),
+      });
     },
     onError: (error) =>
-      toast({ kind: 'error', title: 'Sıfırlanamadı', description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Sıfırlanamadı'), description: errorMessage(error) }),
   });
 
   if (isLoading) {
@@ -261,11 +267,11 @@ export function HistoryView({ repoId }: { repoId: string }) {
         <div className="flex w-96 shrink-0 flex-col border-r border-line bg-surface">
           {commits.length === 0 ? (
             <EmptyState
-              title={hasFilter ? 'Filtreye uyan commit yok' : 'Geçmiş boş'}
+              title={hasFilter ? t('Filtreye uyan commit yok') : t('Geçmiş boş')}
               description={
                 hasFilter
-                  ? 'Filtreyi gevşetmeyi dene.'
-                  : 'Bu depoda henüz commit yok. İlk commit’ini oluşturduğunda burada görünecek.'
+                  ? t('Filtreyi gevşetmeyi dene.')
+                  : t('Bu depoda henüz commit yok. İlk commit’ini oluşturduğunda burada görünecek.')
               }
             />
           ) : (
@@ -298,7 +304,7 @@ export function HistoryView({ repoId }: { repoId: string }) {
                         onTag={() => setTagTarget(commit)}
                         onCopySha={() => {
                           void navigator.clipboard.writeText(commit.sha);
-                          toast({ kind: 'success', title: 'SHA kopyalandı' });
+                          toast({ kind: 'success', title: t('SHA kopyalandı') });
                         }}
                       />
                     </div>
@@ -347,7 +353,7 @@ export function HistoryView({ repoId }: { repoId: string }) {
                   </div>
 
                   <div className="px-3 py-2">
-                    <SectionLabel>{detail.files.length} dosya</SectionLabel>
+                    <SectionLabel>{t('{count} dosya', { count: detail.files.length })}</SectionLabel>
                   </div>
 
                   <div className="min-h-0 flex-1 overflow-y-auto pb-2">
@@ -396,7 +402,11 @@ export function HistoryView({ repoId }: { repoId: string }) {
                 diff={selectedPath ? diff : undefined}
                 isLoading={!!selectedPath && diffLoading}
                 title={selectedPath ?? ''}
-                subtitle={selectedPath ? `${detail?.shortSha ?? ''} içindeki hâli` : undefined}
+                subtitle={
+                selectedPath
+                  ? t('{sha} içindeki hâli', { sha: detail?.shortSha ?? '' })
+                  : undefined
+              }
                 sideBySide={settings?.sideBySideDiff ?? false}
               />
             </div>
@@ -404,8 +414,8 @@ export function HistoryView({ repoId }: { repoId: string }) {
         ) : (
           <div className="min-w-0 flex-1">
             <EmptyState
-              title="Commit seç"
-              description="Soldaki listeden bir commit’e tıklayarak içindeki değişiklikleri gör. Sağ tıkla revert, reset ve etiket seçeneklerine ulaşabilirsin."
+              title={t('Commit seç')}
+              description={t('Soldaki listeden bir commit’e tıklayarak içindeki değişiklikleri gör. Sağ tıkla revert, reset ve etiket seçeneklerine ulaşabilirsin.')}
             />
           </div>
         )}
@@ -414,30 +424,28 @@ export function HistoryView({ repoId }: { repoId: string }) {
       <ConfirmDialog
         open={revertTarget !== null}
         onOpenChange={(next) => !next && setRevertTarget(null)}
-        title="Commit’i geri al"
-        confirmLabel="Geri al"
+        title={t('Commit’i geri al')}
+        confirmLabel={t('Geri al')}
         onConfirm={() => revertTarget && revert.mutate(revertTarget.sha)}
       >
         <p className="text-[13px] text-ink-2">
-          <span className="font-mono text-ink">{revertTarget?.shortSha}</span> commit’inin
-          değişikliklerini geri alan yeni bir commit oluşturulacak. Geçmiş silinmez, bu yüzden
-          paylaşılmış dallarda güvenlidir.
+          <span className="font-mono text-ink">{revertTarget?.shortSha}</span>{' '}
+          {t('commit’inin değişikliklerini geri alan yeni bir commit oluşturulacak. Geçmiş silinmez, bu yüzden paylaşılmış dallarda güvenlidir.')}
         </p>
       </ConfirmDialog>
 
       <ConfirmDialog
         open={resetTarget !== null}
         onOpenChange={(next) => !next && setResetTarget(null)}
-        title="Bu commit’e sıfırla"
-        confirmLabel="Sıfırla"
+        title={t('Bu commit’e sıfırla')}
+        confirmLabel={t('Sıfırla')}
         destructive={resetMode === 'hard'}
         onConfirm={() => resetTarget && reset.mutate({ sha: resetTarget.sha, mode: resetMode })}
       >
         <div className="flex flex-col gap-3">
           <p className="text-[13px] text-ink-2">
-            HEAD <span className="font-mono text-ink">{resetTarget?.shortSha}</span> commit’ine
-            taşınacak. Bu dal başkalarıyla paylaşıldıysa dikkatli ol: karşı tarafta ayrılmış bir
-            geçmiş bırakır.
+            HEAD <span className="font-mono text-ink">{resetTarget?.shortSha}</span>{' '}
+            {t('commit’ine taşınacak. Bu dal başkalarıyla paylaşıldıysa dikkatli ol: karşı tarafta ayrılmış bir geçmiş bırakır.')}
           </p>
           <div className="flex flex-col gap-1.5">
             {RESET_MODES.map((option) => (
@@ -458,9 +466,9 @@ export function HistoryView({ repoId }: { repoId: string }) {
                     resetMode === option.mode ? 'text-accent-ink' : 'text-ink',
                   )}
                 >
-                  {option.label}
+                  {t(option.label)}
                 </p>
-                <p className="text-[11px] text-ink-2">{option.description}</p>
+                <p className="text-[11px] text-ink-2">{t(option.description)}</p>
               </button>
             ))}
           </div>

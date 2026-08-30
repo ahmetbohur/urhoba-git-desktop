@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Tooltip } from 'radix-ui';
 import { FolderGit2, GitCommitHorizontal, GitPullRequest, History } from 'lucide-react';
+import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { matchesShortcut, useCommands, type Command } from '../lib/commands';
 import { onAppEvent } from '../lib/ipc';
@@ -31,6 +32,7 @@ const TABS: Array<{ id: MainTab; label: string; icon: typeof History }> = [
  * commit attığında) arayüz kendiliğinden tazeleniyor.
  */
 function useAppEvents(): void {
+  const t = useT();
   const client = useQueryClient();
   const pushCommandLog = useUi((s) => s.pushCommandLog);
   const recordAutoPull = useUi((s) => s.recordAutoPull);
@@ -53,13 +55,13 @@ function useAppEvents(): void {
             if (event.result.commitsPulled > 0) {
               toast({
                 kind: 'success',
-                title: 'Otomatik pull',
+                title: t('Otomatik pull'),
                 description: event.result.message,
               });
             } else if (event.result.outcome === 'conflict' || event.result.outcome === 'error') {
               toast({
                 kind: 'error',
-                title: 'Otomatik pull başarısız',
+                title: t('Otomatik pull başarısız'),
                 description: event.result.message,
               });
             }
@@ -70,7 +72,7 @@ function useAppEvents(): void {
             break;
         }
       }),
-    [client, pushCommandLog, recordAutoPull, toast],
+    [client, pushCommandLog, recordAutoPull, toast, t],
   );
 }
 
@@ -112,6 +114,7 @@ function useShortcuts(commands: Command[], openPalette: () => void): void {
 }
 
 export function App() {
+  const t = useT();
   useAppEvents();
   const [paletteOpen, setPaletteOpen] = useState(false);
 
@@ -144,7 +147,7 @@ export function App() {
     <Tooltip.Provider delayDuration={400}>
       <div className="flex h-full">
         <a href="#ana-icerik" className="skip-link">
-          İçeriğe atla
+          {t('İçeriğe atla')}
         </a>
         <RepoSidebar autoPullRepoIds={autoPullRepoIds} />
 
@@ -154,7 +157,7 @@ export function App() {
               <TopBar repo={activeRepo} />
 
               <nav
-                aria-label="Depo görünümleri"
+                aria-label={t('Depo görünümleri')}
                 role="tablist"
                 className="flex shrink-0 gap-1 border-b border-line bg-surface px-3"
               >
@@ -173,7 +176,7 @@ export function App() {
                     )}
                   >
                     <Icon className="size-3.5" />
-                    {label}
+                    {t(label)}
                   </button>
                 ))}
               </nav>
@@ -194,7 +197,7 @@ export function App() {
             <EmptyState
               icon={<FolderGit2 className="size-6" />}
               title="Urhoba Git Desktop"
-              description="Başlamak için soldan bir depo ekle ya da uzak bir depoyu klonla. Komut paletini Ctrl/Cmd + K ile açabilirsin."
+              description={t('Başlamak için soldan bir depo ekle ya da uzak bir depoyu klonla. Komut paletini Ctrl/Cmd + K ile açabilirsin.')}
             />
           )}
         </main>

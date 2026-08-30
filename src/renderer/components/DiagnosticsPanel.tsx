@@ -1,4 +1,5 @@
 import { Copy, FileText } from 'lucide-react';
+import { useT } from '../i18n';
 import { invoke } from '../lib/ipc';
 import { useMutation, useQuery } from '../lib/queries';
 import { useUi } from '../stores/ui';
@@ -24,6 +25,7 @@ const ROWS: Array<{ key: keyof Diagnostics; label: string }> = [
 ];
 
 export function DiagnosticsPanel() {
+  const t = useT();
   const toast = useUi((s) => s.toast);
   const { data, isLoading } = useQuery<Diagnostics>({
     queryKey: ['diagnostics'],
@@ -38,7 +40,7 @@ export function DiagnosticsPanel() {
     if (!data) return;
     const text = ROWS.map((row) => `${row.label}: ${String(data[row.key])}`).join('\n');
     void navigator.clipboard.writeText(text);
-    toast({ kind: 'success', title: 'Tanılama bilgisi kopyalandı' });
+    toast({ kind: 'success', title: t('Tanılama bilgisi kopyalandı') });
   };
 
   if (isLoading || !data) {
@@ -52,36 +54,36 @@ export function DiagnosticsPanel() {
   return (
     <section>
       <div className="flex items-center justify-between">
-        <SectionLabel>Tanılama</SectionLabel>
+        <SectionLabel>{t('Tanılama')}</SectionLabel>
         <div className="flex gap-1">
           <Button size="sm" variant="ghost" onClick={() => openLogs.mutate()}>
             <FileText className="size-3.5" />
-            Günlükleri aç
+            {t('Günlükleri aç')}
           </Button>
           <Button size="sm" variant="ghost" onClick={copyAll}>
             <Copy className="size-3.5" />
-            Kopyala
+            {t('Kopyala')}
           </Button>
         </div>
       </div>
 
       <div className="mt-2 flex items-center gap-2">
         {data.usesEmbeddedGit ? (
-          <Badge tone="ok">gömülü git</Badge>
+          <Badge tone="ok">{t('gömülü git')}</Badge>
         ) : (
-          <Badge tone="warn">sistem git’i</Badge>
+          <Badge tone="warn">{t('sistem git’i')}</Badge>
         )}
         <span className="text-[11px] text-ink-2">
           {data.usesEmbeddedGit
-            ? 'Uygulama kendi git sürümünü taşıyor; sistemde git kurulu olması gerekmiyor.'
-            : 'Gömülü git bulunamadı; sistemde kurulu git kullanılıyor.'}
+            ? t('Uygulama kendi git sürümünü taşıyor; sistemde git kurulu olması gerekmiyor.')
+            : t('Gömülü git bulunamadı; sistemde kurulu git kullanılıyor.')}
         </span>
       </div>
 
       <dl className="mt-2 divide-y divide-line-soft rounded-lg border border-line bg-ground">
         {ROWS.map((row) => (
           <div key={row.key} className="flex gap-3 px-2.5 py-1.5">
-            <dt className="w-32 shrink-0 text-[12px] text-ink-2">{row.label}</dt>
+            <dt className="w-32 shrink-0 text-[12px] text-ink-2">{t(row.label)}</dt>
             <dd className="selectable min-w-0 flex-1 truncate font-mono text-[11px] text-ink">
               {String(data[row.key])}
             </dd>

@@ -1,11 +1,29 @@
 import { formatDistanceToNowStrict, format, parseISO } from 'date-fns';
-import { tr } from 'date-fns/locale';
+import { enUS, tr } from 'date-fns/locale';
+import type { LanguagePreference } from '@shared/types';
+
+/**
+ * Tarih biçimlendirme dile bağlı.
+ *
+ * Etkin dil modül düzeyinde tutuluyor: tarih yardımcıları arayüzün her yerinde,
+ * çoğu zaman React bağlamına erişemeyen yerlerde çağrılıyor. Dil değiştiğinde
+ * kök bileşen bunu bir kez güncelliyor.
+ */
+let activeLanguage: LanguagePreference = 'tr';
+
+export function setFormatLanguage(language: LanguagePreference): void {
+  activeLanguage = language;
+}
+
+function locale() {
+  return activeLanguage === 'en' ? enUS : tr;
+}
 
 /** "3 dakika önce" — liste satırlarında tam tarihten daha okunur. */
 export function relativeTime(iso: string): string {
   if (!iso) return '';
   try {
-    return formatDistanceToNowStrict(parseISO(iso), { addSuffix: true, locale: tr });
+    return formatDistanceToNowStrict(parseISO(iso), { addSuffix: true, locale: locale() });
   } catch {
     return iso;
   }
@@ -14,7 +32,7 @@ export function relativeTime(iso: string): string {
 export function absoluteTime(iso: string): string {
   if (!iso) return '';
   try {
-    return format(parseISO(iso), 'd MMMM yyyy HH:mm', { locale: tr });
+    return format(parseISO(iso), 'd MMMM yyyy HH:mm', { locale: locale() });
   } catch {
     return iso;
   }
@@ -37,7 +55,7 @@ export function directoryName(filePath: string): string {
   return segments.join('/');
 }
 
-/** Sayıyı Türkçe binlik ayırıcıyla yazar. */
+/** Sayıyı etkin dilin binlik ayırıcısıyla yazar. */
 export function formatCount(value: number): string {
-  return new Intl.NumberFormat('tr-TR').format(value);
+  return new Intl.NumberFormat(activeLanguage === 'en' ? 'en-US' : 'tr-TR').format(value);
 }
