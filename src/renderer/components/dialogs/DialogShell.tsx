@@ -17,6 +17,7 @@ export function DialogShell({
   children,
   footer,
   width = 'md',
+  fill = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,6 +26,12 @@ export function DialogShell({
   children: ReactNode;
   footer?: ReactNode;
   width?: 'md' | 'lg';
+  /**
+   * İçerik kendi kaydırmasını yönetiyorsa true. Kabuk o zaman kaydırmayı
+   * kapatıp yüksekliği içeriğe bırakıyor: iç içe iki kaydırma alanı hem farenin
+   * hangisini kaydıracağını belirsizleştiriyor hem de alttaki satırı kesiyor.
+   */
+  fill?: boolean;
 }) {
   const t = useT();
   return (
@@ -32,6 +39,22 @@ export function DialogShell({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
         <Dialog.Content
+          /*
+           * Varsayılanda odak DOM'daki ilk öğeye, yani kapatma düğmesine
+           * gidiyor. `data-autofocus` taşıyan bir öğe varsa onu tercih ediyoruz:
+           * klavyeyle gelen kullanıcı doğrudan birincil eylemde başlıyor.
+           *
+           * React'in `autoFocus` özelliği burada işe yaramıyor; onu DOM
+           * özniteliği olarak yazmayıp odağı kendisi veriyor, dolayısıyla
+           * seçiciyle bulunamıyor.
+           */
+          onOpenAutoFocus={(event) => {
+            const content = event.currentTarget as HTMLElement | null;
+            const preferred = content?.querySelector<HTMLElement>('[data-autofocus]');
+            if (!preferred) return;
+            event.preventDefault();
+            preferred.focus();
+          }}
           className={cn(
             'fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-line bg-surface shadow-2xl',
             width === 'lg' ? 'max-w-2xl' : 'max-w-md',
@@ -54,7 +77,14 @@ export function DialogShell({
             </Dialog.Close>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</div>
+          <div
+            className={cn(
+              'flex min-h-0 flex-1 flex-col px-4 py-4',
+              fill ? 'overflow-hidden' : 'overflow-y-auto',
+            )}
+          >
+            {children}
+          </div>
 
           {footer && (
             <div className="flex items-center justify-end gap-2 border-t border-line-soft px-4 py-3">

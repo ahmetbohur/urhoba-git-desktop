@@ -61,7 +61,7 @@ export const en: Record<string, string> = {
   'Klasör ekle…': 'Add folder…',
   'Tek bir depo seç': 'Pick a single repository',
   'Klasörü tara…': 'Scan folder…',
-  'İçindeki bütün depoları bul ve toplu ekle': 'Find every repository inside and add them at once',
+  'İçindeki bütün depoları bul': 'Find every repository inside',
   'Depo klonla…': 'Clone repository…',
   'Uzak sunucudan indir': 'Download from a remote',
   'Klasörü tara': 'Scan folder',

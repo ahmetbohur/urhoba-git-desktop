@@ -93,39 +93,57 @@ export function ScanDialog({
       title={t('Klasörü tara')}
       description={t('Seçtiğin klasördeki bütün git depolarını bulur ve tek seferde ekler.')}
       width="lg"
+      fill
       footer={
         <>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={addMany.isPending}>
             {t('Vazgeç')}
           </Button>
-          <Button
-            variant="primary"
-            loading={addMany.isPending}
-            disabled={selected.size === 0}
-            onClick={() => addMany.mutate()}
-          >
-            {selected.size > 0
-              ? t('{count} depoyu ekle', { count: selected.size })
-              : t('Depo seç')}
-          </Button>
+          {/* Tarama yapılmadan "ekle" düğmesi göstermek anlamsız: eklenecek bir
+              şey yok ve devre dışı bir düğme kullanıcıya yanlış yerde arıyormuş
+              hissi veriyor. */}
+          {results && results.length > 0 && (
+            <Button
+              variant="primary"
+              loading={addMany.isPending}
+              disabled={selected.size === 0}
+              onClick={() => addMany.mutate()}
+            >
+              {selected.size > 0
+                ? t('{count} depoyu ekle', { count: selected.size })
+                : t('Depo seç')}
+            </Button>
+          )}
         </>
       }
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1 rounded-md border border-line bg-ground px-2 py-1.5">
-            <p className="truncate font-mono text-[11px] text-ink">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="min-w-0 flex-1 rounded-md border border-line bg-ground px-2.5 py-1.5">
+            {/* Seçilmemiş durumda yol biçimi kullanmıyoruz: tek aralıklı yazı
+                gerçek bir yol varmış izlenimi veriyordu. */}
+            <p
+              className={cn(
+                'truncate text-[11px]',
+                directory ? 'font-mono text-ink' : 'text-ink-3 italic',
+              )}
+            >
               {directory ?? t('Henüz klasör seçilmedi')}
             </p>
           </div>
-          <Button variant="secondary" loading={scan.isPending} onClick={() => scan.mutate()}>
+          <Button
+            variant={directory ? 'secondary' : 'primary'}
+            loading={scan.isPending}
+            data-autofocus
+            onClick={() => scan.mutate()}
+          >
             <FolderOpen className="size-3.5" />
             {directory ? t('Başka klasör') : t('Klasör seç')}
           </Button>
         </div>
 
         {scan.isPending && (
-          <div className="flex items-center justify-center gap-2 py-8 text-[12px] text-ink-2">
+          <div className="flex flex-1 items-center justify-center gap-2 py-8 text-[12px] text-ink-2">
             <Spinner />
             {t('Klasör taranıyor…')}
           </div>
@@ -133,7 +151,7 @@ export function ScanDialog({
 
         {results && !scan.isPending && (
           <>
-            <div className="flex items-center gap-2 border-t border-line-soft pt-2">
+            <div className="flex shrink-0 items-center gap-2 border-t border-line-soft pt-2">
               <SectionLabel>{t('{count} depo bulundu', { count: results.length })}</SectionLabel>
               <div className="flex-1" />
               {selectable.length > 0 && (
@@ -152,7 +170,7 @@ export function ScanDialog({
             </div>
 
             {results.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-line py-10 text-center">
+              <div className="flex shrink-0 flex-col items-center gap-2 rounded-lg border border-dashed border-line py-10 text-center">
                 <FolderSearch className="size-5 text-ink-3" />
                 <p className="text-[13px] font-medium text-ink">{t('Depo bulunamadı')}</p>
                 <p className="max-w-sm text-[12px] text-ink-2">
@@ -160,18 +178,19 @@ export function ScanDialog({
                 </p>
               </div>
             ) : (
-              <ul className="flex max-h-80 flex-col gap-0.5 overflow-y-auto">
+              <ul className="min-h-0 flex-1 divide-y divide-line-soft overflow-y-auto rounded-lg border border-line">
                 {results.map((repo) => (
                   <li key={repo.path}>
                     <label
                       className={cn(
-                        'flex items-center gap-2 rounded-md px-2 py-1.5',
+                        // Seçim sol kenardaki şeritle de belli oluyor: uzun bir
+                        // listede yalnızca arka plan tonu ayırt etmeye yetmiyor.
+                        'flex items-center gap-2.5 border-l-2 px-2.5 py-2',
                         repo.alreadyAdded
-                          ? 'opacity-50'
+                          ? 'border-transparent opacity-45'
                           : selected.has(repo.path)
-                            ? 'bg-accent-tint'
-                            : 'hover:bg-surface-2',
-                        !repo.alreadyAdded && 'cursor-pointer',
+                            ? 'cursor-pointer border-accent bg-accent-tint'
+                            : 'cursor-pointer border-transparent hover:bg-surface-2',
                       )}
                     >
                       <input
@@ -182,14 +201,16 @@ export function ScanDialog({
                         className="size-3.5 shrink-0 accent-[var(--accent)]"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] text-ink">{repo.name}</span>
+                        <span className="block truncate text-[13px] font-medium text-ink">
+                          {repo.name}
+                        </span>
                         <span className="block truncate font-mono text-[11px] text-ink-3">
                           {repo.relativePath}
                         </span>
                       </span>
                       {repo.currentBranch && (
-                        <span className="flex shrink-0 items-center gap-1 text-[11px] text-ink-3">
-                          <GitBranch className="size-3" />
+                        <span className="flex shrink-0 items-center gap-1 rounded border border-line-soft bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-ink-2">
+                          <GitBranch className="size-2.5" />
                           {repo.currentBranch}
                         </span>
                       )}

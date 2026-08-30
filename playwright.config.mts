@@ -12,6 +12,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [['list']],
+  // Ekran görüntüsü üreten senaryolar doğrulama yapmıyor; yalnızca istendiğinde
+  // `--grep @screenshot` ile çalışıyorlar.
+  grepInvert: /@screenshot/,
   use: {
     trace: 'retain-on-failure',
   },

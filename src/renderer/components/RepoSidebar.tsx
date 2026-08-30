@@ -165,7 +165,10 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
             <DropdownMenu.Content
               align="end"
               sideOffset={4}
-              className="z-50 min-w-64 rounded-md border border-line bg-surface p-1 shadow-lg"
+              // Menü kenar çubuğundan geniş olduğu için hizalama onu ekranın sol
+              // kenarına yapıştırıyordu; çarpışma boşluğu kenarda nefes bırakıyor.
+              collisionPadding={10}
+              className="z-50 w-60 rounded-lg border border-line bg-surface p-1 shadow-xl"
             >
               <DropdownMenu.Item
                 onSelect={() => addRepo.mutate()}
@@ -185,7 +188,7 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
                 <span>
                   <span className="block text-[13px] text-ink">{t('Klasörü tara…')}</span>
                   <span className="block text-[11px] text-ink-3">
-                    {t('İçindeki bütün depoları bul ve toplu ekle')}
+                    {t('İçindeki bütün depoları bul')}
                   </span>
                 </span>
               </DropdownMenu.Item>
