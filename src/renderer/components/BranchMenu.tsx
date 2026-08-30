@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ContextMenu, DropdownMenu } from 'radix-ui';
-import { Check, GitBranch, GitMerge, Plus, Search, Trash2 } from 'lucide-react';
+import { Check, GitBranch, GitMerge, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { errorMessage, invoke } from '../lib/ipc';
@@ -9,6 +9,7 @@ import { relativeTime } from '../lib/format';
 import { useUi } from '../stores/ui';
 import { Badge, SectionLabel } from './primitives';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
+import { RenameBranchDialog } from './dialogs/RenameBranchDialog';
 import type { Branch } from '@shared/types';
 
 /**
@@ -27,6 +28,7 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
   // Kirli dizin yüzünden engellenen geçiş: kullanıcıya saklayıp geçmeyi öneriyoruz.
   const [blocked, setBlocked] = useState<{ branch: string; paths: string[] } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Branch | null>(null);
+  const [renameTarget, setRenameTarget] = useState<Branch | null>(null);
 
   const checkout = useMutation({
     mutationFn: (name: string) => invoke('git:checkout', { repoId, name }),
@@ -199,9 +201,20 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
               Bu dalı <strong className="font-mono">{branch.fullName}</strong> üzerine diz
             </span>
           </ContextMenu.Item>
-          {!branch.isRemote && !branch.isCurrent && (
+          {!branch.isRemote && (
             <>
               <ContextMenu.Separator className="my-1 h-px bg-line-soft" />
+              <ContextMenu.Item
+                onSelect={() => setRenameTarget(branch)}
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
+              >
+                <Pencil className="size-3.5" />
+                {t('Yeniden adlandır…')}
+              </ContextMenu.Item>
+            </>
+          )}
+          {!branch.isRemote && !branch.isCurrent && (
+            <>
               <ContextMenu.Item
                 onSelect={() => setDeleteTarget(branch)}
                 className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] text-crit outline-none data-[highlighted]:bg-crit-tint"
@@ -308,6 +321,14 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
           </p>
         </div>
       </ConfirmDialog>
+
+      <RenameBranchDialog
+        key={renameTarget?.fullName ?? 'none'}
+        repoId={repoId}
+        branch={renameTarget}
+        open={renameTarget !== null}
+        onOpenChange={(next) => !next && setRenameTarget(null)}
+      />
 
       <ConfirmDialog
         open={deleteTarget !== null}

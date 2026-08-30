@@ -203,6 +203,17 @@ export const en: Record<string, string> = {
   'dalını oluştur ve geç': 'and switch to it',
   'dalını buraya birleştir': 'into this branch',
   'Dalı sil': 'Delete branch',
+  'Yeniden adlandır…': 'Rename…',
+  'Yeniden adlandır': 'Rename',
+  'Dalı yeniden adlandır': 'Rename branch',
+  'Yeni ad': 'New name',
+  'Dal yeniden adlandırma': 'Branch rename',
+  'Dal yeniden adlandırılamadı': 'Could not rename branch',
+  'Uzak sunucudaki dalı da taşı': 'Move the remote branch too',
+  'Yeni ad gönderilir, eski dal silinir. Bu dalı takip eden başkaları varsa onların bağlantısı kopar.':
+    'The new name is pushed and the old branch is deleted. Anyone tracking the old branch loses their link.',
+  'Uzak sunucuda dal eski adıyla kalacak; istediğinde push ederek yeni adı gönderebilirsin.':
+    'The remote branch keeps its old name; you can push the new one whenever you want.',
   'Dal değiştirilemedi': 'Could not switch branch',
   'Dal değiştirme': 'Switch branch',
   'Dal silinemedi': 'Could not delete branch',

@@ -8,6 +8,7 @@ import * as merge from '../git/merge';
 import * as autostart from '../services/autostart';
 import * as ai from '../ai/service';
 import * as diagnostics from '../services/diagnostics';
+import { buildMenu } from '../services/menu';
 import * as github from '../github/provider';
 import * as rewrite from '../git/rewrite';
 import * as tags from '../git/tags';
@@ -156,6 +157,10 @@ const handlers: Handlers = {
     const repo = activateRepo(repoId);
     return branches.deleteBranch(repo.id, repo.path, name, force);
   },
+  'git:branch-rename': ({ repoId, from, to, updateRemote }) => {
+    const repo = activateRepo(repoId);
+    return branches.renameBranch(repo.id, repo.path, from, to, updateRemote);
+  },
   'git:merge': ({ repoId, branch }) => {
     const repo = activateRepo(repoId);
     return merge.merge(repo.id, repo.path, branch);
@@ -290,6 +295,8 @@ const handlers: Handlers = {
      * yeniden başlatılınca uygulanıyordu.
      */
     if (patch.theme) nativeTheme.themeSource = patch.theme;
+    // Electron menüyü canlı güncellemiyor; dil değişince baştan kuruyoruz.
+    if (patch.language) buildMenu(patch.language);
     autopull.reconcileSchedules();
     return next;
   },

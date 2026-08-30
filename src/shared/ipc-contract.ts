@@ -8,6 +8,7 @@ import type {
   CommitDetail,
   AiStatus,
   AutostartStatus,
+  BranchRenameResult,
   CommitSuggestion,
   ConflictFile,
   Diagnostics,
@@ -112,6 +113,11 @@ export const inputSchemas = {
   }),
   'git:checkout': repoId.extend({ name: z.string().min(1) }),
   'git:branch-delete': repoId.extend({ name: z.string().min(1), force: z.boolean() }),
+  'git:branch-rename': repoId.extend({
+    from: z.string().min(1),
+    to: z.string().min(1),
+    updateRemote: z.boolean(),
+  }),
   'git:merge': repoId.extend({ branch: z.string().min(1) }),
   'git:rebase': repoId.extend({ branch: z.string().min(1) }),
   'git:operation-abort': repoId,
@@ -306,6 +312,7 @@ export interface IpcOutputs {
   'git:branch-create': void;
   'git:checkout': CheckoutResult;
   'git:branch-delete': void;
+  'git:branch-rename': BranchRenameResult;
   'git:merge': MergeResult;
   'git:rebase': MergeResult;
   'git:operation-abort': void;

@@ -164,6 +164,23 @@ test('tema değişikliği anında renklere yansıyor', async () => {
   await page.keyboard.press('Escape');
 });
 
+test('uygulama menüsü de dile uyuyor', async () => {
+  // Menü ana süreçte kuruluyor ve arayüzün çeviri katmanını görmüyor; dil
+  // değişince yeniden kurulduğunu doğruluyoruz.
+  const menuLabels = () =>
+    app.evaluate(({ Menu }) =>
+      (Menu.getApplicationMenu()?.items ?? []).flatMap((item) =>
+        (item.submenu?.items ?? []).map((sub) => sub.label),
+      ),
+    );
+
+  await page.evaluate(() => window.urhoba.invoke('settings:set', { language: 'en' }));
+  await expect.poll(menuLabels, { timeout: 5000 }).toContain('About Urhoba Git Desktop');
+
+  await page.evaluate(() => window.urhoba.invoke('settings:set', { language: 'tr' }));
+  await expect.poll(menuLabels, { timeout: 5000 }).toContain('Urhoba Git Desktop Hakkında');
+});
+
 test('git komut günlüğü çalışan komutları gösteriyor', async () => {
   await page.keyboard.press('Control+Shift+G');
   await expect(page.getByText('Git komutları')).toBeVisible();

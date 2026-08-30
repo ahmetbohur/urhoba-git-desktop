@@ -1,10 +1,10 @@
-import { app, BrowserWindow, Menu, nativeTheme, session, shell } from 'electron';
+import { app, BrowserWindow, nativeTheme, session, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { registerIpcHandlers } from './ipc';
-import { emitAppEvent } from './services/events';
 import { installCrashHandlers, log } from './services/logger';
+import { buildMenu } from './services/menu';
 import { initializeUpdates } from './services/updater';
 import * as autopull from './services/autopull';
 import * as store from './services/store';
@@ -80,50 +80,6 @@ function applyContentSecurityPolicy(): void {
   });
 }
 
-function buildMenu(): void {
-  const template: Electron.MenuItemConstructorOptions[] = [
-    {
-      label: 'Urhoba',
-      submenu: [
-        {
-          // İşletim sisteminin kendi "hakkında" paneli yerine uygulama içindeki
-          // diyaloğu açıyoruz: o panel boş kalıyor, dili ve temayı da izlemiyor.
-          label: 'Urhoba Git Desktop Hakkında',
-          click: () => emitAppEvent({ type: 'app:show-about' }),
-        },
-        { type: 'separator' },
-        { role: 'quit', label: 'Çıkış' },
-      ],
-    },
-    {
-      label: 'Düzen',
-      submenu: [
-        { role: 'undo', label: 'Geri al' },
-        { role: 'redo', label: 'Yinele' },
-        { type: 'separator' },
-        { role: 'cut', label: 'Kes' },
-        { role: 'copy', label: 'Kopyala' },
-        { role: 'paste', label: 'Yapıştır' },
-        { role: 'selectAll', label: 'Tümünü seç' },
-      ],
-    },
-    {
-      label: 'Görünüm',
-      submenu: [
-        { role: 'reload', label: 'Yeniden yükle' },
-        { role: 'toggleDevTools', label: 'Geliştirici araçları' },
-        { type: 'separator' },
-        { role: 'resetZoom', label: 'Yakınlaştırmayı sıfırla' },
-        { role: 'zoomIn', label: 'Yakınlaştır' },
-        { role: 'zoomOut', label: 'Uzaklaştır' },
-        { type: 'separator' },
-        { role: 'togglefullscreen', label: 'Tam ekran' },
-      ],
-    },
-  ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-}
-
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1280,
@@ -175,7 +131,7 @@ app.on('ready', () => {
     embeddedGit: process.env.LOCAL_GIT_DIRECTORY ?? 'sistem git',
   });
   applyContentSecurityPolicy();
-  buildMenu();
+  buildMenu(store.getSettings().language);
   registerIpcHandlers();
 
   nativeTheme.themeSource = store.getSettings().theme;

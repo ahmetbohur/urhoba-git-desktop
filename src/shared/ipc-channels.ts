@@ -40,6 +40,7 @@ export const IPC_CHANNELS = [
   'git:branch-create',
   'git:checkout',
   'git:branch-delete',
+  'git:branch-rename',
   'git:merge',
   'git:rebase',
   'git:operation-abort',

@@ -378,6 +378,13 @@ export interface CheckoutResult {
   blockingPaths: string[];
 }
 
+export interface BranchRenameResult {
+  outcome: 'renamed' | 'error';
+  message: string;
+  /** Uzak sunucudaki dal da yeni ada taşındı mı. */
+  remoteUpdated: boolean;
+}
+
 export type MergeOutcome = 'merged' | 'up-to-date' | 'conflict' | 'error';
 
 export interface MergeResult {

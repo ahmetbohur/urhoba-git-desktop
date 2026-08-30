@@ -26,7 +26,8 @@ Aynı dosyadaki iki ayrı değişikliği ayrı commit'lere bölmek için.
 edilmeyen dosyalar isteğe bağlı dahil.
 
 **Dallar** — Aranabilir dal menüsü, yerel ve uzak dallar, dal oluşturup doğrudan
-geçme, upstream'e göre ahead/behind rozetleri, merge, rebase ve dal silme.
+geçme, upstream'e göre ahead/behind rozetleri, merge, rebase, yeniden adlandırma
+ve silme.
 Kaydedilmemiş değişiklik geçişi engellerse hangi dosyaların engellediğini
 söyler ve tek tıkla saklayıp geçmeyi önerir.
 
@@ -36,7 +37,7 @@ iki çıkışı (devam et / iptal et) gösterir. Çakışan dosyada her blok iç
 kapısı.
 
 **Türkçe ve İngilizce arayüz** — Ayarlardan tek tıkla değişir; tarih ve sayı
-biçimleri de dile uyar.
+biçimleri ile uygulama menüsü de dile uyar.
 
 **Komut paleti ve kısayollar** — `Ctrl/Cmd + K` ile her şey tek arama kutusundan:
 depo değiştir, dal değiştir, fetch/pull/push, stash. Kısayollar paletle aynı
@@ -262,5 +263,6 @@ yapılandırması eklendi.
 Planın tamamı kodlandı. Kalanlar:
 
 - **Kod imzalama** — ücretli sertifika bekliyor (yukarıya bakın)
+- **GitHub akışları** — PR listeleme ve oluşturma gerçek bir jetonla denenmedi
 - **Büyük depo profillemesi** — sayfalama ve sanallaştırma var ama 50.000
   commit'lik bir depoda ölçüm yapılmadı

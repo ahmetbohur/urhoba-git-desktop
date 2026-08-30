@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { checkout, createBranch, deleteBranch, getBranches } from '../branches';
+import { checkout, createBranch, deleteBranch, getBranches, renameBranch } from '../branches';
 import { applyChoices, parseConflictSections, readConflict, resolveConflict } from '../conflict';
 import { abortOperation, continueOperation, merge, rebase } from '../merge';
 import { stageLines } from '../staging';
@@ -217,6 +217,92 @@ describe('dal değiştirme koruması', () => {
     const result = await checkout(REPO_ID, repoPath, 'yan');
     expect(result.outcome).toBe('switched');
     expect((await getStatus(REPO_ID, repoPath)).branch).toBe('yan');
+  });
+
+  it('dalı yeniden adlandırır', async () => {
+    await seed();
+    await createBranch(REPO_ID, repoPath, 'eski-ad', undefined, true);
+
+    const result = await renameBranch(REPO_ID, repoPath, 'eski-ad', 'yeni-ad', false);
+
+    expect(result.outcome).toBe('renamed');
+    expect((await getStatus(REPO_ID, repoPath)).branch).toBe('yeni-ad');
+    const branches = await getBranches(REPO_ID, repoPath);
+    expect(branches.local.map((b) => b.fullName).sort()).toEqual(['main', 'yeni-ad']);
+  });
+
+  it('var olan bir ada yeniden adlandırmayı reddeder', async () => {
+    await seed();
+    await createBranch(REPO_ID, repoPath, 'yan', undefined, false);
+
+    const result = await renameBranch(REPO_ID, repoPath, 'yan', 'main', false);
+
+    expect(result.outcome).toBe('error');
+    // Dal adları değişmemiş olmalı.
+    const branches = await getBranches(REPO_ID, repoPath);
+    expect(branches.local.map((b) => b.fullName).sort()).toEqual(['main', 'yan']);
+  });
+
+  it('upstream varken uzak dalın eski adla kaldığını söyler', async () => {
+    const remotePath = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-rename-remote-'));
+    git(['init', '--bare', '--initial-branch=main'], remotePath);
+
+    await seed();
+    git(['remote', 'add', 'origin', remotePath]);
+    git(['push', '--set-upstream', 'origin', 'main']);
+
+    const result = await renameBranch(REPO_ID, repoPath, 'main', 'ana', false);
+
+    expect(result.outcome).toBe('renamed');
+    expect(result.remoteUpdated).toBe(false);
+    expect(result.message).toMatch(/hâlâ main adıyla/);
+
+    fs.rmSync(remotePath, { recursive: true, force: true });
+  });
+
+  it('istenirse uzak dalı da taşır', async () => {
+    const remotePath = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-rename-remote2-'));
+    git(['init', '--bare', '--initial-branch=main'], remotePath);
+
+    await seed();
+    git(['remote', 'add', 'origin', remotePath]);
+    git(['push', '--set-upstream', 'origin', 'main']);
+    // Varsayılan dal değil, sıradan bir özellik dalı: uzak depo kendi HEAD'inin
+    // işaret ettiği dalı silmeyi reddediyor.
+    await createBranch(REPO_ID, repoPath, 'ozellik', undefined, true);
+    git(['push', '--set-upstream', 'origin', 'ozellik']);
+
+    const result = await renameBranch(REPO_ID, repoPath, 'ozellik', 'ozellik-v2', true);
+
+    expect(result.outcome).toBe('renamed');
+    expect(result.remoteUpdated).toBe(true);
+    const remoteBranches = execFileSync('git', ['branch', '--list'], {
+      cwd: remotePath,
+      encoding: 'utf8',
+    });
+    expect(remoteBranches).toContain('ozellik-v2');
+    expect(remoteBranches).not.toContain('ozellik\n');
+
+    fs.rmSync(remotePath, { recursive: true, force: true });
+  });
+
+  it('uzaktaki varsayılan dal silinemediğinde durumu bildirir', async () => {
+    const remotePath = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-rename-remote3-'));
+    git(['init', '--bare', '--initial-branch=main'], remotePath);
+
+    await seed();
+    git(['remote', 'add', 'origin', remotePath]);
+    git(['push', '--set-upstream', 'origin', 'main']);
+
+    // Uzak depo HEAD'inin işaret ettiği dalı silmeyi reddeder; yeni ad
+    // gönderilmiş olsa da eski ad orada kalır ve kullanıcı bunu bilmeli.
+    const result = await renameBranch(REPO_ID, repoPath, 'main', 'ana', true);
+
+    expect(result.outcome).toBe('renamed');
+    expect(result.remoteUpdated).toBe(false);
+    expect(result.message).toMatch(/silinemedi/);
+
+    fs.rmSync(remotePath, { recursive: true, force: true });
   });
 
   it('birleştirilmemiş dalı zorlamadan silmeyi reddeder', async () => {
