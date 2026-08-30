@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ContextMenu } from 'radix-ui';
-import { Copy, GitBranch, GitGraph, History as HistoryIcon, Tag, Undo2 } from 'lucide-react';
+import { Cloud, Copy, GitBranch, GitGraph, History as HistoryIcon, Tag, Undo2 } from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { buildGraph } from '../lib/commit-graph';
@@ -58,12 +58,35 @@ const RESET_MODES: Array<{ mode: ResetMode; label: string; description: string }
   },
 ];
 
+/**
+ * Bir commit'in üzerindeki süsleme.
+ *
+ * Uzak dallar ayrı bir tonda: yerel `main` ile `origin/main` aynı commit'te
+ * durduğunda ikisi aynı görünseydi hangisinin nerede olduğu okunmazdı. Çıkışta
+ * olan dal içi dolu bir nokta taşıyor.
+ */
 function RefBadge({ commitRef }: { commitRef: CommitRef }) {
-  if (commitRef.kind === 'head') return null;
+  if (commitRef.kind === 'tag') {
+    return (
+      <Badge tone="warn">
+        <Tag className="size-2.5" />
+        {commitRef.name}
+      </Badge>
+    );
+  }
+  // Ayrık HEAD: hiçbir dala bağlı değil, ama nerede olduğu görünmeli.
+  if (commitRef.kind === 'head') {
+    return <Badge tone="crit">HEAD</Badge>;
+  }
   return (
-    <Badge tone={commitRef.kind === 'tag' ? 'warn' : 'accent'}>
-      {commitRef.kind === 'tag' ? <Tag className="size-2.5" /> : <GitBranch className="size-2.5" />}
+    <Badge tone={commitRef.kind === 'remote' ? 'neutral' : 'accent'}>
+      {commitRef.kind === 'remote' ? (
+        <Cloud className="size-2.5" />
+      ) : (
+        <GitBranch className="size-2.5" />
+      )}
       {commitRef.name}
+      {commitRef.isHead && <span className="text-[9px]">●</span>}
     </Badge>
   );
 }
@@ -126,9 +149,18 @@ function CommitRow({
               <span className="shrink-0 text-[11px] text-ink-3">
                 {relativeTime(commit.authoredAt)}
               </span>
-              {commit.refs.slice(0, 2).map((commitRef) => (
+              {/*
+                Üçten fazlası satıra sığmıyor; kalanların sayısı yazılıyor.
+                Sessizce kesmek "başka ref yok" gibi okunuyordu.
+              */}
+              {commit.refs.slice(0, 3).map((commitRef) => (
                 <RefBadge key={`${commitRef.kind}-${commitRef.name}`} commitRef={commitRef} />
               ))}
+              {commit.refs.length > 3 && (
+                <span className="shrink-0 text-[11px] text-ink-3">
+                  +{commit.refs.length - 3}
+                </span>
+              )}
             </span>
           </span>
         </button>

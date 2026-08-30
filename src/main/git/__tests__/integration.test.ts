@@ -77,7 +77,7 @@ describe('çalışma dizini akışı', () => {
     expect(log[0].body).toBe('Gövde satırı');
     expect(log[0].authorName).toBe('Test Kullanıcı');
     expect(log[0].parents).toEqual([]);
-    expect(log[0].refs).toContainEqual({ name: 'main', kind: 'local' });
+    expect(log[0].refs).toContainEqual({ name: 'main', kind: 'local', isHead: true });
 
     const detail = await getCommitDetail(REPO_ID, repoPath, result.sha);
     expect(detail.files.map((f) => f.path)).toEqual(['src/app.ts']);

@@ -148,8 +148,17 @@ function parseRefs(decoration: string): CommitRef[] {
     const part = rawPart.trim();
     if (part.length === 0) continue;
     if (part.startsWith('HEAD -> ')) {
-      refs.push({ name: 'HEAD', kind: 'head' });
-      refs.push({ name: part.slice('HEAD -> refs/heads/'.length), kind: 'local' });
+      /*
+       * Ayrı bir HEAD kaydı üretmiyoruz: "HEAD" ile "main" aynı yeri
+       * gösterirken iki rozet basmak yer kaplıyor ve arayüzde uzak dal gibi
+       * gerçekten bilgi taşıyan süslemeleri listeden dışarı itiyordu. Hangi
+       * dalın çıkışta olduğu bilgisi dalın kendisinde taşınıyor.
+       */
+      refs.push({
+        name: part.slice('HEAD -> refs/heads/'.length),
+        kind: 'local',
+        isHead: true,
+      });
     } else if (part === 'HEAD') {
       refs.push({ name: 'HEAD', kind: 'head' });
     } else if (part.startsWith('refs/heads/')) {

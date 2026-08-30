@@ -112,6 +112,10 @@ test('arayüz görüntüleri', async () => {
   await page.screenshot({ path: `${SHOT_DIR}/12-blame.png` });
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
+  // Süslemeler: yerel ve uzak dal aynı commit'te birlikte görünmeli.
+  await page.screenshot({ path: `${SHOT_DIR}/18-gecmis-suslemeler.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
   await page.getByRole('tab', { name: 'Değişiklikler' }).click();
   await page.waitForTimeout(600);
 

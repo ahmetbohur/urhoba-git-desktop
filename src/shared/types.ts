@@ -153,6 +153,8 @@ export interface CommitRef {
   /** Etiket, dal veya HEAD işaretçisi. */
   name: string;
   kind: 'head' | 'local' | 'remote' | 'tag';
+  /** Bu dal o an çıkış yapılmış olan mı. `head` türünde anlamsız. */
+  isHead?: boolean;
 }
 
 export interface Commit {

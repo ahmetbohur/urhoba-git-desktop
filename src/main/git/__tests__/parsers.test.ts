@@ -153,9 +153,13 @@ describe('parseLog', () => {
     expect(commit.parents).toEqual(['b'.repeat(40)]);
     // Açıklamalı etiket `tag:` önekiyle, hafif etiket öneksiz geliyor; ikisi de
     // aynı türde ref olarak çözülmeli.
+    /*
+     * `HEAD -> main` tek bir kayda iniyor: ayrı bir HEAD rozeti aynı yeri
+     * gösterip yer kaplıyor ve uzak dal gibi bilgi taşıyan süslemeleri
+     * listeden dışarı itiyordu.
+     */
     expect(commit.refs).toEqual([
-      { name: 'HEAD', kind: 'head' },
-      { name: 'main', kind: 'local' },
+      { name: 'main', kind: 'local', isHead: true },
       { name: 'origin/main', kind: 'remote' },
       { name: 'v1.0', kind: 'tag' },
       { name: 'v0.9', kind: 'tag' },
