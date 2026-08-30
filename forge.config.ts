@@ -1,4 +1,5 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
+import { execFileSync } from 'node:child_process';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
@@ -6,6 +7,17 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+
+function commandExists(command: string): boolean {
+  try {
+    execFileSync('which', [command], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const hasRpmbuild = commandExists('rpmbuild');
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -31,15 +43,28 @@ const config: ForgeConfig = {
      * macOS .icns, Linux .png. Üçü de `assets/make-icon.py` ile üretiliyor.
      */
     icon: 'assets/icon',
+    /*
+     * Linux'ta ikili dosyanın adı boşluksuz olmalı. `.deb` üreticisi paket
+     * adıyla aynı adda bir ikili arıyor ve "Urhoba Git Desktop" bulunamıyordu;
+     * ayrıca boşluklu bir komut adı terminalden çalıştırmayı da zorlaştırıyor.
+     * Windows ve macOS'ta değiştirilmiyor: orada kullanıcı ikilinin adını
+     * görev yöneticisinde görüyor ve ürün adı daha anlaşılır.
+     */
+    executableName: process.platform === 'linux' ? 'urhoba-git-desktop' : undefined,
   },
   rebuildConfig: {},
+  /*
+   * RPM yalnızca `rpmbuild` kuruluysa listeye giriyor. Koşulsuz eklendiğinde
+   * Forge bütün `make` işlemini daha başlamadan durduruyor ve rpm'e ihtiyacı
+   * olmayan bir makinede .deb üretmek imkânsız hâle geliyor.
+   */
   makers: [
     new MakerSquirrel({
       name: 'urhoba-git-desktop',
       setupIcon: 'assets/icon.ico',
     }),
     new MakerZIP({}, ['darwin']),
-    new MakerRpm({
+    ...(hasRpmbuild ? [new MakerRpm({
       options: {
         name: 'urhoba-git-desktop',
         productName: 'Urhoba Git Desktop',
@@ -49,7 +74,7 @@ const config: ForgeConfig = {
         icon: 'assets/icon.png',
         homepage: 'https://github.com/urhoba/urhoba-git-desktop',
       },
-    }),
+    })] : []),
     new MakerDeb({
       options: {
         name: 'urhoba-git-desktop',
