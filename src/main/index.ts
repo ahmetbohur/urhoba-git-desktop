@@ -51,6 +51,23 @@ function configureEmbeddedGit(): void {
   log('warn', 'Gömülü git bulunamadı, sistemdeki git denenecek', { candidates });
 }
 
+/**
+ * Pencere ikonu.
+ *
+ * Windows ve macOS'ta ikon paketleyici tarafından ikili dosyaya gömülüyor, ama
+ * Linux'ta gömülmüyor: pencereye açıkça verilmezse görev çubuğunda varsayılan
+ * Electron ikonu çıkıyor. Gömülü git ile aynı üç senaryo burada da geçerli
+ * olduğu için yollar aynı sırayla deneniyor.
+ */
+function windowIcon(): string | undefined {
+  const candidates = [
+    path.join(process.resourcesPath, 'icon.png'),
+    path.join(app.getAppPath(), 'assets', 'icon.png'),
+    path.join(process.cwd(), 'assets', 'icon.png'),
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate));
+}
+
 const isDevelopment = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
 
 /**
@@ -82,6 +99,7 @@ function applyContentSecurityPolicy(): void {
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
+    icon: windowIcon(),
     width: 1280,
     height: 820,
     minWidth: 960,

@@ -21,11 +21,14 @@ const config: ForgeConfig = {
      * `__dirname` tahminine güvenmekten daha sağlam: bundle edilmiş kodda o
      * tahmin zaten yanlış çıkıyor.
      */
-    extraResource: ['node_modules/dugite/git'],
     /*
-     * Uzantısız veriyoruz: her hedef kendi biçimini seçiyor (Windows .ico,
-     * Linux .png). macOS için .icns üretilmedi; o platformda şimdilik varsayılan
-     * Electron ikonu görünür.
+     * İkon ayrıca kaynak olarak kopyalanıyor: Linux'ta paketleyici ikonu ikili
+     * dosyaya gömmüyor, pencereye çalışma anında verilmesi gerekiyor.
+     */
+    extraResource: ['node_modules/dugite/git', 'assets/icon.png'],
+    /*
+     * Uzantısız veriyoruz: her hedef kendi biçimini seçiyor — Windows .ico,
+     * macOS .icns, Linux .png. Üçü de `assets/make-icon.py` ile üretiliyor.
      */
     icon: 'assets/icon',
   },
