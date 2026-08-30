@@ -19,6 +19,7 @@ import * as remote from '../git/remote';
 import * as preview from '../git/preview';
 import * as staging from '../git/staging';
 import * as submodule from '../git/submodule';
+import * as worktree from '../git/worktree';
 import * as stash from '../git/stash';
 import * as status from '../git/status';
 import * as autopull from '../services/autopull';
@@ -275,6 +276,10 @@ const handlers: Handlers = {
   'git:bisect-reset': ({ repoId }) => {
     const repo = activateRepo(repoId);
     return bisect.reset(repo.id, repo.path);
+  },
+  'git:worktrees': ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    return worktree.listWorktrees(repo.id, repo.path);
   },
   'git:submodules': ({ repoId }) => {
     const repo = activateRepo(repoId);

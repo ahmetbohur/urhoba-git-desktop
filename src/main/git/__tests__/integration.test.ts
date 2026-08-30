@@ -11,6 +11,7 @@ import { interactiveRebase } from '../merge';
 import { listSubmodules, updateSubmodules } from '../submodule';
 import * as bisect from '../bisect';
 import { getFilePreview } from '../preview';
+import { listWorktrees } from '../worktree';
 
 /**
  * Gerçek git süreçlerine karşı uçtan uca testler.
@@ -530,5 +531,30 @@ describe('LFS işaretçileri', () => {
     const preview = await getFilePreview(repoPath, 'gercek.png', 'HEAD');
 
     expect(preview?.lfs).toBeUndefined();
+  });
+});
+
+describe('çalışma ağaçları', () => {
+  it('ikinci ağacı ve dalını listeler', async () => {
+    write('a.txt', 'bir\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'ilk']);
+    git(['branch', 'ozellik']);
+
+    const second = `${repoPath}-ozellik`;
+    git(['worktree', 'add', second, 'ozellik']);
+
+    try {
+      const trees = await listWorktrees(REPO_ID, repoPath);
+
+      expect(trees).toHaveLength(2);
+      // Git listeyi her zaman ana ağaçla başlatıyor.
+      expect(trees[0].isMain).toBe(true);
+      expect(trees[0].branch).toBe('main');
+      expect(trees[1].branch).toBe('ozellik');
+      expect(trees[1].path).toBe(fs.realpathSync(second));
+    } finally {
+      git(['worktree', 'remove', '--force', second]);
+    }
   });
 });

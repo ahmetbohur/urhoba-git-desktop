@@ -56,6 +56,7 @@ export const IPC_CHANNELS = [
   'git:bisect-start',
   'git:bisect-mark',
   'git:bisect-reset',
+  'git:worktrees',
   'git:submodules',
   'git:submodule-update',
   'git:cherry-pick',

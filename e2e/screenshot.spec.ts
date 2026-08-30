@@ -319,6 +319,14 @@ test('arayüz görüntüleri', async () => {
   fs.copyFileSync('assets/icon-64.png', path.join(samplePath, 'logo.png'));
 
   /*
+   * Çalışma ağacı: örnek depoda ikinci bir ağaç açıp dal menüsünde o dalın
+   * "başka klasörde açık" diye işaretlendiğini kontrol ediyoruz.
+   */
+  sampleGit(['branch', 'ozellik']);
+  const secondTree = path.join(sampleRoot, 'ornek-ozellik');
+  sampleGit(['worktree', 'add', secondTree, 'ozellik']);
+
+  /*
    * LFS işaretçisi: git'teki içeriği üç satırlık metin olan bir görüntü.
    * git-lfs kurulu olmasa da tanınıp "Git LFS dosyası" diye gösterilmeli.
    */
@@ -373,6 +381,12 @@ test('arayüz görüntüleri', async () => {
   await page.getByText('buyuk.png').first().click();
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${SHOT_DIR}/25-lfs.png` });
+
+  await page.getByRole('button', { name: 'main' }).first().click();
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${SHOT_DIR}/26-worktree.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
 
   /*
    * Alt modül: hem kurulmamış uyarı şeridi hem değişiklik listesindeki rozet.

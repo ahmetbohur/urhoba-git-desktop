@@ -4,13 +4,13 @@ import { Check, GitBranch, GitMerge, Pencil, Plus, Search, Trash2 } from 'lucide
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { errorMessage, invoke } from '../lib/ipc';
-import { useBranches, useInvalidateRepo, useMutation } from '../lib/queries';
+import { useBranches, useInvalidateRepo, useMutation, useQuery } from '../lib/queries';
 import { relativeTime } from '../lib/format';
 import { useUi } from '../stores/ui';
 import { Badge, SectionLabel } from './primitives';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import { RenameBranchDialog } from './dialogs/RenameBranchDialog';
-import type { Branch } from '@shared/types';
+import type { Branch, Worktree } from '@shared/types';
 
 /**
  * Dal seçici.
@@ -21,6 +21,23 @@ import type { Branch } from '@shared/types';
 export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentBranch: string | null }) {
   const t = useT();
   const { data: branches } = useBranches(repoId);
+  const { data: worktrees } = useQuery<Worktree[]>({
+    queryKey: ['worktrees', repoId],
+    queryFn: () => invoke('git:worktrees', { repoId }),
+  });
+
+  /*
+   * Dal → o dalı tutan çalışma ağacının yolu. Ana ağaç (bu depo) listeye
+   * girmiyor: kendi dalımıza "başka yerde açık" demek anlamsız olurdu.
+   */
+  const worktreeByBranch = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const tree of worktrees ?? []) {
+      if (tree.isMain || !tree.branch) continue;
+      map.set(tree.branch, tree.path);
+    }
+    return map;
+  }, [worktrees]);
   const invalidate = useInvalidateRepo();
   const toast = useUi((s) => s.toast);
   const [open, setOpen] = useState(false);
@@ -158,12 +175,24 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
   );
   const canCreate = filter.trim().length > 0 && !exactMatch;
 
-  const renderBranch = (branch: Branch) => (
+  const renderBranch = (branch: Branch) => {
+    /*
+     * Bir dal aynı anda yalnızca bir çalışma ağacında açık olabiliyor. Başka
+     * ağaçta açıksa geçiş denemesi git'in "already used by worktree" hatasıyla
+     * bitiyor; nerede açık olduğunu baştan söylemek o hatayı hiç doğurmuyor.
+     */
+    const usedBy = worktreeByBranch.get(branch.fullName);
+
+    return (
     <ContextMenu.Root key={branch.fullName}>
       <ContextMenu.Trigger asChild>
         <DropdownMenu.Item
-          onSelect={() => checkout.mutate(branch.isRemote ? branch.name : branch.fullName)}
-          className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 outline-none data-[highlighted]:bg-surface-2"
+          disabled={!!usedBy}
+          onSelect={() => {
+            if (usedBy) return;
+            checkout.mutate(branch.isRemote ? branch.name : branch.fullName);
+          }}
+          className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 outline-none data-[disabled]:cursor-default data-[disabled]:opacity-50 data-[highlighted]:bg-surface-2"
         >
           <Check
             className={cn('size-3.5 shrink-0', branch.isCurrent ? 'text-accent-ink' : 'opacity-0')}
@@ -171,7 +200,9 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[13px] text-ink">{branch.fullName}</span>
             <span className="block truncate text-[11px] text-ink-3">
-              {branch.lastCommitSubject || t('commit yok')} · {relativeTime(branch.lastCommitAt)}
+              {usedBy
+                ? t('{path} klasöründe açık', { path: usedBy })
+                : `${branch.lastCommitSubject || t('commit yok')} · ${relativeTime(branch.lastCommitAt)}`}
             </span>
           </span>
           {branch.ahead > 0 && <Badge tone="accent">↑{branch.ahead}</Badge>}
@@ -227,7 +258,8 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu.Root>
-  );
+    );
+  };
 
   return (
     <>

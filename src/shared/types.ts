@@ -89,6 +89,22 @@ export interface FileChange {
   submodule?: SubmoduleState;
 }
 
+/**
+ * Aynı deponun bir başka klasörde açık kopyası.
+ *
+ * Her çalışma ağacı ayrı bir dalda duruyor ve bir dal aynı anda yalnızca bir
+ * ağaçta açık olabiliyor.
+ */
+export interface Worktree {
+  path: string;
+  sha: string;
+  /** Ayrık HEAD'de null. */
+  branch: string | null;
+  /** Ana çalışma ağacı mı — silinemeyen, deponun kendi klasörü. */
+  isMain: boolean;
+  locked: boolean;
+}
+
 /** Bir alt modülün deponun içindeki durumu. */
 export interface Submodule {
   /** Depo köküne göre yol. */

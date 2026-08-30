@@ -35,6 +35,10 @@ kurulur.
 vurgulanır. Uzun bir satırda tek sayı değiştiğinde satırın tamamını okumak
 gerekmiyor.
 
+**Çalışma ağaçları (worktree)** — Başka bir klasörde açık olan dallar dal
+menüsünde soluk görünür ve altında nerede açık oldukları yazar; o dala geçmeye
+çalışıp git'in anlaşılmaz hatasını almak gerekmez.
+
 **Git LFS** — LFS ile takip edilen dosyalarda sha256 satırları yerine dosyanın
 boyutu ve ne olduğu gösterilir; git-lfs kurulu olmasa da tanınır.
 
@@ -234,6 +238,19 @@ değiştiyse de vurgu üretilmiyor: her yeri boyamak bilgi taşımıyor.
 Eşleştirme yan yana görünümdekiyle aynı kuralı izliyor — arka arkaya gelen
 silinenler ve eklenenler sırayla eşleniyor. İki görünümde farklı çiftler kurmak
 aynı diff'i iki türlü göstermek olurdu.
+
+### Çalışma ağaçları
+
+Bir depo aynı anda birden fazla klasörde açık olabiliyor ve bir dal yalnızca bir
+ağaçta bulunabiliyor. Uygulama bunu bilmediğinde kullanıcı o dala geçmeye
+çalışıyor ve git `'dal' is already used by worktree at '/yol'` diyordu.
+
+Dal menüsü artık diğer ağaçlarda tutulan dalları soluk gösteriyor ve altında
+hangi klasörde açık olduklarını yazıyor. Engeli baştan söylemek, hatayı sonra
+çevirmekten iyi.
+
+Ana ağaç listeye girmiyor: kendi dalımıza "başka yerde açık" demek anlamsız
+olurdu.
 
 ### Git LFS
 

@@ -24,6 +24,7 @@ import type {
   PublishResult,
   ReflogEntry,
   Submodule,
+  Worktree,
   PullRequest,
   FetchResult,
   FileDiff,
@@ -172,6 +173,7 @@ export const inputSchemas = {
   'git:bisect-start': repoId.extend({ goodSha: z.string().min(4) }),
   'git:bisect-mark': repoId.extend({ verdict: z.enum(['good', 'bad', 'skip']) }),
   'git:bisect-reset': repoId,
+  'git:worktrees': repoId,
   'git:submodules': repoId,
   'git:submodule-update': repoId,
   'git:blame': repoId.extend({ path: z.string().min(1), ref: z.string().optional() }),
@@ -397,6 +399,7 @@ export interface IpcOutputs {
   'git:bisect-start': BisectState;
   'git:bisect-mark': BisectState;
   'git:bisect-reset': void;
+  'git:worktrees': Worktree[];
   'git:submodules': Submodule[];
   'git:submodule-update': void;
   'git:cherry-pick': MergeResult;
