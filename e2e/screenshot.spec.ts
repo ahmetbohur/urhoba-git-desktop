@@ -92,6 +92,28 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${SHOT_DIR}/10-gruplu-liste.png` });
 
+  // AI ayarları bölümü
+  await page.evaluate(() =>
+    window.urhoba.invoke('settings:set', {
+      ai: {
+        enabled: true,
+        provider: 'ollama',
+        model: 'gemma4:26b-a4b-it-qat',
+        ollamaHost: 'http://127.0.0.1:11434',
+      },
+    }),
+  );
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(1200);
+  await page.getByLabel('Ayarlar').click();
+  await page.waitForTimeout(1200);
+  await page.getByText('AI yardımı').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${SHOT_DIR}/11-ai-ayarlari.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
   // Koyu tema
   await page.getByLabel('Ayarlar').click();
   await page.waitForTimeout(500);

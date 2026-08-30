@@ -16,6 +16,8 @@ interface TagsResponse {
 
 interface GenerateResponse {
   response?: string;
+  /** Düşünen modellerde akıl yürütme bu alanda gelir. */
+  thinking?: string;
 }
 
 export function createOllamaClient(host = DEFAULT_HOST): AiClient {
@@ -46,12 +48,30 @@ export function createOllamaClient(host = DEFAULT_HOST): AiClient {
           system: request.system,
           prompt: request.user,
           stream: false,
+          /*
+           * Düşünme kapalı.
+           *
+           * Düşünen modellerde (gemma4, qwen3 gibi) üretilen token'ların tamamı
+           * düşünme bölümüne gidiyor ve `response` boş dönüyor: model 400 token
+           * harcıyor, kullanıcı "boş yanıt" hatası alıyor. Bizim istediğimiz tek
+           * satırlık bir commit başlığı, uzun uzun akıl yürütme değil.
+           *
+           * Bu alanı tanımayan eski sürümler onu sessizce yok sayıyor.
+           */
+          think: false,
           options: { num_predict: request.maxTokens, temperature: 0.2 },
         },
         {},
       );
       const text = payload.response?.trim();
-      if (!text) throw new AiError('Model boş yanıt döndürdü.', true);
+      if (!text) {
+        throw new AiError(
+          payload.thinking
+            ? 'Model yalnızca düşünme çıktısı üretti. Başka bir model deneyebilirsin.'
+            : 'Model boş yanıt döndürdü.',
+          true,
+        );
+      }
       return text;
     },
   };

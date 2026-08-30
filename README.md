@@ -91,7 +91,12 @@ npm run make       # kurulum dosyası üret
 ```bash
 npm run test:e2e    # paketleyip uçtan uca testleri çalıştırır
 npm run test:all    # birim + uçtan uca
+npm run test:ai     # AI akışlarını gerçek bir Ollama sunucusuyla dener
+npm run screenshots # arayüz görüntüleri üretir (inceleme aracı)
 ```
+
+`test:ai` ve `screenshots` varsayılan koşunun dışında: ilki makinede çalışan bir
+Ollama sunucusu ve yüklü bir model gerektiriyor, ikincisi doğrulama yapmıyor.
 
 Geliştirme için Node.js 20+ yeterli. **Uygulamayı kullanmak için sistemde git
 kurulu olması gerekmiyor** — kendi git sürümünü taşıyor.
@@ -162,6 +167,12 @@ katmanın kullanıldığı kullanıcıya bildirilir.
 
 API anahtarları GitHub jetonunda olduğu gibi ana süreçte, `safeStorage` ile
 işletim sistemi anahtarlığında şifreli tutulur ve arayüze hiç aktarılmaz.
+
+Ollama isteklerinde düşünme modu kapatılır (`think: false`). Düşünen modellerde
+(gemma4, qwen3 gibi) üretilen token'ların tamamı akıl yürütme bölümüne gidiyor ve
+görünür yanıt boş dönüyor — model 400 token harcıyor, kullanıcı "boş yanıt"
+hatası alıyordu. Bize gereken tek satırlık bir commit başlığı, uzun uzun akıl
+yürütme değil.
 
 ### Gömülü git
 

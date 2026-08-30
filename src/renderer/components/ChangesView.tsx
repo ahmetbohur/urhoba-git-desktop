@@ -218,7 +218,24 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
         rows={3}
         className="selectable w-full resize-none rounded-md border border-line bg-ground px-2 py-1.5 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
       />
+      {/*
+        Üç öğe tek satıra sığmıyordu ve etiketler kırılıyordu. Yardımcı eylemler
+        üstte, asıl eylem altta tam genişlikte: commit düğmesi hem daha belirgin
+        hem dar panelde güvenli.
+      */}
       <div className="flex items-center justify-between gap-2">
+        <label className="flex cursor-pointer items-center gap-1.5 text-[12px] whitespace-nowrap text-ink-2">
+          <input
+            type="checkbox"
+            checked={amend}
+            onChange={(event) => {
+              setAmend(event.target.checked);
+              if (event.target.checked && subject.length === 0) loadLastMessage.mutate();
+            }}
+            className="size-3.5 accent-[var(--accent)]"
+          />
+          {t('Son commit’i düzelt')}
+        </label>
         {aiStatus?.enabled && (
           <Button
             size="sm"
@@ -232,32 +249,21 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
             {t('Öner')}
           </Button>
         )}
-        <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-ink-2">
-          <input
-            type="checkbox"
-            checked={amend}
-            onChange={(event) => {
-              setAmend(event.target.checked);
-              if (event.target.checked && subject.length === 0) loadLastMessage.mutate();
-            }}
-            className="size-3.5 accent-[var(--accent)]"
-          />
-          {t('Son commit’i düzelt')}
-        </label>
-        <Button
-          variant="primary"
-          loading={commit.isPending}
-          disabled={!canCommit}
-          onClick={() => commit.mutate()}
-        >
-          <GitCommitHorizontal className="size-3.5" />
-          {amend
-            ? t('Commit’i düzelt')
-            : stagedCount > 0
-              ? t('{count} dosyayı commit’le', { count: formatCount(stagedCount) })
-              : t('Commit’le')}
-        </Button>
       </div>
+
+      <Button
+        variant="primary"
+        loading={commit.isPending}
+        disabled={!canCommit}
+        onClick={() => commit.mutate()}
+      >
+        <GitCommitHorizontal className="size-3.5" />
+        {amend
+          ? t('Commit’i düzelt')
+          : stagedCount > 0
+            ? t('{count} dosyayı commit’le', { count: formatCount(stagedCount) })
+            : t('Commit’le')}
+      </Button>
     </div>
   );
 }

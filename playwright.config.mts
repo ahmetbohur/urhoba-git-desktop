@@ -18,7 +18,13 @@ export default defineConfig({
    * ile açılıyor. (Etiket + grepInvert denendi ama config'deki grepInvert
    * komut satırındaki --grep ile çakışıyor ve hiçbir test bulunamıyor.)
    */
-  testIgnore: process.env.URHOBA_SCREENSHOTS ? [] : ['**/screenshot.spec.ts'],
+  testIgnore: [
+    // Ekran görüntüsü senaryosu bir inceleme aracı, doğrulama değil.
+    ...(process.env.URHOBA_SCREENSHOTS ? [] : ['**/screenshot.spec.ts']),
+    // AI senaryosu makinede çalışan bir Ollama sunucusu ve yüklü model
+    // gerektiriyor; her ortamda bulunmadığı için varsayılan koşuda atlanıyor.
+    ...(process.env.URHOBA_OLLAMA ? [] : ['**/ai-check.spec.ts']),
+  ],
   use: {
     trace: 'retain-on-failure',
   },
