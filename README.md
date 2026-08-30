@@ -110,6 +110,18 @@ Ollama sunucusu ve yüklü bir model gerektiriyor, ikincisi doğrulama yapmıyor
 Geliştirme için Node.js 20+ yeterli. **Uygulamayı kullanmak için sistemde git
 kurulu olması gerekmiyor** — kendi git sürümünü taşıyor.
 
+### İkon
+
+Kaynak logo `assets/icon-512.png`. Windows `.ico`, macOS `.icns` ve Linux `.png`
+bekliyor; üçü de `python3 assets/make-icon.py` ile buradan türetiliyor, elle
+tutulan tek dosya kaynak logo.
+
+Türetme sırasında dış beyaz saydama çevriliyor. Kaynağın arka planı opak beyaz
+ve masaüstü ikonunda bu beyaz bir kare olarak görünüyor — özellikle macOS
+dock'unda. Kenarlardan taşma yöntemi kullanılıyor, yani yalnızca dışarıya bağlı
+olan beyaz siliniyor; yön tuşu ve düğmeler gövdenin içinde kaldığı için onlara
+dokunulmuyor.
+
 ## Mimari
 
 ```
