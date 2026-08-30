@@ -90,3 +90,7 @@ typings/
 
 # Electron-Forge
 out/
+
+# Playwright çıktıları
+test-results/
+playwright-report/

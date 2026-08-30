@@ -12,9 +12,8 @@ import path from 'node:path';
  */
 const SHOT_DIR = '/tmp/urhoba-shots';
 
-// `@screenshot` etiketi bunu normal koşudan ayırıyor: bir araç, bir doğrulama
-// değil. Çalıştırmak için: npx playwright test --grep @screenshot
-test('tarama diyaloğunun görüntüleri @screenshot', async () => {
+// Bu dosya normal test koşusunun dışında; `npm run screenshots` ile çalışıyor.
+test('arayüz görüntüleri', async () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-shot-'));
   const app = await electron.launch({
     args: ['.vite/build/main.js', `--user-data-dir=${userData}`],
@@ -41,6 +40,22 @@ test('tarama diyaloğunun görüntüleri @screenshot', async () => {
   await page.getByRole('button', { name: 'Klasör seç' }).click();
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${SHOT_DIR}/03-tarama-sonuc.png` });
+
+  // Üst çubuk: bir depo ekleyip dar pencerede düğmelerin sığdığını görüyoruz.
+  await page.getByRole('button', { name: 'Vazgeç' }).click();
+  await page.evaluate(
+    (repo) => window.urhoba.invoke('repo:add', { path: repo }),
+    '/home/urhoba/Documents/Projects/Individual/urhoba-git-desktop',
+  );
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: `${SHOT_DIR}/04-ust-cubuk.png` });
+
+  // Uygulamanın izin verdiği en dar pencere: sıkışma önce burada görünür.
+  await page.setViewportSize({ width: 960, height: 700 });
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `${SHOT_DIR}/05-ust-cubuk-dar.png` });
 
   await app.close();
   fs.rmSync(userData, { recursive: true, force: true });

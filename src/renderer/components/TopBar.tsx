@@ -111,7 +111,12 @@ export function TopBar({ repo }: { repo: Repo }) {
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-surface px-3">
-      <div className="flex min-w-0 flex-col">
+      {/*
+        Daralan yer buradan alınıyor ama tamamen yok olmamalı: taban genişlik
+        olmadan depo adı dar pencerede sıfıra iniyor ve kullanıcı hangi depoda
+        olduğunu göremiyor.
+      */}
+      <div className="flex min-w-28 flex-col overflow-hidden">
         <span className="truncate text-[13px] font-semibold text-ink">{repo.name}</span>
         <span className="truncate text-[11px] text-ink-3">{repo.path}</span>
       </div>
@@ -121,7 +126,7 @@ export function TopBar({ repo }: { repo: Repo }) {
       <BranchMenu repoId={repo.id} currentBranch={status?.branch ?? null} />
 
       {(ahead > 0 || behind > 0) && (
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           {behind > 0 && <Badge tone="warn">↓ {behind}</Badge>}
           {ahead > 0 && <Badge tone="accent">↑ {ahead}</Badge>}
         </div>
@@ -143,36 +148,42 @@ export function TopBar({ repo }: { repo: Repo }) {
 
       <AutoPullPopover repoId={repo.id} />
 
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         <Button
           size="sm"
           variant="ghost"
+          title={t('Fetch')}
+          aria-label={t('Fetch')}
           loading={fetchMutation.isPending}
           onClick={() => fetchMutation.mutate()}
         >
           <RefreshCw className="size-3.5" />
-          {t('Fetch')}
+          <span className="hidden lg:inline">{t('Fetch')}</span>
         </Button>
         <Button
           size="sm"
           variant={behind > 0 ? 'primary' : 'ghost'}
+          title={t('Pull')}
+          aria-label={t('Pull')}
           loading={pullMutation.isPending}
           onClick={() => pullMutation.mutate()}
         >
           <ArrowDownToLine className="size-3.5" />
-          {t('Pull')}
+          <span className="hidden lg:inline">{t('Pull')}</span>
           {behind > 0 && <span className="tabular-nums">{behind}</span>}
         </Button>
-        <div className="flex items-center">
+        <div className="flex shrink-0 items-center">
           <Button
             size="sm"
             variant={ahead > 0 ? 'primary' : 'ghost'}
+            title={t('Push')}
+            aria-label={t('Push')}
             loading={pushMutation.isPending}
             onClick={() => pushMutation.mutate(false)}
             className="rounded-r-none"
           >
             <ArrowUpFromLine className="size-3.5" />
-            {t('Push')}
+            <span className="hidden lg:inline">{t('Push')}</span>
             {ahead > 0 && <span className="tabular-nums">{ahead}</span>}
           </Button>
           <DropdownMenu.Root>

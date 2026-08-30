@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "electron-forge package && playwright test",
-    "test:all": "vitest run && npm run test:e2e"
+    "test:all": "vitest run && npm run test:e2e",
+    "screenshots": "URHOBA_SCREENSHOTS=1 playwright test screenshot"
   },
   "keywords": [
     "git",

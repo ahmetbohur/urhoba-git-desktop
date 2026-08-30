@@ -110,17 +110,32 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
       <Popover.Trigger asChild>
         <button
           type="button"
+          title={
+            autoPull.enabled
+              ? t('Oto pull · {minutes} dk', { minutes: autoPull.intervalMinutes })
+              : t('Oto pull kapalı')
+          }
+          aria-label={
+            autoPull.enabled
+              ? t('Oto pull · {minutes} dk', { minutes: autoPull.intervalMinutes })
+              : t('Oto pull kapalı')
+          }
           className={cn(
-            'flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium',
+            'flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium whitespace-nowrap',
             autoPull.enabled
               ? 'bg-ok-tint text-ok'
               : 'border border-line bg-surface text-ink-2 hover:bg-surface-2',
           )}
         >
           <RefreshCcwDot className={cn('size-3.5', autoPull.enabled && 'animate-pulse')} />
-          {autoPull.enabled
-            ? t('Oto pull · {minutes} dk', { minutes: autoPull.intervalMinutes })
-            : t('Oto pull kapalı')}
+          <span className="hidden lg:inline">
+            {autoPull.enabled
+              ? t('Oto pull · {minutes} dk', { minutes: autoPull.intervalMinutes })
+              : t('Oto pull kapalı')}
+          </span>
+          <span className="lg:hidden">
+            {autoPull.enabled ? t('{minutes} dk', { minutes: autoPull.intervalMinutes }) : ''}
+          </span>
         </button>
       </Popover.Trigger>
 

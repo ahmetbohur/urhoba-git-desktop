@@ -62,10 +62,12 @@ export function StashMenu({ repoId, hasChanges }: { repoId: string; hasChanges: 
       <Popover.Trigger asChild>
         <button
           type="button"
-          className="flex h-8 items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium text-ink-2 hover:bg-surface-2"
+          title={t('Stash')}
+          aria-label={t('Stash')}
+          className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium whitespace-nowrap text-ink-2 hover:bg-surface-2"
         >
           <Archive className="size-3.5" />
-          {t('Stash')}
+          <span className="hidden lg:inline">{t('Stash')}</span>
           {count > 0 && <Badge tone="accent">{count}</Badge>}
         </button>
       </Popover.Trigger>
