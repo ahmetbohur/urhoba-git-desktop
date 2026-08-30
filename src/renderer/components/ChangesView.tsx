@@ -165,7 +165,16 @@ function FileRow({
   );
 }
 
-function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: number }) {
+function CommitBox({
+  repoId,
+  stagedCount,
+  canAmend,
+}: {
+  repoId: string;
+  stagedCount: number;
+  /** Depoda hiç commit yoksa düzeltilecek bir şey de yok. */
+  canAmend: boolean;
+}) {
   const t = useT();
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -248,10 +257,21 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
         hem dar panelde güvenli.
       */}
       <div className="flex items-center justify-between gap-2">
-        <label className="flex cursor-pointer items-center gap-1.5 text-[12px] whitespace-nowrap text-ink-2">
+        {/*
+          İlk commit'ten önce düzeltilecek bir şey yok; kutu açık kalsaydı
+          kullanıcı işaretleyip git'in "nothing to amend" hatasına çarpardı.
+        */}
+        <label
+          className={cn(
+            'flex items-center gap-1.5 text-[12px] whitespace-nowrap text-ink-2',
+            canAmend ? 'cursor-pointer' : 'cursor-default opacity-40',
+          )}
+          title={canAmend ? undefined : t('Bu depoda henüz commit yok.')}
+        >
           <input
             type="checkbox"
             checked={amend}
+            disabled={!canAmend}
             onChange={(event) => {
               setAmend(event.target.checked);
               if (event.target.checked && subject.length === 0) loadLastMessage.mutate();
@@ -525,7 +545,11 @@ export function ChangesView({ repoId }: { repoId: string }) {
           )}
         </div>
 
-        <CommitBox repoId={repoId} stagedCount={status?.staged.length ?? 0} />
+        <CommitBox
+          repoId={repoId}
+          stagedCount={status?.staged.length ?? 0}
+          canAmend={!(status?.isEmptyRepo ?? false)}
+        />
       </div>
 
       <div className="min-w-0 flex-1">

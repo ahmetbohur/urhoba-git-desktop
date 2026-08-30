@@ -28,8 +28,13 @@ export function parseSubmoduleStatus(raw: string): Submodule[] {
       const marker = line[0];
       const rest = line.slice(1);
       const [sha, ...pathParts] = rest.split(' ');
-      // Ad sonundaki "(v1.2)" gibi açıklama yola dahil değil.
-      const path = pathParts.join(' ').replace(/\s*\([^)]*\)\s*$/, '').trim();
+      /*
+       * Kurulu alt modüllerde yolun ardından boşlukla ayrılmış bir açıklama
+       * geliyor: "vendor/lib (v1.2)". Boşluk şartı önemli — koşulsuz kırpmak
+       * adı gerçekten parantezle biten bir yolu ("vendor/lib(eski)")
+       * bozuyordu.
+       */
+      const path = pathParts.join(' ').replace(/\s+\([^)]*\)$/, '').trim();
       return {
         path,
         sha: sha ?? '',

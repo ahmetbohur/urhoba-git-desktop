@@ -148,10 +148,14 @@ npm run test:e2e    # paketleyip uçtan uca testleri çalıştırır
 npm run test:all    # birim + uçtan uca
 npm run test:ai     # AI akışlarını gerçek bir Ollama sunucusuyla dener
 npm run screenshots # arayüz görüntüleri üretir (inceleme aracı)
+npm run qa          # uç durumları ve koyu temayı gezer (inceleme aracı)
 ```
 
-`test:ai` ve `screenshots` varsayılan koşunun dışında: ilki makinede çalışan bir
-Ollama sunucusu ve yüklü bir model gerektiriyor, ikincisi doğrulama yapmıyor.
+`test:ai`, `screenshots` ve `qa` varsayılan koşunun dışında: ilki makinede
+çalışan bir Ollama sunucusu ve yüklü bir model gerektiriyor, diğer ikisi
+doğrulama yapmıyor — çıktıları gözle incelenmek üzere PNG olarak yazılıyor.
+`qa` yeni yüzeyleri koyu temada ve uç durumlarda (commit'i olmayan depo, ayrık
+HEAD, yarım kalmış rebase) geziyor.
 
 Geliştirme için Node.js 20+ yeterli. **Uygulamayı kullanmak için sistemde git
 kurulu olması gerekmiyor** — kendi git sürümünü taşıyor.

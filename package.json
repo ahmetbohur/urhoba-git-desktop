@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:e2e": "electron-forge package && playwright test",
     "test:all": "vitest run && npm run test:e2e",
+    "qa": "URHOBA_QA=1 playwright test qa",
     "screenshots": "URHOBA_SCREENSHOTS=1 playwright test screenshot",
     "test:ai": "URHOBA_OLLAMA=1 playwright test ai-check"
   },

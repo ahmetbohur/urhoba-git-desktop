@@ -47,6 +47,7 @@ export const en: Record<string, string> = {
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
   'Git LFS dosyası': 'Git LFS file',
+  'Bu depoda henüz commit yok.': 'This repository has no commits yet.',
   '{path} klasöründe açık': 'checked out in {path}',
   '{before} → {after}': '{before} → {after}',
   'Eklendi · {size}': 'Added · {size}',

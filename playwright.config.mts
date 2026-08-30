@@ -24,6 +24,12 @@ export default defineConfig({
     // AI senaryosu makinede çalışan bir Ollama sunucusu ve yüklü model
     // gerektiriyor; her ortamda bulunmadığı için varsayılan koşuda atlanıyor.
     ...(process.env.URHOBA_OLLAMA ? [] : ['**/ai-check.spec.ts']),
+    /*
+     * QA taraması yeni yüzeyleri koyu temada ve uç durumlarda geziyor. Uzun
+     * sürüyor ve doğrulamadan çok gözle inceleme için; varsayılan koşuda
+     * dışarıda, `npm run qa` ile açılıyor.
+     */
+    ...(process.env.URHOBA_QA ? [] : ['**/qa.spec.ts']),
   ],
   use: {
     trace: 'retain-on-failure',
