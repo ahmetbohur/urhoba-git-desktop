@@ -12,6 +12,31 @@ export interface Repo {
   /** Listede en son ne zaman açıldı — sıralama için. ISO 8601. */
   lastOpenedAt: string;
   addedAt: string;
+  /**
+   * Ait olduğu grup. Yoldan çıkarılır ama kullanıcı elle değiştirebilir;
+   * değiştirdiyse sonraki çıkarımlar bunu ezmez.
+   */
+  groupName?: string;
+  /** Kullanıcı grubu elle seçtiyse otomatik çıkarım devre dışı kalır. */
+  groupPinnedByUser?: boolean;
+  /** Listenin en üstündeki hızlı erişim bölümünde görünsün mü. */
+  pinned?: boolean;
+  /** Serbest etiketler — bir depo birden çok etiket taşıyabilir. */
+  tags?: string[];
+}
+
+/** Kenar çubuğundaki bir grup ve durumu. */
+export interface RepoGroup {
+  name: string;
+  count: number;
+  collapsed: boolean;
+}
+
+/** Grup başlıklarındaki değişiklik rozetleri için hafif durum özeti. */
+export interface RepoDirtyCount {
+  repoId: string;
+  /** Kaydedilmemiş değişiklik içeren dosya sayısı; okunamadıysa null. */
+  changes: number | null;
 }
 
 /** Klasör taramasında bulunan bir depo. */
@@ -174,6 +199,46 @@ export interface PushResult {
   message: string;
   /** Upstream yoksa push sırasında kurulmuş olabilir. */
   upstreamSet: boolean;
+}
+
+export type AiProviderId = 'ollama' | 'openai' | 'anthropic';
+
+export interface AiSettings {
+  /** Varsayılan kapalı: açılmadan hiçbir istek gitmiyor. */
+  enabled: boolean;
+  provider: AiProviderId;
+  model: string;
+  ollamaHost: string;
+}
+
+export interface AiStatus {
+  enabled: boolean;
+  provider: AiProviderId;
+  model: string;
+  hasKey: boolean;
+  /** Anahtarlar diske şifreli yazılabiliyor mu. */
+  keysPersisted: boolean;
+  /** Seçili sağlayıcı yerel mi — kod makineden çıkıyor mu. */
+  isLocal: boolean;
+}
+
+/** Diff'in modele hangi ayrıntı düzeyinde gönderildiği. */
+export type DiffDetail = 'full' | 'truncated-files' | 'changed-lines' | 'file-list';
+
+export interface CommitSuggestion {
+  subject: string;
+  body: string;
+  detail: DiffDetail;
+  /** Daraltma uygulandıysa kullanıcıya gösterilecek açıklama. */
+  note: string | null;
+  charactersSent: number;
+  provider: AiProviderId;
+}
+
+export interface GroupSuggestion {
+  group: string;
+  repoIds: string[];
+  repoNames: string[];
 }
 
 /** Sistem açılışında otomatik başlatma durumu. */
@@ -392,11 +457,17 @@ export interface RepoSettings {
   autoPull: AutoPullSettings;
   /** Otomatik pull kapalıyken de arka planda fetch edilip rozetler tazelensin mi. */
   autoFetch: boolean;
+  /**
+   * Bu deponun kodu bulut sağlayıcısına gönderilebilir mi. Varsayılan kapalı ve
+   * depo bazlı: "bütün depolarda açık" diye bir seçenek bilerek yok.
+   */
+  allowCloudAi?: boolean;
 }
 
 export interface AppSettings {
   theme: ThemePreference;
   language: LanguagePreference;
+  ai: AiSettings;
   /** Tüm depolar için varsayılan; depo bazlı ayar bunu ezer. */
   defaultAutoPull: AutoPullSettings;
   autoFetchIntervalMinutes: number;

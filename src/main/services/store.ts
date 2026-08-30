@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
+import { inferGroup } from './grouping';
 import type { AppSettings, Repo, RepoSettings } from '@shared/types';
 
 /**
@@ -19,6 +20,14 @@ const DEFAULT_SETTINGS: AppSettings = {
     fastForwardOnly: true,
   },
   autoFetchIntervalMinutes: 10,
+  ai: {
+    // AI varsayılan olarak kapalı ve yerel: kullanıcı açıkça açmadan hiçbir
+    // istek gitmiyor, açtığında da kod makineden çıkmıyor.
+    enabled: false,
+    provider: 'ollama',
+    model: '',
+    ollamaHost: 'http://127.0.0.1:11434',
+  },
   sideBySideDiff: false,
   lastOpenedRepoId: null,
 };
@@ -27,6 +36,8 @@ interface StoreShape {
   settings: AppSettings;
   repos: Repo[];
   repoSettings: Record<string, RepoSettings>;
+  /** Katlanmış grup adları — açık/kapalı durumu oturumlar arası korunuyor. */
+  collapsedGroups?: string[];
 }
 
 let cache: StoreShape | null = null;
@@ -59,10 +70,32 @@ function load(): StoreShape {
     }
   }
   cache = {
-    settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
+    settings: {
+      ...DEFAULT_SETTINGS,
+      ...(parsed.settings ?? {}),
+      // İç içe nesneler yayılma ile birleşmediği için ayrıca ele alınıyor;
+      // eski kayıtlarda `ai` alanı hiç yok.
+      ai: { ...DEFAULT_SETTINGS.ai, ...(parsed.settings?.ai ?? {}) },
+    },
     repos: Array.isArray(parsed.repos) ? parsed.repos : [],
     repoSettings: parsed.repoSettings ?? {},
+    collapsedGroups: parsed.collapsedGroups ?? [],
   };
+
+  /*
+   * Gruplama eklenmeden önce kaydedilmiş depolarda grup bilgisi yok. Yol
+   * elimizde olduğu için geriye dönük çıkarabiliyoruz; kullanıcı hiçbir şey
+   * yapmadan listesi düzenlenmiş oluyor.
+   */
+  let migrated = false;
+  for (const repo of cache.repos) {
+    if (repo.groupName === undefined) {
+      repo.groupName = inferGroup(repo.path) ?? undefined;
+      migrated = true;
+    }
+  }
+  if (migrated) persist();
+
   return cache;
 }
 
@@ -104,6 +137,53 @@ export function saveRepo(repo: Repo): Repo {
   return repo;
 }
 
+/** Depo kaydının bir bölümünü günceller; bilinmeyen id sessizce yok sayılır. */
+export function updateRepo(id: string, patch: Partial<Repo>): Repo | undefined {
+  const store = load();
+  const repo = store.repos.find((r) => r.id === id);
+  if (!repo) return undefined;
+  Object.assign(repo, patch);
+  persist();
+  return repo;
+}
+
+export function getCollapsedGroups(): string[] {
+  return [...(load().collapsedGroups ?? [])];
+}
+
+export function setGroupCollapsed(name: string, collapsed: boolean): void {
+  const store = load();
+  const current = new Set(store.collapsedGroups ?? []);
+  if (collapsed) current.add(name);
+  else current.delete(name);
+  store.collapsedGroups = [...current];
+  persist();
+}
+
+/** Bir grubun bütün depolarını yeni ada taşır. */
+export function renameGroup(from: string, to: string): void {
+  const store = load();
+  for (const repo of store.repos) {
+    if (repo.groupName === from) {
+      repo.groupName = to;
+      repo.groupPinnedByUser = true;
+    }
+  }
+  const collapsed = new Set(store.collapsedGroups ?? []);
+  if (collapsed.delete(from)) collapsed.add(to);
+  store.collapsedGroups = [...collapsed];
+  persist();
+}
+
+/** Tanımlı bütün etiketler — etiket seçicisinde öneri olarak kullanılıyor. */
+export function getAllTags(): string[] {
+  const tags = new Set<string>();
+  for (const repo of load().repos) {
+    for (const tag of repo.tags ?? []) tags.add(tag);
+  }
+  return [...tags].sort((a, b) => a.localeCompare(b, 'tr'));
+}
+
 export function removeRepo(id: string): void {
   const store = load();
   store.repos = store.repos.filter((r) => r.id !== id);
@@ -129,6 +209,8 @@ export function getRepoSettings(id: string): RepoSettings {
   return {
     autoPull: { ...store.settings.defaultAutoPull },
     autoFetch: true,
+    // Bulut sağlayıcıya kod göndermek her depo için ayrı ayrı açılır.
+    allowCloudAi: false,
   };
 }
 

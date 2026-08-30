@@ -18,6 +18,12 @@ export const IPC_CHANNELS = [
   'repo:scan',
   'repo:add-many',
   'repo:reveal',
+  'repo:update',
+  'repo:dirty-counts',
+  'repo:group-collapse',
+  'repo:collapsed-groups',
+  'repo:group-rename',
+  'repo:tags',
   // --- Çalışma dizini ---
   'git:status',
   'git:stage',
@@ -78,6 +84,13 @@ export const IPC_CHANNELS = [
   'app:autostart-get',
   'app:autostart-set',
   'app:open-logs',
+  // --- AI ---
+  'ai:status',
+  'ai:models',
+  'ai:set-key',
+  'ai:suggest-commit',
+  'ai:suggest-groups',
+  'ai:apply-groups',
   // --- GitHub ---
   'github:status',
   'github:sign-in',

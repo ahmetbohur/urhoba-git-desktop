@@ -1,13 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ContextMenu } from 'radix-ui';
-import { EyeOff, ExternalLink, GitCommitHorizontal, TriangleAlert } from 'lucide-react';
+import { EyeOff, ExternalLink, GitCommitHorizontal, Sparkles, TriangleAlert } from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { directoryName, fileName, formatCount } from '../lib/format';
 import { errorMessage, invoke } from '../lib/ipc';
 import {
   keys,
+  useAiStatus,
   useInvalidateRepo,
   useMutation,
   useQueryClient,
@@ -147,6 +148,29 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
   const [amend, setAmend] = useState(false);
   const invalidate = useInvalidateRepo();
   const toast = useUi((s) => s.toast);
+  const { data: aiStatus } = useAiStatus();
+
+  /*
+   * Öneri doğrudan alanlara yazılıyor, commit'e dönüşmüyor: kullanıcı okuyup
+   * düzeltmeden hiçbir şey kaydedilmiyor. Model ne gönderildiğini de bildiriyor
+   * ve bunu bildirimde gösteriyoruz.
+   */
+  const suggest = useMutation({
+    mutationFn: () => invoke('ai:suggest-commit', { repoId }),
+    onSuccess: (suggestion) => {
+      setSubject(suggestion.subject);
+      setBody(suggestion.body);
+      toast({
+        kind: 'success',
+        title: t('Öneri hazır'),
+        description:
+          suggestion.note ??
+          t('{count} karakterlik diff gönderildi.', { count: suggestion.charactersSent }),
+      });
+    },
+    onError: (error) =>
+      toast({ kind: 'error', title: t('Öneri alınamadı'), description: errorMessage(error) }),
+  });
 
   const commit = useMutation({
     mutationFn: () => invoke('git:commit', { repoId, subject: subject.trim(), body, amend }),
@@ -195,6 +219,19 @@ function CommitBox({ repoId, stagedCount }: { repoId: string; stagedCount: numbe
         className="selectable w-full resize-none rounded-md border border-line bg-ground px-2 py-1.5 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
       />
       <div className="flex items-center justify-between gap-2">
+        {aiStatus?.enabled && (
+          <Button
+            size="sm"
+            variant="ghost"
+            title={t('AI ile commit mesajı öner')}
+            loading={suggest.isPending}
+            disabled={stagedCount === 0}
+            onClick={() => suggest.mutate()}
+          >
+            <Sparkles className="size-3.5" />
+            {t('Öner')}
+          </Button>
+        )}
         <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-ink-2">
           <input
             type="checkbox"

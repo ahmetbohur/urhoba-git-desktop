@@ -6,6 +6,7 @@ import * as conflict from '../git/conflict';
 import * as history from '../git/history';
 import * as merge from '../git/merge';
 import * as autostart from '../services/autostart';
+import * as ai from '../ai/service';
 import * as diagnostics from '../services/diagnostics';
 import * as github from '../github/provider';
 import * as rewrite from '../git/rewrite';
@@ -17,6 +18,7 @@ import * as status from '../git/status';
 import * as autopull from '../services/autopull';
 import * as repos from '../services/repos';
 import { scanForRepositories } from '../services/scan';
+import { collectDirtyCounts } from '../services/dirty';
 import * as ssh from '../services/ssh';
 import * as store from '../services/store';
 import { watchRepo } from '../services/watcher';
@@ -78,6 +80,22 @@ const handlers: Handlers = {
     return added;
   },
   'repo:reveal': ({ repoId }) => repos.revealRepo(repoId),
+  'repo:update': ({ id, groupName, pinned, tags }) => {
+    const patch: Parameters<typeof store.updateRepo>[1] = {};
+    if (groupName !== undefined) {
+      patch.groupName = groupName ?? undefined;
+      // Elle atanan grup, sonraki otomatik çıkarımlarda korunur.
+      patch.groupPinnedByUser = true;
+    }
+    if (pinned !== undefined) patch.pinned = pinned;
+    if (tags !== undefined) patch.tags = tags;
+    return store.updateRepo(id, patch) ?? null;
+  },
+  'repo:dirty-counts': () => collectDirtyCounts(),
+  'repo:group-collapse': ({ name, collapsed }) => store.setGroupCollapsed(name, collapsed),
+  'repo:collapsed-groups': () => store.getCollapsedGroups(),
+  'repo:group-rename': ({ from, to }) => store.renameGroup(from, to),
+  'repo:tags': () => store.getAllTags(),
 
   // --- Çalışma dizini ---
   'git:status': ({ repoId }) => {
@@ -293,6 +311,25 @@ const handlers: Handlers = {
   'app:autostart-get': () => autostart.getStatus(),
   'app:autostart-set': ({ enabled }) => autostart.setEnabled(enabled),
   'app:open-logs': () => diagnostics.openLogFolder(),
+
+  // --- AI ---
+  'ai:status': () => ai.getStatusSummary(),
+  'ai:models': () => ai.listModels(),
+  'ai:set-key': ({ provider, key }) => ai.setApiKey(provider, key),
+  'ai:suggest-commit': ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    return ai.suggestCommitMessage(repo.id, repo.path);
+  },
+  'ai:suggest-groups': () => ai.suggestGroups(),
+  'ai:apply-groups': ({ assignments }) => {
+    for (const assignment of assignments) {
+      for (const id of assignment.repoIds) {
+        // Elle atanan grup gibi işaretleniyor: sonraki otomatik çıkarımlar
+        // kullanıcının kabul ettiği öneriyi ezmemeli.
+        store.updateRepo(id, { groupName: assignment.group, groupPinnedByUser: true });
+      }
+    }
+  },
 
   // --- GitHub ---
   'github:status': () => github.getStatus(),

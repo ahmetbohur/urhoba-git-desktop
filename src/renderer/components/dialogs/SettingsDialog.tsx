@@ -5,6 +5,7 @@ import { cn } from '../../lib/cn';
 import { errorMessage, invoke } from '../../lib/ipc';
 import { keys, useMutation, useQuery, useQueryClient, useSettings } from '../../lib/queries';
 import { useUi } from '../../stores/ui';
+import { AiSettingsSection } from './AiSettingsSection';
 import { DiagnosticsPanel } from '../DiagnosticsPanel';
 import { RemoteSettings } from '../RemoteSettings';
 import { SectionLabel } from '../primitives';
@@ -209,6 +210,8 @@ export function SettingsDialog({
               {t('Bu deponun otomatik pull ayarları üst çubuktaki “Oto pull” düğmesinde.')}
             </p>
           </section>
+
+          <AiSettingsSection repoId={repoId} repoSettings={repoSettings} />
 
           <RemoteSettings repoId={repoId} />
 

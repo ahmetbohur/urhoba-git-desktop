@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { invoke } from './ipc';
 import type {
+  AiStatus,
   AppSettings,
   BranchList,
   Commit,
@@ -21,6 +22,7 @@ import type {
   Remote,
   Repo,
   RepoContext,
+  RepoDirtyCount,
   RepoSettings,
   SshEnvironment,
   Stash,
@@ -57,6 +59,24 @@ export const keys = {
 
 export function useRepos() {
   return useQuery<Repo[]>({ queryKey: keys.repos, queryFn: () => invoke('repo:list', undefined) });
+}
+
+export function useDirtyCounts(enabled: boolean) {
+  return useQuery<RepoDirtyCount[]>({
+    queryKey: ['dirty-counts'],
+    queryFn: () => invoke('repo:dirty-counts', undefined),
+    enabled,
+    // Grup rozetleri için; depo başına tek hafif komut çalışıyor.
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+}
+
+export function useAllTags() {
+  return useQuery<string[]>({
+    queryKey: ['tags'],
+    queryFn: () => invoke('repo:tags', undefined),
+  });
 }
 
 export function useSettings() {
@@ -238,6 +258,22 @@ export function useGithubRepos(query: string, enabled: boolean) {
   return useQuery<GithubRepo[]>({
     queryKey: [...keys.github, 'repos', query],
     queryFn: () => invoke('github:repos', { query: query || undefined }),
+    enabled,
+    retry: false,
+  });
+}
+
+export function useAiStatus() {
+  return useQuery<AiStatus>({
+    queryKey: ['ai-status'],
+    queryFn: () => invoke('ai:status', undefined),
+  });
+}
+
+export function useAiModels(enabled: boolean) {
+  return useQuery<string[]>({
+    queryKey: ['ai-models'],
+    queryFn: () => invoke('ai:models', undefined),
     enabled,
     retry: false,
   });

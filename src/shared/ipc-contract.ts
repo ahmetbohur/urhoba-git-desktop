@@ -6,11 +6,14 @@ import type {
   CheckoutResult,
   Commit,
   CommitDetail,
+  AiStatus,
   AutostartStatus,
+  CommitSuggestion,
   ConflictFile,
   Diagnostics,
   GithubAuthStatus,
   GithubRepo,
+  GroupSuggestion,
   MergeResult,
   PullRequest,
   FetchResult,
@@ -20,6 +23,7 @@ import type {
   Remote,
   Repo,
   RepoContext,
+  RepoDirtyCount,
   RepoSettings,
   RevertResult,
   ScannedRepo,
@@ -60,6 +64,17 @@ export const inputSchemas = {
   }),
   'repo:add-many': z.object({ paths: z.array(z.string().min(1)).min(1) }),
   'repo:reveal': repoId,
+  'repo:update': z.object({
+    id: z.string().min(1),
+    groupName: z.string().nullable().optional(),
+    pinned: z.boolean().optional(),
+    tags: z.array(z.string().min(1)).optional(),
+  }),
+  'repo:dirty-counts': z.undefined(),
+  'repo:group-collapse': z.object({ name: z.string().min(1), collapsed: z.boolean() }),
+  'repo:collapsed-groups': z.undefined(),
+  'repo:group-rename': z.object({ from: z.string().min(1), to: z.string().min(1) }),
+  'repo:tags': z.undefined(),
 
   // --- Çalışma dizini ---
   'git:status': repoId,
@@ -176,6 +191,14 @@ export const inputSchemas = {
   'settings:set': z.object({
     theme: z.enum(['system', 'light', 'dark']).optional(),
     language: z.enum(['tr', 'en']).optional(),
+    ai: z
+      .object({
+        enabled: z.boolean(),
+        provider: z.enum(['ollama', 'openai', 'anthropic']),
+        model: z.string(),
+        ollamaHost: z.string().min(1),
+      })
+      .optional(),
     autoFetchIntervalMinutes: z.number().int().min(1).max(1440).optional(),
     sideBySideDiff: z.boolean().optional(),
     lastOpenedRepoId: z.string().nullable().optional(),
@@ -191,6 +214,7 @@ export const inputSchemas = {
   'settings:repo-get': repoId,
   'settings:repo-set': repoId.extend({
     autoFetch: z.boolean().optional(),
+    allowCloudAi: z.boolean().optional(),
     autoPull: z
       .object({
         enabled: z.boolean(),
@@ -209,6 +233,19 @@ export const inputSchemas = {
   'app:autostart-get': z.undefined(),
   'app:autostart-set': z.object({ enabled: z.boolean() }),
   'app:open-logs': z.undefined(),
+
+  // --- AI ---
+  'ai:status': z.undefined(),
+  'ai:models': z.undefined(),
+  'ai:set-key': z.object({
+    provider: z.enum(['ollama', 'openai', 'anthropic']),
+    key: z.string(),
+  }),
+  'ai:suggest-commit': repoId,
+  'ai:suggest-groups': z.undefined(),
+  'ai:apply-groups': z.object({
+    assignments: z.array(z.object({ group: z.string().min(1), repoIds: z.array(z.string()) })),
+  }),
 
   // --- GitHub ---
   'github:status': z.undefined(),
@@ -247,6 +284,12 @@ export interface IpcOutputs {
   'repo:scan': ScannedRepo[];
   'repo:add-many': Repo[];
   'repo:reveal': void;
+  'repo:update': Repo | null;
+  'repo:dirty-counts': RepoDirtyCount[];
+  'repo:group-collapse': void;
+  'repo:collapsed-groups': string[];
+  'repo:group-rename': void;
+  'repo:tags': string[];
 
   'git:status': WorkingTreeStatus;
   'git:stage': void;
@@ -307,6 +350,13 @@ export interface IpcOutputs {
   'app:autostart-get': AutostartStatus;
   'app:autostart-set': AutostartStatus;
   'app:open-logs': void;
+
+  'ai:status': AiStatus;
+  'ai:models': string[];
+  'ai:set-key': boolean;
+  'ai:suggest-commit': CommitSuggestion;
+  'ai:suggest-groups': GroupSuggestion[];
+  'ai:apply-groups': void;
 
   'github:status': GithubAuthStatus;
   'github:sign-in': GithubAuthStatus;

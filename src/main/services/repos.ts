@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { humanizeGitError, run } from '../git/client';
+import { inferGroup } from './grouping';
 import { parseCloneProgress } from '../git/clone-progress';
 import { emitAppEvent } from './events';
 import * as store from './store';
@@ -47,6 +48,7 @@ export async function addRepo(candidatePath: string): Promise<Repo> {
     path: root,
     addedAt: now,
     lastOpenedAt: now,
+    groupName: inferGroup(root) ?? undefined,
   });
 }
 

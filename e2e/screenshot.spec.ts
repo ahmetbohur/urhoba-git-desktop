@@ -77,6 +77,21 @@ test('arayüz görüntüleri', async () => {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
 
+  // Gruplu kenar çubuğu: tarama sonuçlarını uygulayıp listeye bakıyoruz.
+  await page.evaluate(async () => {
+    const found = await window.urhoba.invoke('repo:scan', {
+      directory: '/home/urhoba/Documents/Projects',
+      maxDepth: 4,
+    });
+    await window.urhoba.invoke('repo:add-many', {
+      paths: found.slice(0, 24).map((repo) => repo.path),
+    });
+  });
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: `${SHOT_DIR}/10-gruplu-liste.png` });
+
   // Koyu tema
   await page.getByLabel('Ayarlar').click();
   await page.waitForTimeout(500);

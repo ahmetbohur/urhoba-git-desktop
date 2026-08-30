@@ -5,8 +5,14 @@ Electron + React + TypeScript ile yazıldı; Linux, Windows ve macOS hedefleniyo
 
 ## Şu an neler çalışıyor
 
-**Depo yönetimi** — Yerel klasörden depo ekleme, SSH/HTTPS adresinden ilerleme
-göstergeli klonlama, kenar çubuğunda arama yapılabilen depo listesi.
+**Depo yönetimi** — Yerel klasörden depo ekleme, bir klasör ağacını tarayıp
+içindeki bütün depoları toplu ekleme, SSH/HTTPS adresinden ilerleme göstergeli
+klonlama.
+
+**Düzen** — Depolar klasör yapısından çıkarılan gruplara ayrılır; gruplar
+katlanabilir, elle yeniden adlandırılabilir ve depolar gruplar arasında
+taşınabilir. Sık kullanılanlar üste sabitlenir, etiketlerle süzülür. Grup
+başlığında o gruptaki kaydedilmemiş değişiklik sayısı görünür.
 
 **Değişiklikler** — Hazırlanmış/hazırlanmamış dosya ayrımı, sözdizimi
 renklendirmeli diff (tek sütun veya yan yana), tek tık veya toplu stage/unstage,
@@ -60,6 +66,9 @@ yalnızca fast-forward yapar, yani arka planda haberin olmadan merge commit'i
 **GitHub** — Kişisel erişim jetonuyla bağlanma, açık pull request listesi, PR
 dalına geçme (fork'tan gelenler dahil), mevcut daldan PR açma ve GitHub
 depolarını arayıp klonlama.
+
+**AI yardımı (isteğe bağlı)** — Commit mesajı önerisi ve gruplama önerisi;
+Ollama (yerel), OpenAI veya Claude ile. Varsayılan olarak kapalı ve yerel.
 
 **SSH kurulumu** — Sistemdeki anahtarları listeler, ssh-agent durumunu gösterir,
 yeni ed25519 anahtarı üretir, public key'i panoya kopyalar ve GitHub bağlantısını
@@ -135,6 +144,24 @@ bozuk arayüz üretmiyor.
 çağrılarını tarayıp sözlükte karşılığı olmayanları isim isim rapor ediyor; ayrıca
 `{ad}` yer tutucularının çeviride korunduğunu doğruluyor. Yeni bir metin ekleyip
 çevirisini unutmak bu yüzden testte kırmızı veriyor, üretimde sessiz kalmıyor.
+
+### AI ve gizlilik
+
+AI varsayılan olarak kapalı; açılmadan hiçbir istek gitmez. Varsayılan sağlayıcı
+**Ollama**, yani model kullanıcının makinesinde çalışır ve kod dışarı çıkmaz.
+
+Bulut sağlayıcı (OpenAI, Claude) seçildiğinde commit mesajı önerisi için diff
+gönderilmesi gerekir; bu **depo bazlı izin** ister ve "bütün depolarda açık" diye
+bir seçenek bilinçli olarak yoktur. Gruplama önerisi yalnızca depo adlarını
+gönderir, kod göndermez — o yüzden aynı izni istemez.
+
+Büyük diff'ler katman katman daraltılır (`ai/diff-budget.ts`): tam diff, dosya
+başına ilk 100 satır, yalnızca değişen satırlar, dosya listesi. Ham diff'i sondan
+kesmek modele yarım kalmış bir değişiklik gösterip yanlış özet ürettiriyor. Hangi
+katmanın kullanıldığı kullanıcıya bildirilir.
+
+API anahtarları GitHub jetonunda olduğu gibi ana süreçte, `safeStorage` ile
+işletim sistemi anahtarlığında şifreli tutulur ve arayüze hiç aktarılmaz.
 
 ### Gömülü git
 

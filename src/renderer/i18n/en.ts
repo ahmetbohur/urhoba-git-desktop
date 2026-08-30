@@ -44,6 +44,71 @@ export const en: Record<string, string> = {
 
   // --- Kenar çubuğu ve depolar ---
   'Depolar': 'Repositories',
+  'Sabitlenenler': 'Pinned',
+  'AI yardımı': 'AI assistance',
+  'Commit mesajı ve gruplama önerileri. Varsayılan olarak kapalı.':
+    'Commit message and grouping suggestions. Off by default.',
+  'Yerel — kod makineden çıkmaz': 'Local — code never leaves your machine',
+  'Bulut — kod dışarı gider': 'Cloud — code is sent out',
+  'Ollama adresi': 'Ollama address',
+  'Ollama kurulu değilse ollama.com adresinden indirebilirsin.':
+    'If Ollama is not installed you can get it from ollama.com.',
+  'API anahtarı': 'API key',
+  'Anahtar ana süreçte, işletim sistemi anahtarlığında şifreli tutulur.':
+    'The key stays in the main process, encrypted with the system keychain.',
+  'Kayıtlı — değiştirmek için yaz': 'Saved — type to replace',
+  'Anahtar kaydedildi': 'Key saved',
+  'Anahtar kaydedilemedi': 'Could not save key',
+  'Anahtarlık bulunamadı; anahtar yalnızca bu oturumda geçerli.':
+    'No keychain found; the key is valid for this session only.',
+  'Model': 'Model',
+  'Model bulunamadı. Sağlayıcı ayarlarını kontrol et.':
+    'No models found. Check the provider settings.',
+  'Bu deponun kodu buluta gönderilebilsin': 'Allow sending this repository’s code to the cloud',
+  'Commit mesajı önerisi için diff gönderilir. Her depo için ayrı ayrı açılır.':
+    'The diff is sent for commit message suggestions. Enabled per repository.',
+  'İşletim sisteminde anahtarlık yok; anahtar diske yazılmadı.':
+    'No system keychain; the key was not written to disk.',
+  'kod makineden çıkmıyor': 'code stays on your machine',
+  'AI ile commit mesajı öner': 'Suggest a commit message with AI',
+  'Öner': 'Suggest',
+  'Öneri hazır': 'Suggestion ready',
+  'Öneri alınamadı': 'Could not get a suggestion',
+  '{count} karakterlik diff gönderildi.': 'Sent {count} characters of diff.',
+  'AI ile grupla…': 'Group with AI…',
+  'AI ile grupla': 'Group with AI',
+  'Yalnızca depo adları gönderilir': 'Only repository names are sent',
+  'Yalnızca depo adları gönderilir; kod gönderilmez.':
+    'Only repository names are sent; no code leaves your machine.',
+  'AI yardımı kapalı. Ayarlardan açman gerekiyor.':
+    'AI assistance is off. Turn it on in settings.',
+  'Depo adlarına bakıp anlamlı kümeler önerir. Klasör yapısının yakalayamadığı benzerlikleri bulur.':
+    'Looks at repository names and suggests meaningful clusters — the ones your folder layout cannot capture.',
+  'yerel model — veri dışarı çıkmıyor': 'local model — nothing leaves your machine',
+  'Öneri iste': 'Ask for suggestions',
+  'Model anlamlı bir grup öneremedi.': 'The model could not suggest any grouping.',
+  '{count} grup önerildi': '{count} groups suggested',
+  '{count} grubu uygula': 'Apply {count} groups',
+  '{count} grup uygulandı': 'Applied {count} groups',
+  'Gruplar uygulanamadı': 'Could not apply groups',
+  'Diff büyük olduğu için dosya başına ilk 100 satır gönderildi.':
+    'The diff was large, so only the first 100 lines per file were sent.',
+  'Gruplanmamış': 'Ungrouped',
+  'Üste sabitle': 'Pin to top',
+  'Sabitlemeyi kaldır': 'Unpin',
+  'Etiketler…': 'Tags…',
+  'Gruba taşı': 'Move to group',
+  'Gruptan çıkar': 'Remove from group',
+  'Grubu yeniden adlandır': 'Rename group',
+  'Grup adı değiştirilemedi': 'Could not rename group',
+  'Etiket süzgecini temizle': 'Clear tag filter',
+  'Etiketler kaydedilemedi': 'Could not save tags',
+  'Bu depoda': 'On this repository',
+  'Henüz etiket yok.': 'No tags yet.',
+  'Yeni etiket': 'New tag',
+  'örn. aktif': 'e.g. active',
+  'Hızlı ekle': 'Quick add',
+  '{tag} etiketini kaldır': 'Remove tag {tag}',
   'Depolarda ara': 'Search repositories',
   'Henüz depo yok': 'No repositories yet',
   'Eşleşen depo yok': 'No matching repository',
