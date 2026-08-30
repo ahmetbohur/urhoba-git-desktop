@@ -519,7 +519,6 @@ export interface AppSettings {
   ai: AiSettings;
   /** Bütün depolar için geçerli varsayılanlar; depo bazlı ayar bunları ezebilir. */
   defaults: ScopedSettings;
-  autoFetchIntervalMinutes: number;
   /** Commit ekranında diff'i yan yana göster. */
   sideBySideDiff: boolean;
   lastOpenedRepoId: string | null;

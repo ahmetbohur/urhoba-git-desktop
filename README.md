@@ -72,9 +72,10 @@ yalnızca fast-forward yapar, yani arka planda haberin olmadan merge commit'i
 dalına geçme (fork'tan gelenler dahil), mevcut daldan PR açma ve GitHub
 depolarını arayıp klonlama.
 
-**Genel ve depo bazlı ayarlar** — Arka planda fetch, otomatik pull, AI yardımı
-ve bulut AI izni hem bütün depolar için hem tek bir depo için ayarlanabilir.
-Geçersiz kılınmayan ayar genel varsayılanı izlemeye devam eder.
+**Genel ve depo bazlı ayarlar** — Ayarlar penceresi iki sekme: *Genel* bütün
+depoları, *Bu depo* yalnızca açık olanı etkiler. Arka planda fetch, otomatik pull
+(aralık ve koşullar dahil), AI yardımı ve bulut AI izni her iki kapsamda da
+ayarlanabilir; geçersiz kılınmayan ayar genel varsayılanı izlemeye devam eder.
 
 **AI yardımı (isteğe bağlı)** — Commit mesajı önerisi ve gruplama önerisi;
 Ollama (yerel), OpenAI veya Claude ile. Varsayılan olarak kapalı ve yerel.
@@ -181,6 +182,10 @@ ayar değiştiğinde o depo da kendiliğinden güncellenir.
 Çözülmüş değeri kaydetseydik depo genel ayardan sessizce kopardı — kullanıcı
 genel ayarı değiştirip "ama bu depo eskisi gibi davranıyor" derdi. Arayüzde her
 depo ayarı üç durumlu: *Genel (açık/kapalı)*, *Açık*, *Kapalı*.
+
+İki kapsam ayrı sekmelerde. Tek bir listede alt alta dizildiklerinde aynı adı
+taşıyan ayarlar ("Otomatik pull" hem genelde hem depoda) iki kez geçiyor ve
+hangisinin neyi etkilediği ancak bölüm başlığı okunarak anlaşılıyordu.
 
 ### AI ve gizlilik
 

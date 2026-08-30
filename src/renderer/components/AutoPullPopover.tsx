@@ -1,4 +1,4 @@
-import { Popover, Switch } from 'radix-ui';
+import { Popover } from 'radix-ui';
 import { RefreshCcwDot } from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
@@ -12,10 +12,9 @@ import {
 } from '../lib/queries';
 import { relativeTime } from '../lib/format';
 import { useUi } from '../stores/ui';
+import { AutoPullFields, ToggleRow } from './AutoPullFields';
 import { Button, SectionLabel } from './primitives';
 import type { AutoPullSettings, PullOutcome } from '@shared/types';
-
-const INTERVALS = [1, 5, 10, 15, 30, 60] as const;
 
 /** Sonucun kullanıcı için iyi mi kötü mü olduğunu renkle anlatıyoruz. */
 const OUTCOME_TONE: Record<PullOutcome, string> = {
@@ -30,43 +29,13 @@ const OUTCOME_TONE: Record<PullOutcome, string> = {
   error: 'text-crit',
 };
 
-function ToggleRow({
-  label,
-  hint,
-  checked,
-  onCheckedChange,
-  disabled,
-}: {
-  label: string;
-  hint: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className={cn('flex items-start justify-between gap-3', disabled && 'opacity-50')}>
-      <div className="min-w-0">
-        <p className="text-[12px] font-medium text-ink">{label}</p>
-        <p className="text-[11px] text-ink-3">{hint}</p>
-      </div>
-      <Switch.Root
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={onCheckedChange}
-        className="relative h-5 w-9 shrink-0 rounded-full bg-surface-3 transition-colors data-[state=checked]:bg-accent"
-      >
-        <Switch.Thumb className="block size-4 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[18px]" />
-      </Switch.Root>
-    </div>
-  );
-}
-
 /**
  * Otomatik pull denetimi.
  *
- * Ayar depo bazlı: insanlar her depoda aynı davranışı istemiyor — ekip deposunda
- * sık, kişisel deposunda hiç. Varsayılanlar bilinçli olarak temkinli; ne
- * yaptığını değiştirmek isteyen buradan iki tıkla açıyor.
+ * Buradan yapılan her değişiklik depoya özel: insanlar her depoda aynı
+ * davranışı istemiyor — ekip deposunda sık, kişisel deposunda hiç. Dokunulmadığı
+ * sürece depo genel varsayılanı izliyor, o yüzden ellinin üstünde depoyu tek tek
+ * ayarlamak gerekmiyor; genel ayar ayarlar penceresinden değiştiriliyor.
  */
 export function AutoPullPopover({ repoId }: { repoId: string }) {
   const t = useT();
@@ -81,6 +50,15 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
     // bu depoda ayrı bir davranış istediğini söylemiş oluyor.
     mutationFn: (autoPull: AutoPullSettings) =>
       invoke('settings:repo-set', { repoId, autoPull }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.repoSettings(repoId) }),
+    onError: (error) =>
+      toast({ kind: 'error', title: t('Ayar kaydedilemedi'), description: errorMessage(error) }),
+  });
+
+  // Depoya özel ayarı silmek: alan `null` verilince kayıttan düşüyor ve depo
+  // yeniden genel varsayılanı izlemeye başlıyor.
+  const revert = useMutation({
+    mutationFn: () => invoke('settings:repo-set', { repoId, autoPull: null }),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.repoSettings(repoId) }),
     onError: (error) =>
       toast({ kind: 'error', title: t('Ayar kaydedilemedi'), description: errorMessage(error) }),
@@ -151,7 +129,9 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
             <div>
               <SectionLabel>{t('Otomatik pull')}</SectionLabel>
               <p className="mt-1 text-[11px] text-ink-2">
-                {t('Uzak sunucudaki değişiklikleri arka planda çeker. Bu ayar yalnızca bu depo için geçerlidir.')}
+                {settings.overrides.autoPull
+                  ? t('Bu depo için ayrı ayarlandı; genel varsayılanı izlemiyor.')
+                  : t('Genel varsayılanı izliyor. Burada bir değişiklik yaparsan yalnızca bu depoya özel olur.')}
               </p>
             </div>
 
@@ -162,43 +142,21 @@ export function AutoPullPopover({ repoId }: { repoId: string }) {
               onCheckedChange={(enabled) => update({ enabled })}
             />
 
-            <div className={cn(!autoPull.enabled && 'opacity-50')}>
-              <p className="mb-1.5 text-[12px] font-medium text-ink">{t('Aralık')}</p>
-              <div className="flex flex-wrap gap-1">
-                {INTERVALS.map((minutes) => (
-                  <button
-                    key={minutes}
-                    type="button"
-                    disabled={!autoPull.enabled}
-                    onClick={() => update({ intervalMinutes: minutes })}
-                    className={cn(
-                      'h-7 min-w-12 rounded-md border px-2 text-[12px] tabular-nums',
-                      autoPull.intervalMinutes === minutes
-                        ? 'border-transparent bg-accent text-white'
-                        : 'border-line bg-surface text-ink-2 hover:bg-surface-2',
-                    )}
-                  >
-                    {t('{minutes} dk', { minutes })}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <ToggleRow
-              label={t('Sadece çalışma dizini temizken')}
-              hint={t('Kaydedilmemiş değişiklik varsa dokunma.')}
-              checked={autoPull.onlyWhenClean}
-              disabled={!autoPull.enabled}
-              onCheckedChange={(onlyWhenClean) => update({ onlyWhenClean })}
+            <AutoPullFields
+              value={autoPull}
+              onChange={update}
+              intervalLabel={t('Aralık')}
             />
 
-            <ToggleRow
-              label={t('Sadece fast-forward')}
-              hint={t('Geçmişler ayrıldıysa birleştirme yapma, kararı sana bırak.')}
-              checked={autoPull.fastForwardOnly}
-              disabled={!autoPull.enabled}
-              onCheckedChange={(fastForwardOnly) => update({ fastForwardOnly })}
-            />
+            {settings.overrides.autoPull && (
+              <button
+                type="button"
+                onClick={() => revert.mutate()}
+                className="self-start text-[11px] text-accent-ink underline underline-offset-2"
+              >
+                {t('Genel ayara dön')}
+              </button>
+            )}
 
             <div className="border-t border-line-soft pt-2">
               {lastResult ? (

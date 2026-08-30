@@ -46,6 +46,20 @@ export const en: Record<string, string> = {
   'Depolar': 'Repositories',
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
+  'Ayar kapsamı': 'Settings scope',
+  'Genel': 'General',
+  'Bu depo': 'This repository',
+  'Bu depoya özel': 'Specific to this repository',
+  'Uzak sunucu davranışı': 'Remote behaviour',
+  'Genel ayara dön': 'Back to the general setting',
+  'Bu depo için ayrı ayarlandı; genel varsayılanı izlemiyor.':
+    'Set separately for this repository; it does not follow the general default.',
+  'Genel varsayılanı izliyor. Burada bir değişiklik yaparsan yalnızca bu depoya özel olur.':
+    'Following the general default. A change here applies to this repository only.',
+  '“Genel” seçili kaldığı sürece ayar genel varsayılanı izler; genel ayarı değiştirdiğinde bu depo da güncellenir.':
+    'While “General” stays selected the setting follows the general default; changing that default updates this repository too.',
+  'Kapalıyken commit mesajı önerisi yalnızca yerel modelle çalışır.':
+    'When off, commit message suggestions run on the local model only.',
   'AI sağlayıcısı': 'AI provider',
   'AI yardımı kapalı. Sağlayıcı ayarları açıldığında görünür.':
     'AI assistance is off. Provider settings appear once it is on.',
@@ -472,7 +486,6 @@ export const en: Record<string, string> = {
   'Diff’i yan yana göster': 'Show diffs side by side',
   'Kapalıyken eski ve yeni satırlar tek sütunda alt alta gösterilir.':
     'When off, old and new lines are shown stacked in one column.',
-  'Bu depo': 'This repository',
   'Arka planda fetch': 'Background fetch',
   'Uzak dalın kaç commit ilerde olduğunu tazeler; yerel dosyalara dokunmaz.':
     'Refreshes how far ahead the remote branch is; never touches local files.',

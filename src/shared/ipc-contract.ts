@@ -207,7 +207,6 @@ export const inputSchemas = {
         ollamaHost: z.string().min(1),
       })
       .optional(),
-    autoFetchIntervalMinutes: z.number().int().min(1).max(1440).optional(),
     sideBySideDiff: z.boolean().optional(),
     lastOpenedRepoId: z.string().nullable().optional(),
     defaults: z

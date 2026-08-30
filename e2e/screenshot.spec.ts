@@ -129,6 +129,9 @@ test('arayüz görüntüleri', async () => {
   await page.getByText('AI sağlayıcısı').scrollIntoViewIfNeeded();
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${SHOT_DIR}/11-ai-ayarlari.png` });
+  await page.getByRole('tab', { name: 'Bu depo' }).click();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `${SHOT_DIR}/13-depo-ayarlari.png` });
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
 

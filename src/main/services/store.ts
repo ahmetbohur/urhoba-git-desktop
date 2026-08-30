@@ -33,7 +33,6 @@ const DEFAULT_SETTINGS: AppSettings = {
     // AI varsayılan olarak kapalı: kullanıcı açıkça açmadan hiçbir istek gitmiyor.
     aiEnabled: false,
   },
-  autoFetchIntervalMinutes: 10,
   ai: {
     // Varsayılan sağlayıcı yerel: AI açıldığında da kod makineden çıkmıyor.
     provider: 'ollama',
