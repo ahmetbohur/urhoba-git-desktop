@@ -135,6 +135,29 @@ test('arayüz görüntüleri', async () => {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
 
+  // Yayınlama penceresi: uzak sunucusu olmayan geçici bir depoda açılıyor.
+  await page.evaluate(async () => {
+    await window.urhoba.invoke('repo:add', {
+      path: '/tmp/urhoba-shots-repo/urhoba-yayin-ornegi',
+    });
+  });
+  // Depo IPC üzerinden eklendiği için kenar çubuğu kendiliğinden tazelenmiyor.
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(1200);
+  await page.getByPlaceholder('Depolarda ara').fill('yayin-ornegi');
+  await page.waitForTimeout(500);
+  await page.getByText('urhoba-yayin-ornegi').first().click();
+  await page.waitForTimeout(1000);
+  const publishButton = page.getByRole('button', { name: 'GitHub’da yayınla' });
+  if (await publishButton.count()) {
+    await publishButton.first().click();
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: `${SHOT_DIR}/14-yayinla.png` });
+  }
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
   // Koyu tema
   await page.getByLabel('Ayarlar').click();
   await page.waitForTimeout(500);

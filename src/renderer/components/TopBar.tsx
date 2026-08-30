@@ -8,6 +8,7 @@ import {
   KeyRound,
   RefreshCw,
   Settings,
+  UploadCloud,
   Tag,
   Terminal,
   TriangleAlert,
@@ -18,6 +19,7 @@ import { errorMessage, invoke } from '../lib/ipc';
 import {
   useInvalidateRepo,
   useMutation,
+  useRemotes,
   useRepoSettings,
   useStatus,
 } from '../lib/queries';
@@ -29,6 +31,7 @@ import { StashMenu } from './StashMenu';
 import { SettingsDialog } from './dialogs/SettingsDialog';
 import { SshDialog } from './dialogs/SshDialog';
 import { GithubDialog } from './dialogs/GithubDialog';
+import { PublishDialog } from './dialogs/PublishDialog';
 import { TagDialog } from './dialogs/TagDialog';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import type { Repo } from '@shared/types';
@@ -45,6 +48,7 @@ export function TopBar({ repo }: { repo: Repo }) {
   const t = useT();
   const { data: status } = useStatus(repo.id);
   const { data: repoSettings } = useRepoSettings(repo.id);
+  const { data: remotes } = useRemotes(repo.id);
   const invalidate = useInvalidateRepo();
   const toast = useUi((s) => s.toast);
   const toggleCommandLog = useUi((s) => s.toggleCommandLog);
@@ -55,6 +59,18 @@ export function TopBar({ repo }: { repo: Repo }) {
   const [tagsOpen, setTagsOpen] = useState(false);
   const [githubOpen, setGithubOpen] = useState(false);
   const [forcePushOpen, setForcePushOpen] = useState(false);
+  const publishOpen = useUi((s) => s.publishOpen);
+  const setPublishOpen = useUi((s) => s.setPublishOpen);
+
+  /*
+   * Uzak sunucusu olmayan bir depoda fetch/pull/push yapacak bir yer yok;
+   * onların yerine yayınlama düğmesi çıkıyor. İkisini birden göstermek
+   * kullanıcıya hiçbir zaman çalışmayacak üç düğme sunmak olurdu.
+   */
+  // Liste henüz yüklenmediyse uzak sunucu varmış gibi davranıyoruz: yükleme
+  // anında "GitHub'da yayınla" düğmesinin bir anlığına parlayıp kaybolması,
+  // uzak sunucusu olan bir depoda yanıltıcı bir titreşim üretiyordu.
+  const hasRemote = remotes === undefined || remotes.length > 0;
 
   const fetchMutation = useMutation({
     mutationFn: () => invoke('git:fetch', { repoId: repo.id }),
@@ -146,9 +162,21 @@ export function TopBar({ repo }: { repo: Repo }) {
         hasChanges={(status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) > 0}
       />
 
-      <AutoPullPopover repoId={repo.id} />
+      {hasRemote && <AutoPullPopover repoId={repo.id} />}
 
-      <div className="flex shrink-0 items-center gap-1">
+      {!hasRemote && (
+        <Button
+          size="sm"
+          variant="primary"
+          title={t('GitHub’da yayınla')}
+          onClick={() => setPublishOpen(true)}
+        >
+          <UploadCloud className="size-3.5" />
+          {t('GitHub’da yayınla')}
+        </Button>
+      )}
+
+      <div className={cn('flex shrink-0 items-center gap-1', !hasRemote && 'hidden')}>
         <Button
           size="sm"
           variant="ghost"
@@ -287,6 +315,10 @@ export function TopBar({ repo }: { repo: Repo }) {
       <SshDialog open={sshOpen} onOpenChange={setSshOpen} />
       <TagDialog repoId={repo.id} commit={null} open={tagsOpen} onOpenChange={setTagsOpen} />
       <GithubDialog open={githubOpen} onOpenChange={setGithubOpen} />
+      {/* Koşullu monte: pencere her açılışta taze durumla başlasın. */}
+      {publishOpen && (
+        <PublishDialog open onOpenChange={setPublishOpen} repo={repo} />
+      )}
 
       <ConfirmDialog
         open={forcePushOpen}

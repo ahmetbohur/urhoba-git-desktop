@@ -103,6 +103,8 @@ export const IPC_CHANNELS = [
   'github:pulls',
   'github:pull-checkout',
   'github:pull-create',
+  'github:owners',
+  'github:publish',
   // --- SSH ---
   'ssh:environment',
   'ssh:generate-key',

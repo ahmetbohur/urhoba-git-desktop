@@ -22,6 +22,12 @@ interface UiState {
   tab: MainTab;
   selection: Selection;
   commandLogOpen: boolean;
+  /**
+   * Yayınlama penceresi. Yerel durum yerine burada duruyor çünkü pencereyi
+   * hem üst çubuktaki düğme hem komut paleti açabiliyor; palet üst çubuğun
+   * yerel durumuna erişemez.
+   */
+  publishOpen: boolean;
   commandLog: GitLogEntry[];
   toasts: Toast[];
   /** Depo başına son otomatik pull sonucu — arayüzde "en son ne oldu" göstergesi. */
@@ -31,6 +37,7 @@ interface UiState {
   setTab: (tab: MainTab) => void;
   select: (selection: Selection) => void;
   toggleCommandLog: () => void;
+  setPublishOpen: (open: boolean) => void;
   pushCommandLog: (entry: GitLogEntry) => void;
   toast: (toast: Omit<Toast, 'id'>) => void;
   dismissToast: (id: string) => void;
@@ -45,6 +52,7 @@ export const useUi = create<UiState>((set) => ({
   tab: 'changes',
   selection: { kind: 'none' },
   commandLogOpen: false,
+  publishOpen: false,
   commandLog: [],
   toasts: [],
   lastAutoPull: {},
@@ -54,6 +62,7 @@ export const useUi = create<UiState>((set) => ({
   setTab: (tab) => set({ tab, selection: { kind: 'none' } }),
   select: (selection) => set({ selection }),
   toggleCommandLog: () => set((state) => ({ commandLogOpen: !state.commandLogOpen })),
+  setPublishOpen: (publishOpen) => set({ publishOpen }),
   pushCommandLog: (entry) =>
     set((state) => ({ commandLog: [entry, ...state.commandLog].slice(0, MAX_LOG_ENTRIES) })),
   toast: (toast) =>

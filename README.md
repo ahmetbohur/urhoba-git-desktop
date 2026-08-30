@@ -72,6 +72,11 @@ yalnızca fast-forward yapar, yani arka planda haberin olmadan merge commit'i
 dalına geçme (fork'tan gelenler dahil), mevcut daldan PR açma ve GitHub
 depolarını arayıp klonlama.
 
+**GitHub'da yayınlama** — Uzak sunucusu olmayan bir depoyu tek pencereden
+GitHub'da açar: hesap ya da organizasyon seçilir, ad klasör adından doldurulur,
+görünürlük (özel/herkese açık) seçilir; depo oluşturulur, `origin` kurulur ve
+mevcut dal gönderilir.
+
 **Genel ve depo bazlı ayarlar** — Ayarlar penceresi iki sekme: *Genel* bütün
 depoları, *Bu depo* yalnızca açık olanı etkiler. Arka planda fetch, otomatik pull
 (aralık ve koşullar dahil), AI yardımı ve bulut AI izni her iki kapsamda da
@@ -186,6 +191,27 @@ depo ayarı üç durumlu: *Genel (açık/kapalı)*, *Açık*, *Kapalı*.
 İki kapsam ayrı sekmelerde. Tek bir listede alt alta dizildiklerinde aynı adı
 taşıyan ayarlar ("Otomatik pull" hem genelde hem depoda) iki kez geçiyor ve
 hangisinin neyi etkilediği ancak bölüm başlığı okunarak anlaşılıyordu.
+
+### GitHub'da yayınlama
+
+Sıra şu: depo oluştur → `origin` ekle → dalı upstream kurarak gönder. Ön koşullar
+(giriş yapılmış olması, token yetkisi, uzak sunucunun olmaması, en az bir commit,
+ayrık HEAD olmaması) **oluşturmadan önce** kontrol ediliyor; GitHub'ın 403/422
+yanıtını alıp sonra açıklamak kullanıcıyı yarım kalmış bir durumda bırakıyordu.
+
+Depo `auto_init: false` ile açılıyor. GitHub depoyu bir README ile açsaydı uzak
+dalda bizde olmayan bir commit olurdu ve ilk push "fetch first" ile reddedilirdi.
+
+Remote adresi SSH. Uygulama git'i `GIT_TERMINAL_PROMPT=0` ile çalıştırdığı için
+HTTPS'te parola sorulamıyor ve push sessizce başarısız oluyor.
+
+Oluşturma başarılı olup push başarısız olursa **depo silinmiyor**: silme hem ayrı
+bir yetki istiyor hem de kullanıcının az önce oluşturduğu şeyi yok etmek demek.
+Durum olduğu gibi bildiriliyor ve kullanıcı push düğmesiyle devam edebiliyor.
+
+Depo adı klasör adından türetilirken Türkçe harfler ASCII karşılıklarına
+çevriliyor. GitHub yalnızca `A-Za-z0-9._-` kabul ettiği için doğrudan tireye
+çevirmek `şablon` adını `-ablon` yapıyordu.
 
 ### AI ve gizlilik
 

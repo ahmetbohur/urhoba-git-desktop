@@ -307,6 +307,23 @@ export interface GithubAuthStatus {
   message?: string;
 }
 
+/** Yeni depo açılabilecek hesap: kişisel hesap ya da bir organizasyon. */
+export interface GithubOwner {
+  login: string;
+  isOrganization: boolean;
+  avatarUrl: string;
+}
+
+export interface PublishResult {
+  repo: GithubRepo;
+  /**
+   * Dal gönderilebildi mi. Depo GitHub'da oluşup push başarısız olabiliyor;
+   * arayüz bu ikisini ayırt edebilmeli.
+   */
+  pushed: boolean;
+  message: string;
+}
+
 export interface GithubRepo {
   fullName: string;
   owner: string;

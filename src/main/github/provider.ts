@@ -8,6 +8,7 @@ import type { ForgeProvider } from './forge';
 import type {
   CheckoutResult,
   GithubAuthStatus,
+  GithubOwner,
   GithubRepo,
   GithubUser,
   PullRequest,
@@ -119,13 +120,8 @@ interface RawRepo {
   stargazers_count: number;
 }
 
-export async function listRepos(query?: string): Promise<GithubRepo[]> {
-  // Kullanıcının erişebildiği depolar; en son güncellenen üstte.
-  const raw = await request<RawRepo[]>(
-    '/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member',
-  );
-
-  const mapped = raw.map((repo) => ({
+function toRepo(repo: RawRepo): GithubRepo {
+  return {
     fullName: repo.full_name,
     owner: repo.owner.login,
     name: repo.name,
@@ -137,7 +133,16 @@ export async function listRepos(query?: string): Promise<GithubRepo[]> {
     httpsUrl: repo.clone_url,
     updatedAt: repo.updated_at,
     stars: repo.stargazers_count,
-  }));
+  };
+}
+
+export async function listRepos(query?: string): Promise<GithubRepo[]> {
+  // Kullanıcının erişebildiği depolar; en son güncellenen üstte.
+  const raw = await request<RawRepo[]>(
+    '/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member',
+  );
+
+  const mapped = raw.map(toRepo);
 
   const needle = query?.trim().toLocaleLowerCase('tr');
   if (!needle) return mapped;
@@ -146,6 +151,69 @@ export async function listRepos(query?: string): Promise<GithubRepo[]> {
       repo.fullName.toLocaleLowerCase('tr').includes(needle) ||
       (repo.description ?? '').toLocaleLowerCase('tr').includes(needle),
   );
+}
+
+interface RawOrg {
+  login: string;
+  avatar_url: string;
+}
+
+/**
+ * Yeni deponun açılabileceği hesaplar: kişisel hesap ve üyesi olunan
+ * organizasyonlar.
+ *
+ * Organizasyon listesi başarısız olursa hata yükseltmiyoruz — kişisel hesaba
+ * depo açmak yine mümkün ve tek bir organizasyon isteği yüzünden bütün akışı
+ * kapatmak kullanıcıya bir şey kazandırmaz.
+ */
+export async function listOwners(): Promise<GithubOwner[]> {
+  const token = loadToken();
+  if (!token) throw new Error('GitHub hesabına giriş yapılmamış.');
+
+  const { user } = await fetchViewer(token);
+  const owners: GithubOwner[] = [
+    { login: user.login, isOrganization: false, avatarUrl: user.avatar_url },
+  ];
+
+  try {
+    const orgs = await request<RawOrg[]>('/user/orgs?per_page=100');
+    for (const org of orgs) {
+      owners.push({ login: org.login, isOrganization: true, avatarUrl: org.avatar_url });
+    }
+  } catch {
+    /* organizasyonlar okunamadı; kişisel hesap yeterli */
+  }
+
+  return owners;
+}
+
+/**
+ * GitHub'da yeni depo açar.
+ *
+ * `auto_init: false` şart: GitHub depoyu bir README ile açarsa uzak dalda bizde
+ * olmayan bir commit oluyor ve ilk push "fetch first" ile reddediliyor.
+ */
+export async function createRepo(input: {
+  name: string;
+  description?: string;
+  isPrivate: boolean;
+  /** Kişisel hesap için giriş yapan kullanıcının kendi login'i. */
+  owner: string;
+  viewerLogin: string;
+}): Promise<GithubRepo> {
+  const endpoint =
+    input.owner === input.viewerLogin ? '/user/repos' : `/orgs/${input.owner}/repos`;
+
+  const raw = await request<RawRepo>(endpoint, {
+    method: 'POST',
+    body: {
+      name: input.name,
+      description: input.description || undefined,
+      private: input.isPrivate,
+      auto_init: false,
+    },
+  });
+  return toRepo(raw);
 }
 
 interface RawPull {

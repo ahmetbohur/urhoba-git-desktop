@@ -46,6 +46,32 @@ export const en: Record<string, string> = {
   'Depolar': 'Repositories',
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
+  'GitHub’da yayınla': 'Publish on GitHub',
+  'Depo GitHub’da oluşturulur, origin kurulur ve mevcut dal gönderilir.':
+    'The repository is created on GitHub, origin is set up and the current branch is pushed.',
+  'Hesap': 'Account',
+  'Depo adı': 'Repository name',
+  'GitHub yalnızca harf, rakam, nokta, alt çizgi ve tire kabul ediyor.':
+    'GitHub accepts only letters, digits, dots, underscores and hyphens.',
+  'İsteğe bağlı.': 'Optional.',
+  'Görünürlük': 'Visibility',
+  'Özel': 'Private',
+  'Yalnızca sen ve davet ettiklerin görebilir.': 'Only you and the people you invite can see it.',
+  'Herkese açık': 'Public',
+  'GitHub’daki herkes görebilir.': 'Anyone on GitHub can see it.',
+  'Yayınla': 'Publish',
+  'Yayınlandı': 'Published',
+  'Yayınlanamadı': 'Could not publish',
+  'Kısmen tamamlandı': 'Partly completed',
+  'Bir depo adı yaz.': 'Type a repository name.',
+  'Önce GitHub hesabına giriş yapmalısın.': 'You need to sign in to GitHub first.',
+  'Depoda hiç commit yok. Önce ilk commit’ini at.':
+    'The repository has no commits. Make your first commit first.',
+  'Ayrık HEAD durumunda yayınlanamaz. Önce bir dala geç.':
+    'Cannot publish while in detached HEAD. Switch to a branch first.',
+  '{branch} dalı gönderilecek ve origin şu adrese kurulacak:':
+    'The {branch} branch will be pushed and origin will point to:',
+  'Depoyu GitHub’da oluştur ve gönder': 'Create the repository on GitHub and push it',
   'Ayar kapsamı': 'Settings scope',
   'Genel': 'General',
   'Bu depo': 'This repository',

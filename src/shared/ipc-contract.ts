@@ -14,9 +14,11 @@ import type {
   ConflictFile,
   Diagnostics,
   GithubAuthStatus,
+  GithubOwner,
   GithubRepo,
   GroupSuggestion,
   MergeResult,
+  PublishResult,
   PullRequest,
   FetchResult,
   FileDiff,
@@ -273,6 +275,15 @@ export const inputSchemas = {
   'github:sign-out': z.undefined(),
   'github:repo-context': repoId,
   'github:repos': z.object({ query: z.string().optional() }),
+  'github:owners': z.undefined(),
+  'github:publish': repoId.extend({
+    // GitHub'ın kendi sınırı 100 karakter; buradan geçen ad zaten temizlenmiş
+    // oluyor ama sözleşme yine de kendi başına ayakta durmalı.
+    name: z.string().min(1).max(100),
+    description: z.string().max(350).optional(),
+    isPrivate: z.boolean(),
+    owner: z.string().min(1),
+  }),
   'github:pulls': repoId,
   'github:pull-checkout': repoId.extend({ number: z.number().int().positive() }),
   'github:pull-create': repoId.extend({
@@ -386,6 +397,8 @@ export interface IpcOutputs {
   'github:sign-out': void;
   'github:repo-context': RepoContext | null;
   'github:repos': GithubRepo[];
+  'github:owners': GithubOwner[];
+  'github:publish': PublishResult;
   'github:pulls': PullRequest[];
   'github:pull-checkout': CheckoutResult;
   'github:pull-create': PullRequest;

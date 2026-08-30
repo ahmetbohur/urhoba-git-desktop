@@ -10,6 +10,7 @@ import * as ai from '../ai/service';
 import * as diagnostics from '../services/diagnostics';
 import { buildMenu } from '../services/menu';
 import * as github from '../github/provider';
+import * as publish from '../github/publish';
 import * as rewrite from '../git/rewrite';
 import * as tags from '../git/tags';
 import * as remote from '../git/remote';
@@ -357,6 +358,18 @@ const handlers: Handlers = {
     return github.getRepoContext(repo.id, repo.path);
   },
   'github:repos': ({ query }) => github.listRepos(query),
+  'github:owners': () => publish.listOwners(),
+  'github:publish': async ({ repoId, name, description, isPrivate, owner }) => {
+    const repo = activateRepo(repoId);
+    return publish.publish({
+      repoId: repo.id,
+      repoPath: repo.path,
+      name,
+      description,
+      isPrivate,
+      owner,
+    });
+  },
   'github:pulls': async ({ repoId }) => {
     const repo = activateRepo(repoId);
     const context = await github.getRepoContext(repo.id, repo.path);

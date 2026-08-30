@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useT } from '../i18n';
 import { errorMessage, invoke, platform } from './ipc';
-import { keys, useBranches, useQueryClient, useRepos, useStatus } from './queries';
+import { keys, useBranches, useQueryClient, useRemotes, useRepos, useStatus } from './queries';
 import { useUi } from '../stores/ui';
 import type { Repo } from '@shared/types';
 
@@ -60,12 +60,14 @@ export function useCommands(activeRepo: Repo | null): Command[] {
   const client = useQueryClient();
   const { data: repos } = useRepos();
   const { data: branches } = useBranches(activeRepo?.id ?? null);
+  const { data: remotes } = useRemotes(activeRepo?.id ?? null);
   const { data: status } = useStatus(activeRepo?.id ?? null);
 
   const t = useT();
   const setActiveRepo = useUi((s) => s.setActiveRepo);
   const setTab = useUi((s) => s.setTab);
   const toggleCommandLog = useUi((s) => s.toggleCommandLog);
+  const setPublishOpen = useUi((s) => s.setPublishOpen);
   const toast = useUi((s) => s.toast);
 
   return useMemo(() => {
@@ -178,6 +180,19 @@ export function useCommands(activeRepo: Repo | null): Command[] {
             await invoke('git:stash-create', { repoId, includeUntracked: true });
             return {};
           }),
+        },
+        {
+          id: 'github.publish',
+          label: 'GitHub’da yayınla',
+          group: 'Uzak sunucu',
+          hint: 'Depoyu GitHub’da oluştur ve gönder',
+          // Uzak sunucusu olan bir depo zaten yayınlanmış; komut listede kalıyor
+          // ama pasif, çünkü aranan şeyin var olduğunu görmek yokluğundan iyi.
+          disabled: (remotes?.length ?? 0) > 0,
+          run: () => {
+            setPublishOpen(true);
+            return Promise.resolve();
+          },
         },
         {
           id: 'autopull.now',
