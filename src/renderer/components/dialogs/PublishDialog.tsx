@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Building2, Globe, Lock, User } from 'lucide-react';
+import { Building2, Globe, Lock, Sparkles, User } from 'lucide-react';
 import { useT } from '../../i18n';
 import { cn } from '../../lib/cn';
 import { errorMessage, invoke } from '../../lib/ipc';
 import {
   keys,
+  useAiStatus,
   useGithubStatus,
   useMutation,
   useQuery,
@@ -59,6 +60,7 @@ export function PublishDialog({
   const toast = useUi((s) => s.toast);
   const { data: auth } = useGithubStatus();
   const { data: status } = useStatus(repo.id);
+  const { data: aiStatus } = useAiStatus(repo.id);
 
   /*
    * Başlangıç değerleri yalnızca ilk render'da hesaplanıyor. Pencere her
@@ -104,6 +106,30 @@ export function PublishDialog({
     },
     onError: (error) =>
       toast({ kind: 'error', title: t('Yayınlanamadı'), description: errorMessage(error) }),
+  });
+
+  /*
+   * Öneri doğrudan alana yazılıyor, kaydedilmiyor: kullanıcı okuyup
+   * düzeltmeden GitHub'a hiçbir şey gitmiyor. Modele neyin verildiği
+   * (README mi, yalnızca dosya listesi mi) bildirimde söyleniyor.
+   */
+  const suggestDescription = useMutation({
+    mutationFn: () => invoke('ai:suggest-description', { repoId: repo.id }),
+    onSuccess: (suggestion) => {
+      setDescription(suggestion.description);
+      toast({
+        kind: 'success',
+        title: t('Öneri hazır'),
+        description:
+          suggestion.source === 'readme'
+            ? t('README’den {count} karakter gönderildi.', {
+                count: suggestion.charactersSent,
+              })
+            : t('README bulunamadı; yalnızca dosya listesi gönderildi.'),
+      });
+    },
+    onError: (error) =>
+      toast({ kind: 'error', title: t('Öneri alınamadı'), description: errorMessage(error) }),
   });
 
   const branch = status?.branch ?? null;
@@ -197,7 +223,20 @@ export function PublishDialog({
         </Field>
 
         <Field label={t('Açıklama')} hint={t('İsteğe bağlı.')}>
-          <TextInput value={description} onChange={setDescription} />
+          <div className="flex gap-2">
+            <TextInput value={description} onChange={setDescription} />
+            {aiStatus?.enabled && (
+              <Button
+                variant="secondary"
+                title={t('AI ile açıklama öner')}
+                loading={suggestDescription.isPending}
+                onClick={() => suggestDescription.mutate()}
+              >
+                <Sparkles className="size-3.5" />
+                {t('Öner')}
+              </Button>
+            )}
+          </div>
         </Field>
 
         <div className="flex flex-col gap-1.5">

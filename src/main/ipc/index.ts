@@ -44,14 +44,14 @@ type Handlers = {
  */
 let activeRepoId: string | null = null;
 
-function activateRepo(repoId: string): { id: string; path: string } {
+function activateRepo(repoId: string): { id: string; path: string; name: string } {
   const repo = repos.requireRepo(repoId);
   if (activeRepoId !== repo.id) {
     activeRepoId = repo.id;
     store.touchRepo(repo.id);
     void watchRepo(repo.id, repo.path);
   }
-  return { id: repo.id, path: repo.path };
+  return { id: repo.id, path: repo.path, name: repo.name };
 }
 
 const handlers: Handlers = {
@@ -337,6 +337,10 @@ const handlers: Handlers = {
   'ai:suggest-commit': ({ repoId }) => {
     const repo = activateRepo(repoId);
     return ai.suggestCommitMessage(repo.id, repo.path);
+  },
+  'ai:suggest-description': ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    return ai.suggestDescription(repo.id, repo.path, repo.name);
   },
   'ai:suggest-groups': () => ai.suggestGroups(),
   'ai:apply-groups': ({ assignments }) => {

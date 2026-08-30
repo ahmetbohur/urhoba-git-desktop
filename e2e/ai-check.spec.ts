@@ -15,7 +15,14 @@ import path from 'node:path';
 
 const MODEL = 'gemma4:26b-a4b-it-qat';
 
-test('Ollama ile commit mesajı ve gruplama önerisi', async () => {
+/*
+ * Varsayılan 60 saniye üç model çağrısına yetmiyor: commit mesajı, depo tanıtımı
+ * ve gruplama. Yerel model başka bir işle meşgulse tek çağrı bile dakikayı
+ * bulabiliyor, o yüzden bolca pay bırakılıyor.
+ */
+test.setTimeout(300_000);
+
+test('Ollama ile commit mesajı, tanıtım ve gruplama önerisi', async () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-ai-'));
   const repoPath = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-ai-repo-'));
 
@@ -83,6 +90,20 @@ test('Ollama ile commit mesajı ve gruplama önerisi', async () => {
   expect(suggestion.subject.length).toBeLessThan(120);
   expect(suggestion.detail).toBe('full');
   expect(suggestion.provider).toBe('ollama');
+
+  // --- Depo tanıtımı önerisi ---
+  const described = await page.evaluate(
+    (id) => window.urhoba.invoke('ai:suggest-description', { repoId: id }),
+    repoId,
+  );
+  console.log('TANITIM:', described.description);
+  console.log('KAYNAK:', described.source, '| gönderilen:', described.charactersSent);
+
+  expect(described.description.length).toBeGreaterThan(10);
+  // GitHub'ın sınırı 350; istem 200 istiyor ama modelin taşması engellenmeli.
+  expect(described.description.length).toBeLessThanOrEqual(350);
+  // Tek satır olmalı: GitHub description alanı satır sonu kabul etmiyor.
+  expect(described.description).not.toContain('\n');
 
   // --- Gruplama önerisi ---
   // Tek depoyla öneri anlamsız; modelin örüntü görebilmesi için birkaç ilgili

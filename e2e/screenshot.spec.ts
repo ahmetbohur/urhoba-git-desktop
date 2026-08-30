@@ -149,12 +149,9 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(500);
   await page.getByText('urhoba-yayin-ornegi').first().click();
   await page.waitForTimeout(1000);
-  const publishButton = page.getByRole('button', { name: 'GitHub’da yayınla' });
-  if (await publishButton.count()) {
-    await publishButton.first().click();
-    await page.waitForTimeout(900);
-    await page.screenshot({ path: `${SHOT_DIR}/14-yayinla.png` });
-  }
+  await page.getByRole('button', { name: 'GitHub’da yayınla' }).first().click();
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${SHOT_DIR}/14-yayinla.png` });
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
 

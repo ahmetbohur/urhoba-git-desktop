@@ -258,6 +258,14 @@ export interface CommitSuggestion {
   provider: AiProviderId;
 }
 
+export interface DescriptionSuggestion {
+  description: string;
+  /** Modele neyin verildiği: README bulunduysa metni, yoksa dosya listesi. */
+  source: 'readme' | 'file-list';
+  charactersSent: number;
+  provider: AiProviderId;
+}
+
 export interface GroupSuggestion {
   group: string;
   repoIds: string[];

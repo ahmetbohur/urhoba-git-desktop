@@ -11,6 +11,7 @@ import type {
   BlameResult,
   BranchRenameResult,
   CommitSuggestion,
+  DescriptionSuggestion,
   ConflictFile,
   Diagnostics,
   GithubAuthStatus,
@@ -264,6 +265,7 @@ export const inputSchemas = {
     key: z.string(),
   }),
   'ai:suggest-commit': repoId,
+  'ai:suggest-description': repoId,
   'ai:suggest-groups': z.undefined(),
   'ai:apply-groups': z.object({
     assignments: z.array(z.object({ group: z.string().min(1), repoIds: z.array(z.string()) })),
@@ -389,6 +391,7 @@ export interface IpcOutputs {
   'ai:models': string[];
   'ai:set-key': boolean;
   'ai:suggest-commit': CommitSuggestion;
+  'ai:suggest-description': DescriptionSuggestion;
   'ai:suggest-groups': GroupSuggestion[];
   'ai:apply-groups': void;
 

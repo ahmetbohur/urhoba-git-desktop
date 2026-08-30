@@ -16,6 +16,7 @@ import type {
   AiSettings,
   AiStatus,
   CommitSuggestion,
+  DescriptionSuggestion,
   GroupSuggestion,
   Repo,
 } from '@shared/types';
@@ -217,6 +218,102 @@ export async function suggestCommitMessage(
     detail: budget.detail,
     note: budget.note,
     charactersSent: budget.characters,
+    provider: settings.provider,
+  };
+}
+
+/** README'den modele verilecek metin için üst sınır (karakter). */
+const README_LIMIT = 6_000;
+
+const README_NAMES = ['README.md', 'README.markdown', 'README.txt', 'README', 'readme.md'];
+
+const DESCRIPTION_SYSTEM = [
+  'Sana bir yazılım deposunun adı, dosya listesi ve varsa README’si veriliyor.',
+  'Bu depo için GitHub’daki "description" alanına yazılacak tek cümlelik bir tanıtım yaz.',
+  'Projenin ne yaptığını söyle; "bu depo", "bu proje" gibi kalıplarla başlama.',
+  'En fazla 200 karakter olsun, tek satır olsun, nokta ile bitmesin.',
+  'README hangi dilde yazılmışsa tanıtımı da o dilde yaz.',
+  'Yalnızca cümleyi döndür, tırnak ya da başka hiçbir şey ekleme.',
+].join(' ');
+
+/**
+ * Depo tanıtımı önerisi.
+ *
+ * README varsa asıl kaynak o: bir projenin ne yaptığını en iyi anlatan metin
+ * zaten orada duruyor. Yoksa üst düzey dosya listesiyle yetiniliyor — dosya
+ * adları da bir şey söylüyor ve hiçbir şey önermemekten iyi.
+ *
+ * Listeyi `git ls-tree` veriyor, dosya sistemini taramak yerine: takip
+ * edilmeyen `node_modules` gibi klasörler böylece hiç görünmüyor.
+ */
+export async function suggestDescription(
+  repoId: string,
+  repoPath: string,
+  repoName: string,
+): Promise<DescriptionSuggestion> {
+  const settings = store.getSettings().ai;
+  requireEnabled(repoId, settings);
+  assertCloudAllowed(repoId, settings);
+
+  let readme = '';
+  for (const name of README_NAMES) {
+    const candidate = path.join(repoPath, name);
+    try {
+      if (fs.existsSync(candidate)) {
+        readme = fs.readFileSync(candidate, 'utf8').slice(0, README_LIMIT);
+        break;
+      }
+    } catch {
+      /* okunamayan dosyayı atla */
+    }
+  }
+
+  let files = '';
+  try {
+    const { stdout } = await run({
+      repoId,
+      repoPath,
+      args: ['ls-tree', '--name-only', 'HEAD'],
+      skipQueue: true,
+    });
+    files = stdout.split('\n').filter(Boolean).slice(0, 60).join(', ');
+  } catch {
+    /* commit yoksa liste boş kalır */
+  }
+
+  const user = [
+    `Depo adı: ${repoName}`,
+    files.length > 0 ? `Üst düzey dosyalar: ${files}` : '',
+    readme.length > 0 ? `README:\n${readme}` : 'README yok.',
+  ]
+    .filter((part) => part.length > 0)
+    .join('\n\n');
+
+  const raw = await clientFor(settings).complete(
+    { system: DESCRIPTION_SYSTEM, user, maxTokens: 200 },
+    settings.model,
+  );
+
+  /*
+   * Model bazen cümleyi tırnağa alıyor ya da bir açıklama satırı ekliyor.
+   * İlk dolu satırı alıp tırnakları kırpmak ikisini de temizliyor; GitHub'ın
+   * 350 karakterlik sınırı da burada uygulanıyor.
+   */
+  const description = (raw.split('\n').find((line) => line.trim().length > 0) ?? '')
+    .trim()
+    .replace(/^["'`]+|["'`]+$/g, '')
+    .slice(0, 350);
+
+  log('info', 'Depo tanıtımı önerisi üretildi', {
+    provider: settings.provider,
+    source: readme.length > 0 ? 'readme' : 'file-list',
+    characters: user.length,
+  });
+
+  return {
+    description,
+    source: readme.length > 0 ? 'readme' : 'file-list',
+    charactersSent: user.length,
     provider: settings.provider,
   };
 }

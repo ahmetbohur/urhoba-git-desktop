@@ -82,8 +82,9 @@ depoları, *Bu depo* yalnızca açık olanı etkiler. Arka planda fetch, otomati
 (aralık ve koşullar dahil), AI yardımı ve bulut AI izni her iki kapsamda da
 ayarlanabilir; geçersiz kılınmayan ayar genel varsayılanı izlemeye devam eder.
 
-**AI yardımı (isteğe bağlı)** — Commit mesajı önerisi ve gruplama önerisi;
-Ollama (yerel), OpenAI veya Claude ile. Varsayılan olarak kapalı ve yerel.
+**AI yardımı (isteğe bağlı)** — Commit mesajı, depo tanıtımı ve gruplama
+önerisi; Ollama (yerel), OpenAI veya Claude ile. Varsayılan olarak kapalı ve
+yerel.
 
 **SSH kurulumu** — Sistemdeki anahtarları listeler, ssh-agent durumunu gösterir,
 yeni ed25519 anahtarı üretir, public key'i panoya kopyalar ve GitHub bağlantısını
@@ -229,6 +230,11 @@ yeniden girerdi.
 
 Gruplama önerisi bütün depoları birden ilgilendirdiği için genel ayara bakar ve
 yalnızca depo adlarını gönderir; kod göndermediği için bulut izni aramaz.
+
+Depo tanıtımı önerisi README'yi (ilk 6.000 karakter) ve üst düzey dosya
+listesini gönderir. Liste `git ls-tree` ile alınır, dosya sistemi taranmaz:
+takip edilmeyen `node_modules` gibi klasörler böylece hiç görünmez. README yoksa
+yalnızca dosya adları gider ve kullanıcıya bu söylenir.
 
 Büyük diff'ler katman katman daraltılır (`ai/diff-budget.ts`): tam diff, dosya
 başına ilk 100 satır, yalnızca değişen satırlar, dosya listesi. Ham diff'i sondan

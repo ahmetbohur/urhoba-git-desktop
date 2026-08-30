@@ -46,6 +46,10 @@ export const en: Record<string, string> = {
   'Depolar': 'Repositories',
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
+  'AI ile açıklama öner': 'Suggest a description with AI',
+  'README’den {count} karakter gönderildi.': '{count} characters from the README were sent.',
+  'README bulunamadı; yalnızca dosya listesi gönderildi.':
+    'No README found; only the file list was sent.',
   'GitHub’da yayınla': 'Publish on GitHub',
   'Depo GitHub’da oluşturulur, origin kurulur ve mevcut dal gönderilir.':
     'The repository is created on GitHub, origin is set up and the current branch is pushed.',

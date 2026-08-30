@@ -92,6 +92,7 @@ export const IPC_CHANNELS = [
   'ai:models',
   'ai:set-key',
   'ai:suggest-commit',
+  'ai:suggest-description',
   'ai:suggest-groups',
   'ai:apply-groups',
   // --- GitHub ---
