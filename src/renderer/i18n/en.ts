@@ -54,7 +54,7 @@ export const en: Record<string, string> = {
   'Bu depoda henüz HEAD hareketi kaydedilmemiş.':
     'No HEAD movement has been recorded in this repository yet.',
   'Bu noktaya dön': 'Return to this point',
-  'Geri alınamadı': 'Could not undo',
+  'Geri dönülemedi': 'Could not return',
   '{sha} commit’ine dönülecek. Dosyalara ne olacağını seç:':
     'Returning to commit {sha}. Choose what happens to your files:',
   '{count} dosyadaki kaydedilmemiş değişiklik silinecek.':

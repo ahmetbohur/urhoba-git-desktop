@@ -232,3 +232,13 @@
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
 }
+
+/*
+ * Satır içi fark vurgusu. Satır zaten ekleme/silme rengiyle boyalı olduğu için
+ * vurgu ayrı bir renk değil, aynı rengin koyulaştırılmışı: iki farklı renk
+ * satırın ne olduğunu okumayı zorlaştırıyordu.
+ */
+.intraline {
+  background-color: color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 2px;
+}

@@ -18,6 +18,10 @@ başlığında o gruptaki kaydedilmemiş değişiklik sayısı görünür.
 renklendirmeli diff (tek sütun veya yan yana), tek tık veya toplu stage/unstage,
 onaylı geri alma (discard), commit ve son commit'i düzeltme (amend).
 
+**Kelime düzeyinde fark** — Değişen satırlarda yalnızca değişen kelimeler
+vurgulanır. Uzun bir satırda tek sayı değiştiğinde satırın tamamını okumak
+gerekmiyor.
+
 **İkili dosya önizlemesi** — Görüntü, video, ses ve yazı tipi dosyalarında diff
 yerine içeriğin kendisi, eski ve yeni hâli yan yana gösterilir. Saydam
 görüntülerin arkasında damalı zemin, altında dosya boyutu. Geçmişte de aynı
@@ -136,6 +140,21 @@ Gömülü git'ten kullanılmayan parçalar paketleme sonrası çıkarılıyor
 (`forge.config.ts` → `TRIMMED_GIT_PATHS`): HTTPS kimlik yöneticisi, arayüz
 kütüphaneleri, git'in çevirileri ve gitweb. Kurulu boyut 431 MB'tan 329 MB'a,
 `.deb` 135 MB'tan 101 MB'a iniyor.
+
+### Satır içi fark
+
+Değişen satır çiftleri kelime düzeyinde karşılaştırılır ve yalnızca değişen
+bölümler vurgulanır (`renderer/lib/intraline.ts`). Karakter karakter
+karşılaştırmak "function" ile "func" arasında dağınık parçalar üretiyor; kelime
+bütünlüğü korununca vurgu okunabilir kalıyor.
+
+İki koruma var. Satır çok uzunsa (küçültülmüş dosyalarda tek satır on binlerce
+token olabiliyor) hesaplama hiç başlamıyor. Satırın neredeyse tamamı
+değiştiyse de vurgu üretilmiyor: her yeri boyamak bilgi taşımıyor.
+
+Eşleştirme yan yana görünümdekiyle aynı kuralı izliyor — arka arkaya gelen
+silinenler ve eklenenler sırayla eşleniyor. İki görünümde farklı çiftler kurmak
+aynı diff'i iki türlü göstermek olurdu.
 
 ### İkili dosya önizlemesi
 

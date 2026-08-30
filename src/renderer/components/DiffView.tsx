@@ -3,6 +3,7 @@ import { Columns2, FileWarning, Rows3 } from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { pairLinesForSideBySide } from '../lib/diff-layout';
+import { intralineRanges, type Range } from '../lib/intraline';
 import { languageForPath, tokenizeLines, type HighlightToken } from '../lib/highlight';
 import { formatCount } from '../lib/format';
 import { Badge, Button, EmptyState, Spinner, Tooltip } from './primitives';
@@ -50,13 +51,79 @@ function lineKey(hunkIndex: number, lineIndex: number): string {
   return `${hunkIndex}:${lineIndex}`;
 }
 
-function LineContent({ tokens, fallback }: { tokens: HighlightToken[] | null; fallback: string }) {
-  if (!tokens) return <>{fallback || ' '}</>;
+/**
+ * Satırı, sözdizimi renklerini koruyarak değişen aralıklara göre böler.
+ *
+ * İki bölümleme birbirinden bağımsız: renklendirme dilin gramerine, vurgu ise
+ * komşu satırla farka göre. Aynı anda ikisini göstermek için token sınırları
+ * ve aralık sınırları birlikte kesiliyor.
+ */
+function splitByRanges(
+  tokens: HighlightToken[],
+  ranges: Range[],
+): Array<{ content: string; color?: string; changed: boolean }> {
+  const pieces: Array<{ content: string; color?: string; changed: boolean }> = [];
+  let offset = 0;
+
+  for (const token of tokens) {
+    let start = 0;
+    while (start < token.content.length) {
+      const absolute = offset + start;
+      const inside = ranges.find(([from, to]) => absolute >= from && absolute < to);
+      const next = inside ? undefined : ranges.find(([from]) => from > absolute);
+      const end = inside
+        ? Math.min(token.content.length, inside[1] - offset)
+        : next
+          ? Math.min(token.content.length, next[0] - offset)
+          : token.content.length;
+
+      pieces.push({
+        content: token.content.slice(start, end),
+        color: token.color,
+        changed: !!inside,
+      });
+      start = end;
+    }
+    offset += token.content.length;
+  }
+
+  return pieces;
+}
+
+function LineContent({
+  tokens,
+  fallback,
+  changed,
+}: {
+  tokens: HighlightToken[] | null;
+  fallback: string;
+  /** Satır içinde vurgulanacak karakter aralıkları. */
+  changed?: Range[];
+}) {
+  // Renklendirme yoksa satırın kendisi tek bir token gibi ele alınıyor.
+  const source = tokens ?? [{ content: fallback }];
+  if (!changed || changed.length === 0) {
+    if (!tokens) return <>{fallback || ' '}</>;
+    return (
+      <>
+        {tokens.map((token, index) => (
+          <span key={index} style={token.color ? { color: token.color } : undefined}>
+            {token.content}
+          </span>
+        ))}
+      </>
+    );
+  }
+
   return (
     <>
-      {tokens.map((token, index) => (
-        <span key={index} style={token.color ? { color: token.color } : undefined}>
-          {token.content}
+      {splitByRanges(source, changed).map((piece, index) => (
+        <span
+          key={index}
+          className={piece.changed ? 'intraline' : undefined}
+          style={piece.color ? { color: piece.color } : undefined}
+        >
+          {piece.content}
         </span>
       ))}
     </>
@@ -66,13 +133,14 @@ function LineContent({ tokens, fallback }: { tokens: HighlightToken[] | null; fa
 interface RowProps {
   line: DiffLine;
   tokens: HighlightToken[] | null;
+  changed?: Range[];
   selectable: boolean;
   selected: boolean;
   onToggle: () => void;
   onExtend: () => void;
 }
 
-function UnifiedRow({ line, tokens, selectable, selected, onToggle, onExtend }: RowProps) {
+function UnifiedRow({ line, tokens, changed, selectable, selected, onToggle, onExtend }: RowProps) {
   const isChange = line.kind === 'add' || line.kind === 'del';
   const interactive = selectable && isChange;
 
@@ -120,7 +188,7 @@ function UnifiedRow({ line, tokens, selectable, selected, onToggle, onExtend }: 
         {line.kind === 'add' ? '+' : line.kind === 'del' ? '−' : ''}
       </span>
       <span className="selectable min-w-0 flex-1 pr-3 break-all whitespace-pre-wrap">
-        <LineContent tokens={tokens} fallback={line.content} />
+        <LineContent tokens={tokens} fallback={line.content} changed={changed} />
       </span>
     </div>
   );
@@ -129,6 +197,7 @@ function UnifiedRow({ line, tokens, selectable, selected, onToggle, onExtend }: 
 function SideCell({
   entry,
   tokensFor,
+  changedFor,
   selectable,
   isSelected,
   onToggle,
@@ -136,6 +205,7 @@ function SideCell({
 }: {
   entry: { line: DiffLine; index: number } | null;
   tokensFor: (index: number) => HighlightToken[] | null;
+  changedFor: (index: number) => Range[] | undefined;
   selectable: boolean;
   isSelected: (index: number) => boolean;
   onToggle: (index: number) => void;
@@ -172,7 +242,11 @@ function SideCell({
         {line.kind === 'add' ? (line.newLine ?? '') : (line.oldLine ?? '')}
       </span>
       <span className="selectable min-w-0 flex-1 px-2 break-all whitespace-pre-wrap">
-        <LineContent tokens={tokensFor(index)} fallback={line.content} />
+        <LineContent
+          tokens={tokensFor(index)}
+          fallback={line.content}
+          changed={changedFor(index)}
+        />
       </span>
     </div>
   );
@@ -464,6 +538,13 @@ function HunkBlock({
     () => (sideBySide ? pairLinesForSideBySide(hunk.lines) : []),
     [sideBySide, hunk.lines],
   );
+  /*
+   * Satır içi vurgular hunk başına bir kez hesaplanıyor. Her satırda ayrı
+   * hesaplamak aynı çifti iki kez karşılaştırmak olurdu; ayrıca eşleştirme
+   * zaten komşu satırlara bakıyor, tek satır kendi başına yeterli değil.
+   */
+  const changed = useMemo(() => intralineRanges(hunk.lines), [hunk.lines]);
+  const changedFor = (index: number) => changed.get(index);
 
   return (
     <div>
@@ -486,6 +567,7 @@ function HunkBlock({
             <SideCell
               entry={pair.left}
               tokensFor={tokensFor}
+              changedFor={changedFor}
               selectable={selectable}
               isSelected={isSelected}
               onToggle={onToggle}
@@ -495,6 +577,7 @@ function HunkBlock({
             <SideCell
               entry={pair.right}
               tokensFor={tokensFor}
+              changedFor={changedFor}
               selectable={selectable}
               isSelected={isSelected}
               onToggle={onToggle}
@@ -508,6 +591,7 @@ function HunkBlock({
             key={lineIndex}
             line={line}
             tokens={tokensFor(lineIndex)}
+            changed={changedFor(lineIndex)}
             selectable={selectable}
             selected={isSelected(lineIndex)}
             onToggle={() => onToggle(lineIndex)}

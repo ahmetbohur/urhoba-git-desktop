@@ -14,6 +14,12 @@ import path from 'node:path';
 const SHOT_DIR = '/tmp/urhoba-shots';
 
 // Bu dosya normal test koşusunun dışında; `npm run screenshots` ile çalışıyor.
+/*
+ * Senaryo uzun: her adım arayüzün yerleşmesi için bekliyor ve ekran görüntüsü
+ * alıyor. Varsayılan bir dakika yetmiyor.
+ */
+test.setTimeout(240_000);
+
 test('arayüz görüntüleri', async () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-shot-'));
   const app = await electron.launch({
@@ -115,7 +121,8 @@ test('arayüz görüntüleri', async () => {
   // Süslemeler: yerel ve uzak dal aynı commit'te birlikte görünmeli.
   await page.screenshot({ path: `${SHOT_DIR}/18-gecmis-suslemeler.png` });
 
-  await page.getByRole('button', { name: 'HEAD geçmişi' }).click();
+  // Kesin eşleşme: commit listesinde aynı metni içeren başlıklar olabiliyor.
+  await page.getByRole('button', { name: 'HEAD geçmişi', exact: true }).click();
   await page.waitForTimeout(1500);
   await page.locator('button:has-text("commit")').nth(1).click();
   await page.waitForTimeout(600);
@@ -207,6 +214,20 @@ test('arayüz görüntüleri', async () => {
   sampleGit(['commit', '-m', 'logo eklendi']);
   fs.copyFileSync('assets/icon-64.png', path.join(samplePath, 'logo.png'));
 
+  // Kelime düzeyinde fark: satırın tamamı değil, değişen kelimeler vurgulanmalı.
+  fs.writeFileSync(
+    path.join(samplePath, 'ayar.ts'),
+    'export const timeout = 30;\nexport const retries = 3;\nexport const host = "localhost";\n',
+  );
+  // Yalnızca bu dosya: `-A` az önce değiştirilen logo.png'yi de commit'liyor ve
+  // görsel önizleme adımında karşılaştırılacak bir değişiklik kalmıyordu.
+  sampleGit(['add', 'ayar.ts']);
+  sampleGit(['commit', '-m', 'ayarlar']);
+  fs.writeFileSync(
+    path.join(samplePath, 'ayar.ts'),
+    'export const timeout = 60;\nexport const retries = 3;\nexport const host = "127.0.0.1";\n',
+  );
+
   await page.getByPlaceholder('Depolarda ara').fill('yayin-ornegi');
   await page.waitForTimeout(500);
   await page.getByText('urhoba-yayin-ornegi').first().click();
@@ -214,6 +235,10 @@ test('arayüz görüntüleri', async () => {
   await page.getByText('logo.png').first().click();
   await page.waitForTimeout(2000);
   await page.screenshot({ path: `${SHOT_DIR}/17-gorsel-onizleme.png` });
+
+  await page.getByText('ayar.ts').first().click();
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${SHOT_DIR}/20-kelime-farki.png` });
 
   await page.getByPlaceholder('Depolarda ara').fill('Urhoba-');
   await page.waitForTimeout(500);

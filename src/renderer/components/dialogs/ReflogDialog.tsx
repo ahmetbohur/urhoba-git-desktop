@@ -80,7 +80,7 @@ export function ReflogDialog({
       onOpenChange(false);
     },
     onError: (error) =>
-      toast({ kind: 'error', title: t('Geri alınamadı'), description: errorMessage(error) }),
+      toast({ kind: 'error', title: t('Geri dönülemedi'), description: errorMessage(error) }),
   });
 
   const dirtyCount = (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0);
