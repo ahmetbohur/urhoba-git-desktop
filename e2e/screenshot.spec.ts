@@ -100,7 +100,12 @@ test('arayüz görüntüleri', async () => {
   // Commit satırları alt kenarlıklı butonlar; ilkini seçiyoruz.
   await page.locator('button.border-b').first().click();
   await page.waitForTimeout(2000);
-  await page.getByText('README.md').first().click({ button: 'right' });
+  /*
+   * Belirli bir dosya adı aramıyoruz: son commit'in hangi dosyalara dokunduğu
+   * her çalıştırmada değişiyor ve "README.md" beklemek senaryoyu depo geçmişine
+   * bağlıyordu. Commit dosya satırları tek `button.h-8.w-full` eşleşmesi.
+   */
+  await page.locator('button.h-8.w-full').first().click({ button: 'right' });
   await page.waitForTimeout(500);
   await page.getByText('Satır geçmişi (blame)').click();
   await page.waitForTimeout(2500);
@@ -156,10 +161,34 @@ test('arayüz görüntüleri', async () => {
     (target) => window.urhoba.invoke('repo:add', { path: target }),
     samplePath,
   );
+
+  /*
+   * Uzun adlı bir depoda otomatik pull simgesinin kırpılmadığını görmek için:
+   * ad kısalırken simgenin yerini koruması gerekiyor.
+   */
+  const longPath = path.join(sampleRoot, 'Urhoba-Cok-Uzun-Depo-Adi-Ornegi');
+  fs.mkdirSync(longPath);
+  const longGit = (args: string[]) => execFileSync('git', args, { cwd: longPath });
+  longGit(['init', '--initial-branch=main']);
+  longGit(['config', 'user.email', 'ornek@urhoba.test']);
+  longGit(['config', 'user.name', 'Urhoba']);
+  fs.writeFileSync(path.join(longPath, 'README.md'), '# uzun\n');
+  longGit(['add', '-A']);
+  longGit(['commit', '-m', 'ilk commit']);
+  await page.evaluate(async (target) => {
+    const added = await window.urhoba.invoke('repo:add', { path: target });
+    await window.urhoba.invoke('settings:repo-set', {
+      repoId: added.id,
+      autoPull: { enabled: true, intervalMinutes: 10, onlyWhenClean: true, fastForwardOnly: true },
+    });
+  }, longPath);
   // Depo IPC üzerinden eklendiği için kenar çubuğu kendiliğinden tazelenmiyor.
   await page.reload();
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1200);
+  await page.getByPlaceholder('Depolarda ara').fill('Urhoba-');
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `${SHOT_DIR}/16-uzun-ad.png` });
   await page.getByPlaceholder('Depolarda ara').fill('yayin-ornegi');
   await page.waitForTimeout(500);
   await page.getByText('urhoba-yayin-ornegi').first().click();

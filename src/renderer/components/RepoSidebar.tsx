@@ -100,24 +100,29 @@ function RepoRow({
               />
             )}
             <span className="min-w-0 flex-1">
+              {/*
+                `truncate` kısaltılacak metnin kendi üzerinde olmalı, flex
+                kapsayıcısında değil: kapsayıcıda dururken uzun ad taşıyor ve
+                yanındaki otomatik pull simgesi dışarı itilip kırpılıyordu.
+              */}
               <span
                 className={cn(
-                  'flex items-center gap-1.5 truncate text-[13px] font-medium',
+                  'flex min-w-0 items-center gap-1.5 text-[13px] font-medium',
                   active ? 'text-accent-ink' : 'text-ink',
                 )}
               >
-                {repo.name}
+                <span className="truncate">{repo.name}</span>
                 {autoPullOn && (
                   <RefreshCcwDot className="size-3 shrink-0 text-ok" aria-label={t('Otomatik pull açık')} />
                 )}
               </span>
-              <span className="flex items-center gap-1.5 truncate text-[11px] text-ink-3">
+              <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-ink-3">
                 {(repo.tags ?? []).slice(0, 2).map((tag) => (
-                  <span key={tag} className="rounded bg-surface-3 px-1 text-[10px]">
+                  <span key={tag} className="truncate rounded bg-surface-3 px-1 text-[10px]">
                     {tag}
                   </span>
                 ))}
-                {relativeTime(repo.lastOpenedAt)}
+                <span className="truncate">{relativeTime(repo.lastOpenedAt)}</span>
               </span>
             </span>
           </button>
