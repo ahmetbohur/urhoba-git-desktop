@@ -254,6 +254,10 @@ const handlers: Handlers = {
     const repo = activateRepo(repoId);
     return history.getCommitFileDiff(repo.id, repo.path, sha, path);
   },
+  'git:reflog': ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    return history.getReflog(repo.id, repo.path);
+  },
   'git:blame': ({ repoId, path, ref }) => {
     const repo = activateRepo(repoId);
     return history.getBlame(repo.id, repo.path, path, ref);

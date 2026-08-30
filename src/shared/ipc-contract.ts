@@ -21,6 +21,7 @@ import type {
   GroupSuggestion,
   MergeResult,
   PublishResult,
+  ReflogEntry,
   PullRequest,
   FetchResult,
   FileDiff,
@@ -151,6 +152,7 @@ export const inputSchemas = {
   }),
   'git:commit-detail': repoId.extend({ sha: z.string().min(1) }),
   'git:commit-file-diff': repoId.extend({ sha: z.string().min(1), path: z.string().min(1) }),
+  'git:reflog': repoId,
   'git:blame': repoId.extend({ path: z.string().min(1), ref: z.string().optional() }),
   'git:cherry-pick': repoId.extend({ sha: z.string().min(1) }),
 
@@ -369,6 +371,7 @@ export interface IpcOutputs {
   'git:commit-detail': CommitDetail;
   'git:commit-file-diff': FileDiff;
   'git:blame': BlameResult;
+  'git:reflog': ReflogEntry[];
   'git:cherry-pick': MergeResult;
 
   'git:remotes': Remote[];

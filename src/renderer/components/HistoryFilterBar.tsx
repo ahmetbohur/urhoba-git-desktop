@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Popover } from 'radix-ui';
 import { Filter, X } from 'lucide-react';
 import { useT } from '../i18n';
@@ -34,10 +34,13 @@ export function HistoryFilterBar({
   filter,
   onChange,
   resultCount,
+  actions,
 }: {
   filter: LogFilter;
   onChange: (filter: LogFilter) => void;
   resultCount: number;
+  /** Sağ tarafa, sonuç sayısının soluna konan ek düğmeler. */
+  actions?: ReactNode;
 }) {
   const t = useT();
   const [draft, setDraft] = useState<LogFilter>(filter);
@@ -141,6 +144,7 @@ export function HistoryFilterBar({
       ))}
 
       <div className="flex-1" />
+      {actions}
       <span className="text-[11px] tabular-nums text-ink-3">
         {resultCount > 0 ? t('{count} commit yüklendi', { count: resultCount }) : t('Sonuç yok')}
       </span>

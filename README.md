@@ -56,6 +56,11 @@ Yazara, mesaja, dosya yoluna ve tarih aralığına göre filtreleme.
 reset (soft / mixed / hard, her birinin ne yaptığı yazılı) veya cherry-pick.
 SHA kopyalama ve commit'i etiketleme aynı menüde.
 
+**HEAD geçmişi (reflog)** — HEAD'in geçmişte durduğu noktaları listeler ve
+oraya döndürür. Commit geçmişinden silinmiş çalışmaya ulaşmanın tek yolu bu:
+yanlış bir reset ya da yarıda kesilmiş bir rebase'ten sonra kaybolmuş görünen
+commit'ler burada duruyor.
+
 **Satır geçmişi (blame)** — Bir dosyanın her satırını kimin, hangi commit'te
 yazdığını gösterir. Aynı commit'ten gelen ardışık satırlarda bilgi
 tekrarlanmaz; bir satıra tıklayınca o commit geçmişte açılır.

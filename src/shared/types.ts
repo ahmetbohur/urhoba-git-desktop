@@ -129,6 +129,24 @@ export interface FilePreview {
   bytes: number;
 }
 
+/**
+ * `git reflog` kaydı: HEAD'in geçmişte durduğu bir nokta.
+ *
+ * Commit geçmişinden farklı olarak yalnızca yerelde tutulur ve silinen
+ * commit'lere de ulaştırır — yanlış bir reset'ten dönmenin tek yolu budur.
+ */
+export interface ReflogEntry {
+  sha: string;
+  shortSha: string;
+  /** `HEAD@{3}` biçiminde konum. */
+  selector: string;
+  /** Hangi komutun taşıdığı: commit, reset, checkout, merge, rebase… */
+  action: string;
+  /** Komutun kendi açıklaması. */
+  message: string;
+  at: string;
+}
+
 /** `git blame` çıktısındaki tek bir satır. */
 export interface BlameLine {
   sha: string;

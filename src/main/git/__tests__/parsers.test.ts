@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseUnifiedDiff } from '../diff';
-import {
-  parseBlame,
-  parseLog,
-  parseNameStatus,
-  parseNumstat,
-  parsePorcelainV2,
-  parseRefLines,
-} from '../parse';
+import { parseBlame, parseLog, parseNameStatus, parseNumstat, parsePorcelainV2, parseRefLines, parseReflog } from '../parse';
 
 const US = '\x1f';
 const RS = '\x1e';
@@ -283,5 +276,54 @@ describe('parseBlame', () => {
     const lines = parseBlame(withEmpty);
     expect(lines).toHaveLength(1);
     expect(lines[0].content).toBe('');
+  });
+});
+
+describe('parseReflog', () => {
+  const US = '\x1f';
+  const RS = '\x1e';
+  const record = (...fields: string[]) => fields.join(US) + RS;
+
+  it('eylemi açıklamadan ayırır', () => {
+    const raw =
+      record('a'.repeat(40), 'aaaaaaa', 'HEAD@{0}', 'commit: Girişi düzelt', '2026-08-30T10:00:00+03:00') +
+      record('b'.repeat(40), 'bbbbbbb', 'HEAD@{1}', 'reset: moving to HEAD~1', '2026-08-30T09:00:00+03:00');
+
+    const entries = parseReflog(raw);
+
+    expect(entries).toHaveLength(2);
+    expect(entries[0]).toEqual({
+      sha: 'a'.repeat(40),
+      shortSha: 'aaaaaaa',
+      selector: 'HEAD@{0}',
+      action: 'commit',
+      message: 'Girişi düzelt',
+      at: '2026-08-30T10:00:00+03:00',
+    });
+    expect(entries[1].action).toBe('reset');
+    expect(entries[1].message).toBe('moving to HEAD~1');
+  });
+
+  it('açıklamasız kaydı eylem olarak alır', () => {
+    // Bazı kayıtlarda iki nokta hiç yok; tamamı komutun adı sayılıyor.
+    const entries = parseReflog(
+      record('c'.repeat(40), 'ccccccc', 'HEAD@{0}', 'rebase (finish)', '2026-08-30T10:00:00+03:00'),
+    );
+
+    expect(entries[0].action).toBe('rebase (finish)');
+    expect(entries[0].message).toBe('');
+  });
+
+  it('mesajdaki iki noktalar bozulmadan kalır', () => {
+    const entries = parseReflog(
+      record('d'.repeat(40), 'ddddddd', 'HEAD@{0}', 'commit: Düzeltme: yol ayrımı', '2026-08-30T10:00:00+03:00'),
+    );
+
+    // Yalnızca ilk iki nokta ayırıcı; mesajın kendi noktalama işaretleri kalmalı.
+    expect(entries[0].message).toBe('Düzeltme: yol ayrımı');
+  });
+
+  it('boş çıktıda boş liste döner', () => {
+    expect(parseReflog('')).toEqual([]);
   });
 });

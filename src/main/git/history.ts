@@ -1,7 +1,22 @@
 import { run } from './client';
 import { parseUnifiedDiff } from './diff';
-import { LOG_FORMAT, parseBlame, parseLog, parseNameStatus, parseNumstat } from './parse';
-import type { BlameResult, Commit, CommitDetail, FileDiff, LogFilter } from '@shared/types';
+import {
+  LOG_FORMAT,
+  REFLOG_FORMAT,
+  parseBlame,
+  parseLog,
+  parseNameStatus,
+  parseNumstat,
+  parseReflog,
+} from './parse';
+import type {
+  BlameResult,
+  Commit,
+  CommitDetail,
+  FileDiff,
+  LogFilter,
+  ReflogEntry,
+} from '@shared/types';
 
 /**
  * Geçmiş okuma. Çıktı biçimleri ve ayrıştırma `parse.ts` içinde; burada yalnızca
@@ -128,6 +143,27 @@ const BLAME_LINE_LIMIT = 20_000;
  * satırın dosya içinde taşındığı ya da başka dosyadan kopyalandığı durumlarda
  * asıl yazarı buluyor.
  */
+/**
+ * Son HEAD hareketleri.
+ *
+ * Sayı sınırlı: reflog aylarca birikiyor ve kullanıcı buraya son yaptığı şeyi
+ * geri almak için bakıyor, arşiv taramak için değil.
+ */
+export async function getReflog(
+  repoId: string,
+  repoPath: string,
+  limit = 100,
+): Promise<ReflogEntry[]> {
+  const { stdout } = await run({
+    repoId,
+    repoPath,
+    args: ['reflog', `--format=${REFLOG_FORMAT}`, `--max-count=${limit}`],
+    skipQueue: true,
+    allowFailure: true,
+  });
+  return parseReflog(stdout);
+}
+
 export async function getBlame(
   repoId: string,
   repoPath: string,

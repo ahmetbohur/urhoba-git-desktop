@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ContextMenu } from 'radix-ui';
-import { Cloud, Copy, GitBranch, GitGraph, History as HistoryIcon, Tag, Undo2 } from 'lucide-react';
+import {
+  Cloud,
+  Copy,
+  GitBranch,
+  GitGraph,
+  History as HistoryIcon,
+  RotateCcw,
+  Tag,
+  Undo2,
+} from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { buildGraph } from '../lib/commit-graph';
@@ -18,10 +27,11 @@ import {
   useSettings,
 } from '../lib/queries';
 import { useUi } from '../stores/ui';
-import { Badge, EmptyState, SectionLabel, Spinner } from './primitives';
+import { Badge, Button, EmptyState, SectionLabel, Spinner } from './primitives';
 import { CommitGraph } from './CommitGraph';
 import { DiffView } from './DiffView';
 import { HistoryFilterBar } from './HistoryFilterBar';
+import { ReflogDialog } from './dialogs/ReflogDialog';
 import { BlameDialog } from './dialogs/BlameDialog';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import { TagDialog } from './dialogs/TagDialog';
@@ -226,6 +236,7 @@ export function HistoryView({ repoId }: { repoId: string }) {
 
   const [resetTarget, setResetTarget] = useState<Commit | null>(null);
   const [resetMode, setResetMode] = useState<ResetMode>('mixed');
+  const [reflogOpen, setReflogOpen] = useState(false);
   const [revertTarget, setRevertTarget] = useState<Commit | null>(null);
   const [tagTarget, setTagTarget] = useState<Commit | null>(null);
   const [cherryTarget, setCherryTarget] = useState<Commit | null>(null);
@@ -333,7 +344,18 @@ export function HistoryView({ repoId }: { repoId: string }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <HistoryFilterBar filter={filter} onChange={setFilter} resultCount={commits.length} />
+      <HistoryFilterBar
+        filter={filter}
+        onChange={setFilter}
+        resultCount={commits.length}
+        actions={
+          <Button size="sm" variant="ghost" onClick={() => setReflogOpen(true)}>
+            <RotateCcw className="size-3.5" />
+            {t('HEAD geçmişi')}
+          </Button>
+        }
+      />
+      <ReflogDialog open={reflogOpen} onOpenChange={setReflogOpen} repoId={repoId} />
 
       <div className="flex min-h-0 flex-1">
         <div className="flex w-96 shrink-0 flex-col border-r border-line bg-surface">

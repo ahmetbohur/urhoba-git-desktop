@@ -6,6 +6,7 @@ import type {
   CommitRef,
   FileChange,
   FileChangeKind,
+  ReflogEntry,
   WorkingTreeStatus,
 } from '@shared/types';
 
@@ -371,4 +372,37 @@ export function parseBlame(raw: string): BlameLine[] {
   }
 
   return result;
+}
+
+const REFLOG_US = '\x1f';
+const REFLOG_RS = '\x1e';
+export const REFLOG_FORMAT = ['%H', '%h', '%gd', '%gs', '%aI'].join(REFLOG_US) + REFLOG_RS;
+
+/**
+ * `git reflog` çıktısını ayrıştırır.
+ *
+ * `%gs` "commit: mesaj" ya da "reset: moving to HEAD~1" gibi geliyor: ilk iki
+ * nokta üst üsteye kadarki kısım komutun adı. Ayırmamızın sebebi arayüzde
+ * eylemi vurgulayabilmek — kullanıcı listede aradığı şeyi "hangi komut" diye
+ * tarıyor, açıklamayı sonra okuyor.
+ */
+export function parseReflog(raw: string): ReflogEntry[] {
+  return raw
+    .split(REFLOG_RS)
+    .map((record) => record.replace(/^\n/, ''))
+    .filter((record) => record.trim().length > 0)
+    .map((record) => {
+      const [sha, shortSha, selector, subject, at] = record.split(REFLOG_US);
+      const separator = (subject ?? '').indexOf(':');
+      return {
+        sha: sha ?? '',
+        shortSha: shortSha ?? '',
+        selector: selector ?? '',
+        // İki nokta yoksa tamamı eylem sayılıyor; bazı kayıtlar açıklamasız.
+        action: separator === -1 ? (subject ?? '') : subject.slice(0, separator),
+        message: separator === -1 ? '' : subject.slice(separator + 1).trim(),
+        at: at ?? '',
+      };
+    })
+    .filter((entry) => entry.sha.length > 0);
 }

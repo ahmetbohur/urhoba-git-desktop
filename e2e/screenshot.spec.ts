@@ -114,6 +114,14 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(400);
   // Süslemeler: yerel ve uzak dal aynı commit'te birlikte görünmeli.
   await page.screenshot({ path: `${SHOT_DIR}/18-gecmis-suslemeler.png` });
+
+  await page.getByRole('button', { name: 'HEAD geçmişi' }).click();
+  await page.waitForTimeout(1500);
+  await page.locator('button:has-text("commit")').nth(1).click();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `${SHOT_DIR}/19-reflog.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
   await page.getByRole('tab', { name: 'Değişiklikler' }).click();

@@ -46,6 +46,22 @@ export const en: Record<string, string> = {
   'Depolar': 'Repositories',
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
+  'HEAD geçmişi': 'HEAD history',
+  'HEAD geçmişi (reflog)': 'HEAD history (reflog)',
+  'Geçmişten silinmiş commit’lere de buradan dönebilirsin.':
+    'You can also return to commits that are gone from the history.',
+  'Kayıt yok': 'No entries',
+  'Bu depoda henüz HEAD hareketi kaydedilmemiş.':
+    'No HEAD movement has been recorded in this repository yet.',
+  'Bu noktaya dön': 'Return to this point',
+  'Geri alınamadı': 'Could not undo',
+  '{sha} commit’ine dönülecek. Dosyalara ne olacağını seç:':
+    'Returning to commit {sha}. Choose what happens to your files:',
+  '{count} dosyadaki kaydedilmemiş değişiklik silinecek.':
+    'Uncommitted changes in {count} files will be deleted.',
+  'Değişiklikler hazırlıkta kalır.': 'Changes stay staged.',
+  'Değişiklikler hazırlık dışında kalır.': 'Changes stay unstaged.',
+  'Kaydedilmemiş her şey silinir.': 'Everything uncommitted is deleted.',
   'Önce': 'Before',
   'Sonra': 'After',
   'Yok': 'None',
