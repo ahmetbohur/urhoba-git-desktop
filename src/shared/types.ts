@@ -60,6 +60,23 @@ export type FileChangeKind =
   | 'conflicted'
   | 'typechange';
 
+/**
+ * Alt modülde neyin değiştiği.
+ *
+ * Git bunu ayrı bir alanda bildiriyor çünkü üç şey birbirinden bağımsız: alt
+ * modülün işaret ettiği commit değişmiş olabilir, içinde kaydedilmemiş
+ * değişiklikler olabilir, takip edilmeyen dosyalar olabilir. Arayüzde "değişti"
+ * demek yetmiyor — kullanıcının ne yapması gerektiği bu üçüne göre farklı.
+ */
+export interface SubmoduleState {
+  /** İşaret edilen commit değişti. */
+  commitChanged: boolean;
+  /** İçinde kaydedilmemiş değişiklik var. */
+  hasModifiedContent: boolean;
+  /** İçinde takip edilmeyen dosya var. */
+  hasUntracked: boolean;
+}
+
 export interface FileChange {
   /** Depo köküne göre yol. */
   path: string;
@@ -68,6 +85,20 @@ export interface FileChange {
   kind: FileChangeKind;
   /** İkili dosyalar için diff gösterilmez. */
   isBinary: boolean;
+  /** Yol bir alt modülse durumu; değilse tanımsız. */
+  submodule?: SubmoduleState;
+}
+
+/** Bir alt modülün deponun içindeki durumu. */
+export interface Submodule {
+  /** Depo köküne göre yol. */
+  path: string;
+  sha: string;
+  /** Klasör dolu mu — klonlamadan sonra boş gelebiliyor. */
+  initialized: boolean;
+  /** Ana deponun beklediğinden başka bir commit'te. */
+  outOfDate: boolean;
+  conflicted: boolean;
 }
 
 /** Depoda yarım kalmış bir işlem varsa arayüz farklı davranır (commit yerine "devam et"). */

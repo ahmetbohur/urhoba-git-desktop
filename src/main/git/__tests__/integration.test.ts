@@ -8,6 +8,7 @@ import { commit, discard, getFileDiff, getStatus, stage, unstage } from '../stat
 import { getCommitDetail, getLog } from '../history';
 import { pull, push } from '../remote';
 import { interactiveRebase } from '../merge';
+import { listSubmodules, updateSubmodules } from '../submodule';
 
 /**
  * Gerçek git süreçlerine karşı uçtan uca testler.
@@ -380,5 +381,72 @@ describe('etkileşimli rebase', () => {
     // Depo dokunulmamış kalmalı: doğrulama git'i hiç çalıştırmadan durduruyor.
     const after = await getLog(REPO_ID, repoPath, 0, 5);
     expect(after).toHaveLength(2);
+  });
+});
+
+describe('alt modüller', () => {
+  /** Alt modülü olan bir ana depo kurar ve yollarını döndürür. */
+  function makeRepoWithSubmodule(): { anaPath: string } {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-sm-'));
+    const kutuphane = path.join(root, 'kutuphane');
+    const ana = path.join(root, 'ana');
+
+    fs.mkdirSync(kutuphane);
+    git(['init', '--initial-branch=main'], kutuphane);
+    git(['config', 'user.email', 'test@example.com'], kutuphane);
+    git(['config', 'user.name', 'Test'], kutuphane);
+    fs.writeFileSync(path.join(kutuphane, 'lib.txt'), 'lib\n');
+    git(['add', '-A'], kutuphane);
+    git(['commit', '-m', 'kütüphane'], kutuphane);
+
+    fs.mkdirSync(ana);
+    git(['init', '--initial-branch=main'], ana);
+    git(['config', 'user.email', 'test@example.com'], ana);
+    git(['config', 'user.name', 'Test'], ana);
+    fs.writeFileSync(path.join(ana, 'ana.txt'), 'ana\n');
+    git(['add', '-A'], ana);
+    git(['commit', '-m', 'ana'], ana);
+    // Yerel yoldan alt modül eklemek varsayılan olarak kapalı.
+    git(['-c', 'protocol.file.allow=always', 'submodule', 'add', kutuphane, 'vendor/lib'], ana);
+    git(['commit', '-m', 'alt modül eklendi'], ana);
+
+    return { anaPath: ana };
+  }
+
+  it('alt modülü listeler', async () => {
+    const { anaPath } = makeRepoWithSubmodule();
+
+    const modules = await listSubmodules(REPO_ID, anaPath);
+
+    expect(modules).toHaveLength(1);
+    expect(modules[0].path).toBe('vendor/lib');
+    expect(modules[0].initialized).toBe(true);
+  });
+
+  it('alt modüldeki kaydedilmemiş değişikliği durum içinde bildirir', async () => {
+    const { anaPath } = makeRepoWithSubmodule();
+    fs.appendFileSync(path.join(anaPath, 'vendor/lib/lib.txt'), 'değişiklik\n');
+
+    const status = await getStatus(REPO_ID, anaPath);
+    const entry = status.unstaged.find((change) => change.path === 'vendor/lib');
+
+    expect(entry?.submodule).toBeDefined();
+    // İçerik değişti ama işaret edilen commit hâlâ aynı.
+    expect(entry?.submodule?.hasModifiedContent).toBe(true);
+    expect(entry?.submodule?.commitChanged).toBe(false);
+  });
+
+  it('kurulmamış alt modülü kurar', async () => {
+    const { anaPath } = makeRepoWithSubmodule();
+    // Klonlamayı taklit et: kayıt duruyor ama klasör boş.
+    fs.rmSync(path.join(anaPath, 'vendor/lib'), { recursive: true, force: true });
+    fs.mkdirSync(path.join(anaPath, 'vendor/lib'));
+
+    expect((await listSubmodules(REPO_ID, anaPath))[0].initialized).toBe(false);
+
+    await updateSubmodules(REPO_ID, anaPath);
+
+    expect((await listSubmodules(REPO_ID, anaPath))[0].initialized).toBe(true);
+    expect(fs.existsSync(path.join(anaPath, 'vendor/lib/lib.txt'))).toBe(true);
   });
 });

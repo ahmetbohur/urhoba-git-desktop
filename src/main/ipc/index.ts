@@ -17,6 +17,7 @@ import * as tags from '../git/tags';
 import * as remote from '../git/remote';
 import * as preview from '../git/preview';
 import * as staging from '../git/staging';
+import * as submodule from '../git/submodule';
 import * as stash from '../git/stash';
 import * as status from '../git/status';
 import * as autopull from '../services/autopull';
@@ -261,6 +262,14 @@ const handlers: Handlers = {
   'git:reflog': ({ repoId }) => {
     const repo = activateRepo(repoId);
     return history.getReflog(repo.id, repo.path);
+  },
+  'git:submodules': ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    return submodule.listSubmodules(repo.id, repo.path);
+  },
+  'git:submodule-update': ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    return submodule.updateSubmodules(repo.id, repo.path);
   },
   'git:blame': ({ repoId, path, ref }) => {
     const repo = activateRepo(repoId);

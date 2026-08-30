@@ -18,6 +18,11 @@ başlığında o gruptaki kaydedilmemiş değişiklik sayısı görünür.
 renklendirmeli diff (tek sütun veya yan yana), tek tık veya toplu stage/unstage,
 onaylı geri alma (discard), commit ve son commit'i düzeltme (amend).
 
+**Alt modüller** — Değişiklik listesinde alt modülün *neyinin* değiştiği yazar:
+işaret edilen commit mi, içindeki kaydedilmemiş çalışma mı, takip edilmeyen
+dosyalar mı. Kurulmamış alt modül varsa üstte uyarı şeridi çıkar ve tek tıkla
+kurulur.
+
 **Kelime düzeyinde fark** — Değişen satırlarda yalnızca değişen kelimeler
 vurgulanır. Uzun bir satırda tek sayı değiştiğinde satırın tamamını okumak
 gerekmiyor.
@@ -145,6 +150,18 @@ Gömülü git'ten kullanılmayan parçalar paketleme sonrası çıkarılıyor
 (`forge.config.ts` → `TRIMMED_GIT_PATHS`): HTTPS kimlik yöneticisi, arayüz
 kütüphaneleri, git'in çevirileri ve gitweb. Kurulu boyut 431 MB'tan 329 MB'a,
 `.deb` 135 MB'tan 101 MB'a iniyor.
+
+### Alt modüller
+
+Git alt modül durumunu porcelain çıktısında ayrı bir alanda bildiriyor: `S`
+ardından sırasıyla commit değişikliği, değişmiş içerik ve takip edilmeyen
+dosya. Üçü bağımsız ve kullanıcının yapacağı şey her birinde farklı, o yüzden
+"değişti" demek yerine hangisi olduğu yazılıyor.
+
+Kurulmamış alt modül uyarısı ayrı duruyor çünkü git bunu hiçbir yerde
+söylemiyor: alt modüllü bir depo klonlandığında klasörler boş geliyor ve
+kullanıcı "dosyalar nerede" diye kalıyor. Kurulum `--init --recursive` ile
+yapılıyor; `--init` olmadan komut kurulmamış olanları sessizce atlıyor.
 
 ### Etkileşimli rebase
 

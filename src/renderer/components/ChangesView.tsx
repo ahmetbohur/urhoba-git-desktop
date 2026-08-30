@@ -97,6 +97,20 @@ function FileRow({
               <span className="shrink-0 truncate text-[12px] text-ink-3">{directory}/</span>
             )}
             <span className="truncate text-[12px] text-ink">{fileName(file.path)}</span>
+            {/*
+              Alt modülde "değişti" demek yetmiyor: işaret edilen commit'in
+              değişmesi, içeride kaydedilmemiş çalışma olması ve takip
+              edilmeyen dosya bulunması birbirinden bağımsız ve kullanıcının
+              yapacağı şey her birinde farklı.
+            */}
+            {file.submodule && (
+              <span className="shrink-0 text-[10px] text-ink-3">
+                {t('alt modül')}
+                {file.submodule.commitChanged && ` · ${t('yeni commit')}`}
+                {file.submodule.hasModifiedContent && ` · ${t('kaydedilmemiş')}`}
+                {file.submodule.hasUntracked && ` · ${t('takip edilmeyen')}`}
+              </span>
+            )}
           </button>
           <span
             title={t(mark.label)}

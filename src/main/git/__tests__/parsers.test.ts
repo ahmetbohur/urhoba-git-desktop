@@ -327,3 +327,43 @@ describe('parseReflog', () => {
     expect(parseReflog('')).toEqual([]);
   });
 });
+
+describe('parsePorcelainV2 — alt modüller', () => {
+  const NUL = '\0';
+
+  it('alt modülün hangi bakımdan değiştiğini ayırır', () => {
+    /*
+     * Dördüncü alan alt modüle özel: `S` alt modül olduğunu, ardındaki üç harf
+     * sırasıyla commit değişikliğini, değişmiş içeriği ve takip edilmeyen
+     * dosyayı bildiriyor. Üçü bağımsız; "değişti" demek kullanıcıya ne
+     * yapacağını söylemiyor.
+     */
+    const raw =
+      `# branch.head main${NUL}` +
+      `1 .M SCMU 160000 160000 160000 abc123 abc123 vendor/kutuphane${NUL}`;
+
+    const status = parsePorcelainV2(raw);
+
+    expect(status.unstaged[0].submodule).toEqual({
+      commitChanged: true,
+      hasModifiedContent: true,
+      hasUntracked: true,
+    });
+  });
+
+  it('yalnızca içeriği değişmiş alt modülü doğru okur', () => {
+    const raw = `# branch.head main${NUL}1 .M S.M. 160000 160000 160000 abc123 abc123 vendor/lib${NUL}`;
+
+    expect(parsePorcelainV2(raw).unstaged[0].submodule).toEqual({
+      commitChanged: false,
+      hasModifiedContent: true,
+      hasUntracked: false,
+    });
+  });
+
+  it('sıradan dosyada alt modül bilgisi bırakmaz', () => {
+    const raw = `# branch.head main${NUL}1 .M N... 100644 100644 100644 abc123 abc123 src/a.ts${NUL}`;
+
+    expect(parsePorcelainV2(raw).unstaged[0].submodule).toBeUndefined();
+  });
+});

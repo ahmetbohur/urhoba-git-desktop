@@ -14,6 +14,7 @@ import { AboutDialog } from '../components/dialogs/AboutDialog';
 import { EmptyState } from '../components/primitives';
 import { HistoryView } from '../components/HistoryView';
 import { OperationBar } from '../components/OperationBar';
+import { SubmoduleBar } from '../components/SubmoduleBar';
 import { PullRequestsView } from '../components/PullRequestsView';
 import { RepoSidebar } from '../components/RepoSidebar';
 import { Toasts } from '../components/Toasts';
@@ -188,6 +189,7 @@ export function App() {
               </nav>
 
               <OperationBar repoId={activeRepo.id} />
+              <SubmoduleBar repoId={activeRepo.id} />
 
               {tab === 'changes' ? (
                 <ChangesView repoId={activeRepo.id} />

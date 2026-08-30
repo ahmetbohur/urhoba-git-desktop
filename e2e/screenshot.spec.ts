@@ -253,6 +253,47 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${SHOT_DIR}/20-kelime-farki.png` });
 
+  /*
+   * Alt modül: hem kurulmamış uyarı şeridi hem değişiklik listesindeki rozet.
+   * Kütüphane deposu ayrı kuruluyor ve ana depoya alt modül olarak ekleniyor.
+   */
+  const libPath = path.join(sampleRoot, 'kutuphane');
+  fs.mkdirSync(libPath);
+  const libGit = (args: string[]) => execFileSync('git', args, { cwd: libPath });
+  libGit(['init', '--initial-branch=main']);
+  libGit(['config', 'user.email', 'ornek@urhoba.test']);
+  libGit(['config', 'user.name', 'Urhoba']);
+  fs.writeFileSync(path.join(libPath, 'lib.txt'), 'kütüphane\n');
+  libGit(['add', '-A']);
+  libGit(['commit', '-m', 'kütüphane']);
+
+  const hostPath = path.join(sampleRoot, 'alt-modullu-depo');
+  fs.mkdirSync(hostPath);
+  const hostGit = (args: string[]) => execFileSync('git', args, { cwd: hostPath });
+  hostGit(['init', '--initial-branch=main']);
+  hostGit(['config', 'user.email', 'ornek@urhoba.test']);
+  hostGit(['config', 'user.name', 'Urhoba']);
+  fs.writeFileSync(path.join(hostPath, 'ana.txt'), 'ana\n');
+  hostGit(['add', '-A']);
+  hostGit(['commit', '-m', 'ana']);
+  hostGit(['-c', 'protocol.file.allow=always', 'submodule', 'add', libPath, 'vendor/kutuphane']);
+  hostGit(['commit', '-m', 'alt modül eklendi']);
+  // İçeride kaydedilmemiş bir değişiklik bırak: rozet bunu göstermeli.
+  fs.appendFileSync(path.join(hostPath, 'vendor/kutuphane/lib.txt'), 'değişiklik\n');
+
+  await page.evaluate(
+    (target) => window.urhoba.invoke('repo:add', { path: target }),
+    hostPath,
+  );
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(1200);
+  await page.getByPlaceholder('Depolarda ara').fill('alt-modullu');
+  await page.waitForTimeout(500);
+  await page.getByText('alt-modullu-depo').first().click();
+  await page.waitForTimeout(1800);
+  await page.screenshot({ path: `${SHOT_DIR}/22-alt-modul.png` });
+
   await page.getByPlaceholder('Depolarda ara').fill('Urhoba-');
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${SHOT_DIR}/16-uzun-ad.png` });

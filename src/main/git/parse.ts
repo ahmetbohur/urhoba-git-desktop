@@ -7,6 +7,7 @@ import type {
   FileChange,
   FileChangeKind,
   ReflogEntry,
+  SubmoduleState,
   WorkingTreeStatus,
 } from '@shared/types';
 
@@ -18,6 +19,21 @@ import type {
  * projenin en kırılgan yeri, dolayısıyla Electron'a hiç ihtiyaç duymadan
  * test edilebilir olmaları gerekiyor.
  */
+
+/**
+ * Porcelain v2'deki alt modül alanı: `N...` normal dosya, `SCMU` alt modül.
+ *
+ * Harflerin yeri sabit — sırasıyla commit değişikliği, değişmiş içerik ve
+ * takip edilmeyen dosya. Nokta o durumun yokluğu demek.
+ */
+function parseSubmoduleField(field: string | undefined): SubmoduleState | undefined {
+  if (!field || field[0] !== 'S') return undefined;
+  return {
+    commitChanged: field[1] === 'C',
+    hasModifiedContent: field[2] === 'M',
+    hasUntracked: field[3] === 'U',
+  };
+}
 
 function kindFromCode(code: string): FileChangeKind {
   switch (code) {
@@ -103,6 +119,7 @@ export function parsePorcelainV2(raw: string): WorkingTreeStatus {
       const xy = fields[1];
       const stagedCode = xy[0];
       const worktreeCode = xy[1];
+      const submodule = parseSubmoduleField(fields[2]);
 
       let filePath: string;
       let oldPath: string | undefined;
@@ -121,6 +138,7 @@ export function parsePorcelainV2(raw: string): WorkingTreeStatus {
           oldPath,
           kind: kindFromCode(stagedCode),
           isBinary: false,
+          submodule,
         });
       }
       if (worktreeCode !== '.') {
@@ -129,6 +147,7 @@ export function parsePorcelainV2(raw: string): WorkingTreeStatus {
           oldPath,
           kind: kindFromCode(worktreeCode),
           isBinary: false,
+          submodule,
         });
       }
     }
