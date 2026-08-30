@@ -337,6 +337,17 @@ src/
    kaldırmaz; arka plandaki otomatik pull kullanıcının commit'iyle çakışırsa
    `index.lock` hatası çıkar. Her deponun komutları tek bir sıraya diziliyor.
 
+### İşlevsel doğrulama
+
+`e2e/functional.spec.ts` uygulamanın kendisini çalıştırıp her işlemi gerçek IPC
+üzerinden yaptırıyor, sonucu sonra uygulamaya değil doğrudan git'e soruyor:
+commit gerçekten atıldı mı, upstream gerçekten kuruldu mu, etiket çıplak depoya
+gerçekten gitti mi. Uygulama "oldu" dediği için değil, depo değiştiği için
+geçiyor.
+
+Uzak sunucu gerektiren akışlar yerel bir çıplak depoyla deneniyor: ağa
+çıkmadan push, pull ve upstream kurulumu aynı kod yolundan geçiyor.
+
 ### Git çıktısını ayrıştırma
 
 `main/git/parse.ts` içindeki fonksiyonlar saf: girdi metin, çıktı veri. Süreç
