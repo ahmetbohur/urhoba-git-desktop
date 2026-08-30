@@ -101,6 +101,17 @@ export interface Submodule {
   conflicted: boolean;
 }
 
+/** İkili aramanın o anki durumu. */
+export interface BisectState {
+  active: boolean;
+  /** Kaç revizyon kaldı; git bildirmediyse null. */
+  remaining: number | null;
+  /** Suçlu commit bulunduysa sha. */
+  firstBadSha: string | null;
+  /** Git'in kendi son satırları — arayüz bunu olduğu gibi gösteriyor. */
+  message: string;
+}
+
 /** Depoda yarım kalmış bir işlem varsa arayüz farklı davranır (commit yerine "devam et"). */
 export type RepoOperation = 'none' | 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'bisect';
 

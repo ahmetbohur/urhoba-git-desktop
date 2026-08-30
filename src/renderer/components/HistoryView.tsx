@@ -9,6 +9,7 @@ import {
   History as HistoryIcon,
   ListOrdered,
   RotateCcw,
+  Search,
   ShieldAlert,
   ShieldCheck,
   Tag,
@@ -172,6 +173,7 @@ function CommitRow({
   onCopySha,
   onCherryPick,
   onRebaseFrom,
+  onBisectFrom,
 }: {
   commit: Commit;
   graphRow: ReturnType<typeof buildGraph>[number] | undefined;
@@ -183,6 +185,7 @@ function CommitRow({
   onCopySha: () => void;
   onCherryPick: () => void;
   onRebaseFrom: () => void;
+  onBisectFrom: () => void;
 }) {
   const t = useT();
   return (
@@ -268,6 +271,13 @@ function CommitRow({
           >
             <Undo2 className="size-3.5" />
             {t('Bu commit’i geri al (revert)')}
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            onSelect={onBisectFrom}
+            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-2"
+          >
+            <Search className="size-3.5" />
+            {t('Buradan ikili arama başlat')}
           </ContextMenu.Item>
           <ContextMenu.Item
             onSelect={onRebaseFrom}
@@ -386,6 +396,25 @@ export function HistoryView({ repoId }: { repoId: string }) {
       }),
   });
 
+  /*
+   * Bisect burada başlıyor: sağ tıklanan commit "sağlam", HEAD "hatalı"
+   * sayılıyor. İkisini birden vermek şart — git tek uçla aramaya başlamıyor ve
+   * kullanıcıya ikinci ucu ayrıca sormak gereksiz bir adım olurdu.
+   */
+  const startBisect = useMutation({
+    mutationFn: (goodSha: string) => invoke('git:bisect-start', { repoId, goodSha }),
+    onSuccess: (state) => {
+      invalidate(repoId);
+      toast({
+        kind: 'info',
+        title: t('İkili arama başladı'),
+        description: state.message,
+      });
+    },
+    onError: (error) =>
+      toast({ kind: 'error', title: t('Başlatılamadı'), description: errorMessage(error) }),
+  });
+
   const reset = useMutation({
     mutationFn: ({ sha, mode }: { sha: string; mode: ResetMode }) =>
       invoke('git:reset', { repoId, sha, mode }),
@@ -481,6 +510,7 @@ export function HistoryView({ repoId }: { repoId: string }) {
                         onTag={() => setTagTarget(commit)}
                         onCherryPick={() => setCherryTarget(commit)}
                         onRebaseFrom={() => setRebaseBase(commit)}
+                        onBisectFrom={() => startBisect.mutate(commit.sha)}
                         onCopySha={() => {
                           void navigator.clipboard.writeText(commit.sha);
                           toast({ kind: 'success', title: t('SHA kopyalandı') });

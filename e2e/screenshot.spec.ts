@@ -168,13 +168,54 @@ test('arayüz görüntüleri', async () => {
   }
   fs.rmSync(signedRoot, { recursive: true, force: true });
 
+  /*
+   * Bisect şeridi: depoyu ikili arama ortasında bırakıp uygulamanın yargı
+   * düğmelerini gösterdiğini kontrol ediyoruz.
+   */
+  const bisectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-bisect-'));
+  const bisectGit = (args: string[]) => execFileSync('git', args, { cwd: bisectRoot });
+  bisectGit(['init', '--initial-branch=main']);
+  bisectGit(['config', 'user.email', 'ornek@urhoba.test']);
+  bisectGit(['config', 'user.name', 'Urhoba']);
+  for (let index = 1; index <= 6; index += 1) {
+    fs.writeFileSync(path.join(bisectRoot, 'a.txt'), `sürüm ${index}\n`);
+    bisectGit(['add', '-A']);
+    bisectGit(['commit', '-m', `commit ${index}`]);
+  }
+  bisectGit(['bisect', 'start', 'HEAD', 'HEAD~5']);
+
+  await page.evaluate(
+    (target) => window.urhoba.invoke('repo:add', { path: target }),
+    bisectRoot,
+  );
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(1200);
+  await page.getByPlaceholder('Depolarda ara').fill('urhoba-bisect');
+  await page.waitForTimeout(500);
+  await page.getByText(path.basename(bisectRoot)).first().click();
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${SHOT_DIR}/24-bisect.png` });
+
+  await page.getByPlaceholder('Depolarda ara').fill('urhoba-git-desktop');
+  await page.waitForTimeout(500);
+  await page.getByText('urhoba-git-desktop').first().click();
+  await page.waitForTimeout(1500);
+  await page.getByPlaceholder('Depolarda ara').fill('');
+  await page.waitForTimeout(500);
+  await page.getByRole('tab', { name: 'Geçmiş' }).click();
+  await page.waitForTimeout(1500);
+  fs.rmSync(bisectRoot, { recursive: true, force: true });
+
   // Süslemeler: yerel ve uzak dal aynı commit'te birlikte görünmeli.
   await page.screenshot({ path: `${SHOT_DIR}/18-gecmis-suslemeler.png` });
 
   // Kesin eşleşme: commit listesinde aynı metni içeren başlıklar olabiliyor.
   await page.getByRole('button', { name: 'HEAD geçmişi', exact: true }).click();
   await page.waitForTimeout(1500);
-  await page.locator('button:has-text("commit")').nth(1).click();
+  // Seçici pencereye sınırlı: geçmiş listesindeki başlıklar da "commit"
+  // içerebiliyor ve arkadaki satırlara tıklanmaya çalışılıyordu.
+  await page.getByRole('dialog').locator('button:has-text("commit")').nth(1).click();
   await page.waitForTimeout(600);
   await page.screenshot({ path: `${SHOT_DIR}/19-reflog.png` });
   await page.keyboard.press('Escape');

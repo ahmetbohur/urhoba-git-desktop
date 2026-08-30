@@ -9,6 +9,7 @@ import { getCommitDetail, getLog } from '../history';
 import { pull, push } from '../remote';
 import { interactiveRebase } from '../merge';
 import { listSubmodules, updateSubmodules } from '../submodule';
+import * as bisect from '../bisect';
 
 /**
  * Gerçek git süreçlerine karşı uçtan uca testler.
@@ -448,5 +449,44 @@ describe('alt modüller', () => {
 
     expect((await listSubmodules(REPO_ID, anaPath))[0].initialized).toBe(true);
     expect(fs.existsSync(path.join(anaPath, 'vendor/lib/lib.txt'))).toBe(true);
+  });
+});
+
+describe('ikili arama', () => {
+  it('hatayı getiren commit’i bulur', async () => {
+    // Yedi commit: dördüncüde hata giriyor.
+    write('a.txt', 'sağlam\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'ilk']);
+    const good = git(['rev-parse', 'HEAD']).trim();
+
+    for (let index = 2; index <= 7; index += 1) {
+      // Her commit'te dosya gerçekten değişmeli; aynı içeriği yazmak
+      // "commit edilecek bir şey yok" hatası veriyor.
+      write('a.txt', `${index >= 4 ? 'hatalı' : 'sağlam'} ${index}\n`);
+      git(['add', '-A']);
+      git(['commit', '-m', `commit ${index}`]);
+    }
+    const expected = git(['rev-parse', 'HEAD~3']).trim();
+
+    let state = await bisect.start(REPO_ID, repoPath, good);
+    expect(state.active).toBe(true);
+
+    /*
+     * Her adımda çalışma dizinindeki dosyaya bakıp yargıyı veriyoruz — gerçek
+     * kullanıcının yaptığı şeyin aynısı. Adım sayısı sınırlı: sonsuz döngüye
+     * girerse test asılı kalmasın, patlasın.
+     */
+    for (let step = 0; step < 10 && !state.firstBadSha; step += 1) {
+      const broken = fs.readFileSync(path.join(repoPath, 'a.txt'), 'utf8').includes('hatalı');
+      state = await bisect.mark(REPO_ID, repoPath, broken ? 'bad' : 'good');
+    }
+
+    expect(state.firstBadSha).not.toBeNull();
+    expect(expected.startsWith(state.firstBadSha as string)).toBe(true);
+
+    await bisect.reset(REPO_ID, repoPath);
+    const status = await getStatus(REPO_ID, repoPath);
+    expect(status.operation).toBe('none');
   });
 });

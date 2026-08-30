@@ -8,6 +8,7 @@ import type {
   CommitDetail,
   AiStatus,
   AutostartStatus,
+  BisectState,
   BlameResult,
   BranchRenameResult,
   CommitSuggestion,
@@ -168,6 +169,9 @@ export const inputSchemas = {
   'git:commit-detail': repoId.extend({ sha: z.string().min(1) }),
   'git:commit-file-diff': repoId.extend({ sha: z.string().min(1), path: z.string().min(1) }),
   'git:reflog': repoId,
+  'git:bisect-start': repoId.extend({ goodSha: z.string().min(4) }),
+  'git:bisect-mark': repoId.extend({ verdict: z.enum(['good', 'bad', 'skip']) }),
+  'git:bisect-reset': repoId,
   'git:submodules': repoId,
   'git:submodule-update': repoId,
   'git:blame': repoId.extend({ path: z.string().min(1), ref: z.string().optional() }),
@@ -390,6 +394,9 @@ export interface IpcOutputs {
   'git:commit-file-diff': FileDiff;
   'git:blame': BlameResult;
   'git:reflog': ReflogEntry[];
+  'git:bisect-start': BisectState;
+  'git:bisect-mark': BisectState;
+  'git:bisect-reset': void;
   'git:submodules': Submodule[];
   'git:submodule-update': void;
   'git:cherry-pick': MergeResult;

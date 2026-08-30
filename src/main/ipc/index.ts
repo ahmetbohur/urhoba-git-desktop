@@ -1,6 +1,7 @@
 import { ipcMain, nativeTheme } from 'electron';
 import { inputSchemas, type IpcChannel, type IpcInput, type IpcOutput } from '@shared/ipc-contract';
 import { toIpcError } from '../git/client';
+import * as bisect from '../git/bisect';
 import * as branches from '../git/branches';
 import * as conflict from '../git/conflict';
 import * as history from '../git/history';
@@ -262,6 +263,18 @@ const handlers: Handlers = {
   'git:reflog': ({ repoId }) => {
     const repo = activateRepo(repoId);
     return history.getReflog(repo.id, repo.path);
+  },
+  'git:bisect-start': ({ repoId, goodSha }) => {
+    const repo = activateRepo(repoId);
+    return bisect.start(repo.id, repo.path, goodSha);
+  },
+  'git:bisect-mark': ({ repoId, verdict }) => {
+    const repo = activateRepo(repoId);
+    return bisect.mark(repo.id, repo.path, verdict);
+  },
+  'git:bisect-reset': ({ repoId }) => {
+    const repo = activateRepo(repoId);
+    return bisect.reset(repo.id, repo.path);
   },
   'git:submodules': ({ repoId }) => {
     const repo = activateRepo(repoId);

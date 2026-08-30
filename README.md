@@ -18,6 +18,10 @@ başlığında o gruptaki kaydedilmemiş değişiklik sayısı görünür.
 renklendirmeli diff (tek sütun veya yan yana), tek tık veya toplu stage/unstage,
 onaylı geri alma (discard), commit ve son commit'i düzeltme (amend).
 
+**İkili arama (bisect)** — Bir commit'e sağ tıklayıp "buradan ikili arama
+başlat" dendiğinde git geçmişi ikiye bölerek ilerler; her adımda üstteki
+şeritten *sağlam / hatalı / atla* denir ve hatayı getiren commit bulunur.
+
 **Commit imzaları** — İmzalı commit'lerde detay panelinde doğrulama durumu
 görünür: doğrulandı, güvenilmiyor, geçersiz ya da doğrulanamadı. İmzasız
 commit'te hiçbir şey gösterilmez.
@@ -154,6 +158,20 @@ Gömülü git'ten kullanılmayan parçalar paketleme sonrası çıkarılıyor
 (`forge.config.ts` → `TRIMMED_GIT_PATHS`): HTTPS kimlik yöneticisi, arayüz
 kütüphaneleri, git'in çevirileri ve gitweb. Kurulu boyut 431 MB'tan 329 MB'a,
 `.deb` 135 MB'tan 101 MB'a iniyor.
+
+### İkili arama
+
+Bisect diğer yarım kalmış işlemlerden farklı: çakışma çözülüp "devam et"
+denmiyor, her adımda kullanıcıdan bir yargı isteniyor. Bu yüzden işlem şeridi o
+durumda başka düğmeler gösteriyor.
+
+Arama HEAD hatalı, seçilen commit sağlam sayılarak başlıyor. İkisini birden
+vermek şart — git tek uçla aramaya başlamıyor ve kullanıcıya ikinci ucu ayrıca
+sormak gereksiz bir adım olurdu.
+
+İlerleme ve sonuç git'in düz metin çıktısından okunuyor (`git/bisect.ts`);
+başka bir kaynağı yok. Suçlu bulunduğunda depo hâlâ bisect kipinde kalıyor:
+kullanıcı sonucu görüp "bitir" demeden durum bozulmamalı.
 
 ### Commit imzaları
 
