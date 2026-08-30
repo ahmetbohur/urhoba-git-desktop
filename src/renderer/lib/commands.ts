@@ -230,6 +230,31 @@ export function useCommands(activeRepo: Repo | null): Command[] {
     }
 
     commands.push({
+      id: 'repo.scan',
+      label: 'Klasörü tara…',
+      group: 'Depolar',
+      hint: 'Bir klasördeki bütün depoları bulup toplu ekler',
+      run: async () => {
+        try {
+          const chosen = await invoke('repo:pick-directory', undefined);
+          if (!chosen) return;
+          const found = await invoke('repo:scan', { directory: chosen, maxDepth: 4 });
+          const fresh = found.filter((repo) => !repo.alreadyAdded);
+          if (fresh.length === 0) {
+            toast({ kind: 'info', title: t('Eklenecek yeni depo bulunamadı') });
+            return;
+          }
+          const added = await invoke('repo:add-many', { paths: fresh.map((repo) => repo.path) });
+          void client.invalidateQueries({ queryKey: keys.repos });
+          if (added.length > 0) setActiveRepo(added[0].id);
+          toast({ kind: 'success', title: t('{count} depo eklendi', { count: added.length }) });
+        } catch (error) {
+          toast({ kind: 'error', title: t('Klasör taranamadı'), description: errorMessage(error) });
+        }
+      },
+    });
+
+    commands.push({
       id: 'repo.add',
       label: 'Depo ekle…',
       group: 'Depolar',

@@ -15,6 +15,7 @@ import * as stash from '../git/stash';
 import * as status from '../git/status';
 import * as autopull from '../services/autopull';
 import * as repos from '../services/repos';
+import { scanForRepositories } from '../services/scan';
 import * as ssh from '../services/ssh';
 import * as store from '../services/store';
 import { watchRepo } from '../services/watcher';
@@ -61,6 +62,20 @@ const handlers: Handlers = {
   'repo:clone': ({ url, parentDir, name, taskId }) =>
     repos.cloneRepo(url, parentDir, name, taskId),
   'repo:pick-directory': () => repos.pickDirectory(),
+  'repo:scan': ({ directory, maxDepth }) => scanForRepositories(directory, maxDepth),
+  'repo:add-many': async ({ paths }) => {
+    // Bir yol eklenemezse (silinmiş, artık depo değil) tarama sonucunun tamamını
+    // reddetmek yerine o kaydı atlıyoruz; kullanıcı kaçını eklediğimizi görüyor.
+    const added = [];
+    for (const candidate of paths) {
+      try {
+        added.push(await repos.addRepo(candidate));
+      } catch {
+        continue;
+      }
+    }
+    return added;
+  },
   'repo:reveal': ({ repoId }) => repos.revealRepo(repoId),
 
   // --- Çalışma dizini ---

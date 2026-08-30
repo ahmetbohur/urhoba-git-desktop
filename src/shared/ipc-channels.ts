@@ -15,6 +15,8 @@ export const IPC_CHANNELS = [
   'repo:remove',
   'repo:clone',
   'repo:pick-directory',
+  'repo:scan',
+  'repo:add-many',
   'repo:reveal',
   // --- Çalışma dizini ---
   'git:status',

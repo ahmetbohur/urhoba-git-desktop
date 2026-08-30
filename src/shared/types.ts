@@ -14,6 +14,17 @@ export interface Repo {
   addedAt: string;
 }
 
+/** Klasör taramasında bulunan bir depo. */
+export interface ScannedRepo {
+  path: string;
+  name: string;
+  /** Taranan klasöre göre yol — listede nerede olduğunu göstermek için. */
+  relativePath: string;
+  currentBranch: string | null;
+  /** Depo listesinde zaten var mı. */
+  alreadyAdded: boolean;
+}
+
 export type FileChangeKind =
   | 'added'
   | 'modified'

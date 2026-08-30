@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
-import { FolderGit2, MoreVertical, Plus, RefreshCcwDot, Search, Trash2 } from 'lucide-react';
+import {
+  FolderGit2,
+  FolderOpen,
+  FolderSearch,
+  MoreVertical,
+  Plus,
+  RefreshCcwDot,
+  Search,
+  Trash2,
+  CloudDownload,
+} from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { errorMessage, invoke } from '../lib/ipc';
@@ -9,6 +19,7 @@ import { relativeTime } from '../lib/format';
 import { useUi } from '../stores/ui';
 import { Button, EmptyState, SectionLabel, Spinner } from './primitives';
 import { CloneDialog } from './dialogs/CloneDialog';
+import { ScanDialog } from './dialogs/ScanDialog';
 import type { Repo } from '@shared/types';
 
 function RepoRow({
@@ -107,6 +118,7 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
   const client = useQueryClient();
   const [filter, setFilter] = useState('');
   const [cloneOpen, setCloneOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
 
   const addRepo = useMutation({
     mutationFn: () => invoke('repo:add-dialog', undefined),
@@ -142,20 +154,55 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-line bg-surface">
       <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
         <SectionLabel>{t('Depolar')}</SectionLabel>
-        <div className="flex items-center gap-1">
-          <Button size="sm" variant="ghost" onClick={() => setCloneOpen(true)}>
-            {t('Klonla')}
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            loading={addRepo.isPending}
-            onClick={() => addRepo.mutate()}
-          >
-            <Plus className="size-3.5" />
-            {t('Ekle')}
-          </Button>
-        </div>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <Button size="sm" variant="secondary" loading={addRepo.isPending}>
+              <Plus className="size-3.5" />
+              {t('Ekle')}
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              align="end"
+              sideOffset={4}
+              className="z-50 min-w-64 rounded-md border border-line bg-surface p-1 shadow-lg"
+            >
+              <DropdownMenu.Item
+                onSelect={() => addRepo.mutate()}
+                className="flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 outline-none data-[highlighted]:bg-surface-2"
+              >
+                <FolderOpen className="mt-0.5 size-3.5 shrink-0 text-ink-3" />
+                <span>
+                  <span className="block text-[13px] text-ink">{t('Klasör ekle…')}</span>
+                  <span className="block text-[11px] text-ink-3">{t('Tek bir depo seç')}</span>
+                </span>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                onSelect={() => setScanOpen(true)}
+                className="flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 outline-none data-[highlighted]:bg-surface-2"
+              >
+                <FolderSearch className="mt-0.5 size-3.5 shrink-0 text-ink-3" />
+                <span>
+                  <span className="block text-[13px] text-ink">{t('Klasörü tara…')}</span>
+                  <span className="block text-[11px] text-ink-3">
+                    {t('İçindeki bütün depoları bul ve toplu ekle')}
+                  </span>
+                </span>
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator className="my-1 h-px bg-line-soft" />
+              <DropdownMenu.Item
+                onSelect={() => setCloneOpen(true)}
+                className="flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 outline-none data-[highlighted]:bg-surface-2"
+              >
+                <CloudDownload className="mt-0.5 size-3.5 shrink-0 text-ink-3" />
+                <span>
+                  <span className="block text-[13px] text-ink">{t('Depo klonla…')}</span>
+                  <span className="block text-[11px] text-ink-3">{t('Uzak sunucudan indir')}</span>
+                </span>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       </div>
 
       <div className="px-3 pb-2">
@@ -183,7 +230,7 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
               description={
                 repos?.length
                   ? t('Farklı bir arama dene.')
-                  : t('Diskteki bir klasörü ekle ya da uzak bir depoyu klonla.')
+                  : t('Bir klasör ekle, proje klasörünü tara ya da uzak bir depoyu klonla.')
               }
             />
           </div>
@@ -204,6 +251,7 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
       </div>
 
       <CloneDialog open={cloneOpen} onOpenChange={setCloneOpen} />
+      <ScanDialog open={scanOpen} onOpenChange={setScanOpen} />
     </aside>
   );
 }

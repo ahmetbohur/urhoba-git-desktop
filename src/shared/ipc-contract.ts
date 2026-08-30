@@ -21,6 +21,7 @@ import type {
   RepoContext,
   RepoSettings,
   RevertResult,
+  ScannedRepo,
   SshEnvironment,
   SshKey,
   SshTestResult,
@@ -52,6 +53,11 @@ export const inputSchemas = {
     taskId: z.string().min(1),
   }),
   'repo:pick-directory': z.undefined(),
+  'repo:scan': z.object({
+    directory: z.string().min(1),
+    maxDepth: z.number().int().min(1).max(8).optional(),
+  }),
+  'repo:add-many': z.object({ paths: z.array(z.string().min(1)).min(1) }),
   'repo:reveal': repoId,
 
   // --- Çalışma dizini ---
@@ -235,6 +241,8 @@ export interface IpcOutputs {
   'repo:remove': void;
   'repo:clone': Repo;
   'repo:pick-directory': string | null;
+  'repo:scan': ScannedRepo[];
+  'repo:add-many': Repo[];
   'repo:reveal': void;
 
   'git:status': WorkingTreeStatus;
