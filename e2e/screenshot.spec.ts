@@ -265,6 +265,28 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(400);
 
   /*
+   * AI ile gruplama. Üç kare: menü girişi (ne gönderildiğini söyleyen alt
+   * yazısıyla), pencerenin açılışı ve gerçek modelden dönen öneriler.
+   */
+  // Kesin eşleşme: "Push seçenekleri" düğmesi de "ekle" alt dizesini içeriyor.
+  await page.getByRole('button', { name: 'Ekle', exact: true }).click();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `${SHOT_DIR}/27-ai-grupla-menu.png` });
+  await page.getByText('AI ile grupla…').click();
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: `${SHOT_DIR}/28-ai-grupla.png` });
+
+  const oneriIste = page.getByRole('button', { name: 'Öneri iste' });
+  if (await oneriIste.count()) {
+    await oneriIste.click();
+    // Yerel model yanıt verene kadar; senaryonun kendi süre sınırı korur.
+    await page.waitForTimeout(30_000);
+    await page.screenshot({ path: `${SHOT_DIR}/29-ai-grupla-oneriler.png` });
+  }
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
+  /*
    * Yayınlama penceresi uzak sunucusu olmayan bir depo istiyor. Kullanıcının
    * gerçek depolarının hepsinde origin var, o yüzden senaryo kendi deposunu
    * kuruyor — elle hazırlanmış bir klasöre bel bağlamak senaryoyu kırıyordu.

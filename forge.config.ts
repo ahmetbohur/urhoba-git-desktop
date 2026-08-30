@@ -22,6 +22,20 @@ function commandExists(command: string): boolean {
 const hasRpmbuild = commandExists('rpmbuild');
 
 /**
+ * Paketlemenin hedeflediği platform.
+ *
+ * `process.platform` çalıştığımız makineyi söylüyor, üretilen paketin
+ * platformunu değil. Linux'tan macOS paketi üretilirken ikisi ayrışıyor ve
+ * host'a bakan bir koşul yanlış tarafa düşüyordu.
+ */
+function targetPlatform(): string {
+  const flag = process.argv.find((argument) => argument.startsWith('--platform'));
+  if (!flag) return process.platform;
+  const value = flag.includes('=') ? flag.split('=')[1] : process.argv[process.argv.indexOf(flag) + 1];
+  return value || process.platform;
+}
+
+/**
  * Gömülü git'ten çıkarılan, uygulamanın hiç kullanmadığı parçalar.
  *
  * dugite git'i olduğu gibi taşıyor ve paketin yarısından fazlası buradan
@@ -88,7 +102,7 @@ const config: ForgeConfig = {
      * Windows ve macOS'ta değiştirilmiyor: orada kullanıcı ikilinin adını
      * görev yöneticisinde görüyor ve ürün adı daha anlaşılır.
      */
-    executableName: process.platform === 'linux' ? 'urhoba-git-desktop' : undefined,
+    executableName: targetPlatform() === 'linux' ? 'urhoba-git-desktop' : undefined,
   },
   rebuildConfig: {},
   hooks: {

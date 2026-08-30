@@ -299,6 +299,25 @@ görünür yanıt boş dönüyor — model 400 token harcıyor, kullanıcı "bo�
 hatası alıyordu. Bize gereken tek satırlık bir commit başlığı, uzun uzun akıl
 yürütme değil.
 
+### macOS paketini Linux'ta üretme
+
+Üretilemiyor. Üç ayrı engel var ve ikisi imzalamadan bağımsız:
+
+1. **Gömülü git host'a ait.** `extraResource` dugite'in kurulum sırasında
+   indirdiği git'i kopyalıyor; Linux'ta bu bir ELF ikilisi. Linux'ta üretilen
+   bir `.app` içine Linux git'i giriyor ve macOS'ta çalışmıyor.
+2. **Fuse'lar `codesign` istiyor.** Fuse'ları çevirmek imzayı geçersiz kıldığı
+   için `@electron/fuses` uygulamayı `codesign --sign -` ile yeniden
+   imzalıyor; o araç yalnızca macOS'ta var. Fuse'ları kapatmak paketlemeyi
+   çalıştırıyor ama güvenlik ayarlarını (`RunAsNode: false`, asar bütünlük
+   doğrulaması) da kapatıyor.
+3. **İmzalama ve notarization.** `codesign` ve `stapler` macOS'a özgü. Üçüncü
+   taraf `rcodesign` ikisini de Linux'tan yapabiliyor ama sertifikanın özel
+   anahtarını `.p12` olarak dışa aktarmak yine bir Mac gerektiriyor.
+
+Doğru yol macOS üzerinde derlemek: kendi makinende ya da bir macOS CI
+çalıştırıcısında. Orada üç engel de kendiliğinden kalkıyor.
+
 ### Gömülü git
 
 Uygulama git'i kendisi taşıyor (dugite). Bunun iki faydası var: kullanıcının
