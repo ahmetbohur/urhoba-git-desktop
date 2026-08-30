@@ -5,6 +5,7 @@ import * as branches from '../git/branches';
 import * as conflict from '../git/conflict';
 import * as history from '../git/history';
 import * as merge from '../git/merge';
+import * as autostart from '../services/autostart';
 import * as diagnostics from '../services/diagnostics';
 import * as github from '../github/provider';
 import * as rewrite from '../git/rewrite';
@@ -281,6 +282,8 @@ const handlers: Handlers = {
 
   // --- Tanılama ---
   'app:diagnostics': () => diagnostics.collect(),
+  'app:autostart-get': () => autostart.getStatus(),
+  'app:autostart-set': ({ enabled }) => autostart.setEnabled(enabled),
   'app:open-logs': () => diagnostics.openLogFolder(),
 
   // --- GitHub ---

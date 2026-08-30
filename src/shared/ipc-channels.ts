@@ -75,6 +75,8 @@ export const IPC_CHANNELS = [
   'autopull:run-now',
   // --- Tanılama ---
   'app:diagnostics',
+  'app:autostart-get',
+  'app:autostart-set',
   'app:open-logs',
   // --- GitHub ---
   'github:status',

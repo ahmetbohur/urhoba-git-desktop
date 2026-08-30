@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { registerIpcHandlers } from './ipc';
+import { emitAppEvent } from './services/events';
 import { installCrashHandlers, log } from './services/logger';
 import { initializeUpdates } from './services/updater';
 import * as autopull from './services/autopull';
@@ -84,7 +85,12 @@ function buildMenu(): void {
     {
       label: 'Urhoba',
       submenu: [
-        { role: 'about', label: 'Urhoba Git Desktop Hakkında' },
+        {
+          // İşletim sisteminin kendi "hakkında" paneli yerine uygulama içindeki
+          // diyaloğu açıyoruz: o panel boş kalıyor, dili ve temayı da izlemiyor.
+          label: 'Urhoba Git Desktop Hakkında',
+          click: () => emitAppEvent({ type: 'app:show-about' }),
+        },
         { type: 'separator' },
         { role: 'quit', label: 'Çıkış' },
       ],

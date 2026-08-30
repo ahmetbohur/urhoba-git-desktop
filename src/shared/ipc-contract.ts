@@ -6,6 +6,7 @@ import type {
   CheckoutResult,
   Commit,
   CommitDetail,
+  AutostartStatus,
   ConflictFile,
   Diagnostics,
   GithubAuthStatus,
@@ -205,6 +206,8 @@ export const inputSchemas = {
 
   // --- Tanılama ---
   'app:diagnostics': z.undefined(),
+  'app:autostart-get': z.undefined(),
+  'app:autostart-set': z.object({ enabled: z.boolean() }),
   'app:open-logs': z.undefined(),
 
   // --- GitHub ---
@@ -301,6 +304,8 @@ export interface IpcOutputs {
   'autopull:run-now': PullResult;
 
   'app:diagnostics': Diagnostics;
+  'app:autostart-get': AutostartStatus;
+  'app:autostart-set': AutostartStatus;
   'app:open-logs': void;
 
   'github:status': GithubAuthStatus;

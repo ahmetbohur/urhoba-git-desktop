@@ -10,6 +10,7 @@ import { useUi, type MainTab } from '../stores/ui';
 import { ChangesView } from '../components/ChangesView';
 import { CommandLogPanel } from '../components/CommandLogPanel';
 import { CommandPalette } from '../components/CommandPalette';
+import { AboutDialog } from '../components/dialogs/AboutDialog';
 import { EmptyState } from '../components/primitives';
 import { HistoryView } from '../components/HistoryView';
 import { OperationBar } from '../components/OperationBar';
@@ -31,7 +32,7 @@ const TABS: Array<{ id: MainTab; label: string; icon: typeof History }> = [
  * kullanıcı dosyayı dışarıda düzenlediğinde (editörde kaydettiğinde, terminalde
  * commit attığında) arayüz kendiliğinden tazeleniyor.
  */
-function useAppEvents(): void {
+function useAppEvents(onShowAbout: () => void): void {
   const t = useT();
   const client = useQueryClient();
   const pushCommandLog = useUi((s) => s.pushCommandLog);
@@ -42,6 +43,9 @@ function useAppEvents(): void {
     () =>
       onAppEvent((event) => {
         switch (event.type) {
+          case 'app:show-about':
+            onShowAbout();
+            break;
           case 'repo:changed':
             void client.invalidateQueries({ queryKey: ['repo', event.repoId] });
             break;
@@ -72,7 +76,7 @@ function useAppEvents(): void {
             break;
         }
       }),
-    [client, pushCommandLog, recordAutoPull, toast, t],
+    [client, pushCommandLog, recordAutoPull, toast, t, onShowAbout],
   );
 }
 
@@ -115,8 +119,10 @@ function useShortcuts(commands: Command[], openPalette: () => void): void {
 
 export function App() {
   const t = useT();
-  useAppEvents();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const showAbout = useCallback(() => setAboutOpen(true), []);
+  useAppEvents(showAbout);
 
   const { data: repos } = useRepos();
   const { data: settings } = useSettings();
@@ -204,6 +210,7 @@ export function App() {
 
         <Toasts />
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} commands={commands} />
+        <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
       </div>
     </Tooltip.Provider>
   );

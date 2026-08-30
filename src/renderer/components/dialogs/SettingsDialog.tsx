@@ -1,9 +1,9 @@
 import { Switch } from 'radix-ui';
-import { Languages, Monitor, Moon, Sun } from 'lucide-react';
+import { Languages, Monitor, Moon, Power, Sun } from 'lucide-react';
 import { useT } from '../../i18n';
 import { cn } from '../../lib/cn';
 import { errorMessage, invoke } from '../../lib/ipc';
-import { keys, useMutation, useQueryClient, useSettings } from '../../lib/queries';
+import { keys, useMutation, useQuery, useQueryClient, useSettings } from '../../lib/queries';
 import { useUi } from '../../stores/ui';
 import { DiagnosticsPanel } from '../DiagnosticsPanel';
 import { RemoteSettings } from '../RemoteSettings';
@@ -11,6 +11,7 @@ import { SectionLabel } from '../primitives';
 import { DialogShell } from './DialogShell';
 import type {
   AppSettings,
+  AutostartStatus,
   LanguagePreference,
   RepoSettings,
   ThemePreference,
@@ -82,6 +83,29 @@ export function SettingsDialog({
       toast({ kind: 'error', title: t('Ayar kaydedilemedi'), description: errorMessage(error) }),
   });
 
+  /*
+   * Otomatik başlatma durumu ayar dosyamızda değil, işletim sisteminde tutuluyor:
+   * kullanıcı bunu sistem ayarlarından da kapatabilir ve o zaman bizim kaydımız
+   * gerçeği yansıtmaz. Bu yüzden her açılışta okuyoruz.
+   */
+  const { data: autostart } = useQuery<AutostartStatus>({
+    queryKey: ['autostart'],
+    queryFn: () => invoke('app:autostart-get', undefined),
+    enabled: open,
+  });
+
+  const setAutostart = useMutation({
+    mutationFn: (enabled: boolean) => invoke('app:autostart-set', { enabled }),
+    onSuccess: (status) => {
+      client.setQueryData(['autostart'], status);
+      if (status.reason) {
+        toast({ kind: 'warning', title: t('Otomatik başlatma'), description: status.reason });
+      }
+    },
+    onError: (error) =>
+      toast({ kind: 'error', title: t('Ayar kaydedilemedi'), description: errorMessage(error) }),
+  });
+
   const saveRepo = useMutation({
     mutationFn: (patch: Partial<RepoSettings>) => invoke('settings:repo-set', { repoId, ...patch }),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.repoSettings(repoId) }),
@@ -142,6 +166,32 @@ export function SettingsDialog({
                 checked={settings.sideBySideDiff}
                 onCheckedChange={(sideBySideDiff) => saveApp.mutate({ sideBySideDiff })}
               />
+            </div>
+          </section>
+
+          <section>
+            <SectionLabel>{t('Başlangıç')}</SectionLabel>
+            <div className="mt-1 divide-y divide-line-soft">
+              <div className="flex items-start justify-between gap-4 py-2">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
+                    <Power className="size-3.5 text-ink-2" />
+                    {t('Sistem açılınca başlat')}
+                  </p>
+                  <p className="text-[11px] text-ink-2">
+                    {autostart?.reason ??
+                      t('Oturum açtığında Urhoba kendiliğinden açılır.')}
+                  </p>
+                </div>
+                <Switch.Root
+                  checked={autostart?.enabled ?? false}
+                  disabled={!autostart?.supported}
+                  onCheckedChange={(checked) => setAutostart.mutate(checked)}
+                  className="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-surface-3 transition-colors disabled:opacity-40 data-[state=checked]:bg-accent"
+                >
+                  <Switch.Thumb className="block size-4 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[18px]" />
+                </Switch.Root>
+              </div>
             </div>
           </section>
 

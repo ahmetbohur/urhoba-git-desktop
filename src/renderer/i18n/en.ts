@@ -356,6 +356,22 @@ export const en: Record<string, string> = {
 
   // --- Ayarlar ---
   'Görünüm ve dil': 'Appearance and language',
+  'Sistem açılınca başlat': 'Start when the system starts',
+  'Oturum açtığında Urhoba kendiliğinden açılır.': 'Urhoba opens by itself when you log in.',
+  'Otomatik başlatma': 'Start at login',
+  'Otomatik başlatma yalnızca kurulu uygulamada çalışır.':
+    'Start at login only works for an installed application.',
+  'Ayar yazılamadı; dosya izinlerini kontrol et.':
+    'Could not write the setting; check file permissions.',
+  'Hakkında': 'About',
+  'Sürüm {version}': 'Version {version}',
+  'Depolarını tek pencereden takip eden modern bir masaüstü Git istemcisi.':
+    'A modern desktop Git client that keeps all your repositories in one window.',
+  'Çalışma ortamı': 'Environment',
+  'Sorun bildirirken tanılama bilgisini paylaşman işi kolaylaştırır.':
+    'Sharing the diagnostics makes bug reports much easier to act on.',
+  'Kaynak kodu': 'Source code',
+  'MIT lisansı ile dağıtılır.': 'Distributed under the MIT license.',
   'Arayüz dili': 'Interface language',
   'Diff’i yan yana göster': 'Show diffs side by side',
   'Kapalıyken eski ve yeni satırlar tek sütunda alt alta gösterilir.':

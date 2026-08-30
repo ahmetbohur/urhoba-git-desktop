@@ -57,6 +57,23 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(600);
   await page.screenshot({ path: `${SHOT_DIR}/05-ust-cubuk-dar.png` });
 
+  // Ayarlar: yeni başlangıç bölümü
+  await page.setViewportSize({ width: 1280, height: 820 });
+  await page.getByLabel('Ayarlar').click();
+  await page.waitForTimeout(700);
+  await page.screenshot({ path: `${SHOT_DIR}/06-ayarlar.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+
+  // Hakkında penceresi menüden açılıyor; olayı doğrudan tetikliyoruz.
+  await app.evaluate(async ({ BrowserWindow }) => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.send('app:event', { type: 'app:show-about' });
+    }
+  });
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${SHOT_DIR}/07-hakkinda.png` });
+
   await app.close();
   fs.rmSync(userData, { recursive: true, force: true });
 });

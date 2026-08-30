@@ -176,6 +176,15 @@ export interface PushResult {
   upstreamSet: boolean;
 }
 
+/** Sistem açılışında otomatik başlatma durumu. */
+export interface AutostartStatus {
+  /** Bu ortamda ayarlanabiliyor mu. */
+  supported: boolean;
+  enabled: boolean;
+  /** Desteklenmiyorsa ya da yazılamadıysa sebebi. */
+  reason?: string;
+}
+
 /** Sorun bildirirken paylaşılacak ortam bilgisi. */
 export interface Diagnostics {
   appVersion: string;
@@ -431,6 +440,7 @@ export interface CloneProgress {
 
 /** Ana süreçten arayüze itilen olaylar. Tek kanal, ayrımlı birleşim. */
 export type AppEvent =
+  | { type: 'app:show-about' }
   | { type: 'repo:changed'; repoId: string }
   | { type: 'git:command'; entry: GitLogEntry }
   | { type: 'autopull:result'; result: AutoPullResult }

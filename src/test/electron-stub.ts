@@ -10,8 +10,16 @@ export const BrowserWindow = {
   getAllWindows: () => [] as Array<{ isDestroyed: () => boolean; webContents: { send: () => void } }>,
 };
 
+/**
+ * `app` nesnesi bilerek değiştirilebilir: otomatik başlatma testleri kurulu
+ * uygulama ile geliştirme ortamını ayırt etmek için `isPackaged` değerini
+ * değiştirmek zorunda.
+ */
 export const app = {
-  getPath: () => '/tmp/urhoba-test',
+  getPath: (name?: string) => (name === 'exe' ? '/opt/urhoba/urhoba-git-desktop' : '/tmp/urhoba-test'),
+  isPackaged: false,
+  getLoginItemSettings: () => ({ openAtLogin: false }),
+  setLoginItemSettings: () => undefined,
 };
 
 export const dialog = {
