@@ -117,11 +117,25 @@ Ollama sunucusu ve yüklü bir model gerektiriyor, ikincisi doğrulama yapmıyor
 Geliştirme için Node.js 20+ yeterli. **Uygulamayı kullanmak için sistemde git
 kurulu olması gerekmiyor** — kendi git sürümünü taşıyor.
 
+`npm run make` RPM'i yalnızca `rpmbuild` kuruluysa üretiyor; yoksa .deb üretimi
+engellenmeden devam ediyor. Hedef seçerken Forge üreticiyi kendi adıyla arıyor
+(`--targets deb`), paket adıyla değil: `--targets @electron-forge/maker-deb`
+yapılandırmayı yok sayıp varsayılanlarla paket üretiyor.
+
+Gömülü git'ten kullanılmayan parçalar paketleme sonrası çıkarılıyor
+(`forge.config.ts` → `TRIMMED_GIT_PATHS`): HTTPS kimlik yöneticisi, arayüz
+kütüphaneleri, git'in çevirileri ve gitweb. Kurulu boyut 431 MB'tan 329 MB'a,
+`.deb` 135 MB'tan 101 MB'a iniyor.
+
 ### İkon
 
 Kaynak logo `assets/icon-512.png`. Windows `.ico`, macOS `.icns` ve Linux `.png`
 bekliyor; üçü de `python3 assets/make-icon.py` ile buradan türetiliyor, elle
 tutulan tek dosya kaynak logo.
+
+Betik `.ico`, `.icns` ve Linux paketlerinin hicolor teması için 16'dan 512'ye
+kadar ayrı boyutlar üretiyor. Tek bir büyük ikonu masaüstüne ölçeklettirmek
+küçük boyutlarda bulanık görünüyor.
 
 Türetme sırasında dış beyaz saydama çevriliyor. Kaynağın arka planı opak beyaz
 ve masaüstü ikonunda bu beyaz bir kare olarak görünüyor — özellikle macOS

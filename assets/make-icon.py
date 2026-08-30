@@ -27,6 +27,11 @@ SOURCE = ASSETS / 'icon-512.png'
 WHITE_TOLERANCE = 40
 
 ICO_SIZES = [256, 128, 64, 48, 32, 24, 16]
+# Linux paketlerinde hicolor teması her boyut için ayrı dosya bekliyor; tek bir
+# büyük ikonu masaüstüne ölçeklettirmek küçük boyutlarda bulanık görünüyor.
+# 512 listede yok: o boyut `icon.png` olarak zaten üretiliyor ve `icon-512.png`
+# kaynak logonun kendisi — aynı adla yazmak kaynağı yok ederdi.
+HICOLOR_SIZES = [16, 24, 32, 48, 64, 128, 256]
 # 1024'lük katman yok: kaynak 512 ve büyütmek yumuşak bir görüntü üretirdi.
 ICNS_LAYERS = [
     ('icp4', 16), ('icp5', 32), ('icp6', 64),
@@ -69,6 +74,12 @@ def main():
     base = transparent_background(Image.open(SOURCE))
 
     base.save(out / 'icon.png')
+    for size in HICOLOR_SIZES:
+        target = out / f'icon-{size}.png'
+        # Kaynak dosyanın üzerine yazmak onu geri dönülmez biçimde kaybettirir.
+        if target.resolve() == SOURCE.resolve():
+            raise SystemExit(f'{target.name} kaynak logonun kendisi; üretilemez.')
+        base.resize((size, size), Image.Resampling.LANCZOS).save(target)
 
     # ICO en büyükten kaydediliyor: Pillow taban görüntüden büyük boyutları
     # üretmiyor, küçükten kaydedince dosyada tek bir katman kalıyor.

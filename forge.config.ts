@@ -1,5 +1,7 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
@@ -18,6 +20,42 @@ function commandExists(command: string): boolean {
 }
 
 const hasRpmbuild = commandExists('rpmbuild');
+
+/**
+ * Gömülü git'ten çıkarılan, uygulamanın hiç kullanmadığı parçalar.
+ *
+ * dugite git'i olduğu gibi taşıyor ve paketin yarısından fazlası buradan
+ * geliyordu. Üçünün de çıkarılabilmesinin sebebi tasarımda:
+ *
+ * - `git-credential-manager` (83 MB) HTTPS kimlik doğrulaması için. Uygulama
+ *   yalnızca SSH kullanıyor ve git'i `GIT_TERMINAL_PROMPT=0` ile çalıştırıyor;
+ *   dugite'in kendi gitconfig'i de bu yardımcıyı yapılandırmıyor.
+ * - `libSkiaSharp` ve `libHarfBuzzSharp` kimlik yöneticisinin arayüz
+ *   kütüphaneleri; onsuz anlamları yok.
+ * - `share/locale` git'in çevirileri. Git her zaman `LC_ALL=C` ile
+ *   çalıştırılıyor çünkü çıktısını biz ayrıştırıyoruz — bu dosyalar hiç
+ *   okunmuyor.
+ * - `share/gitweb` git'in web arayüzü; masaüstü uygulamasında karşılığı yok.
+ *
+ * `git-lfs` bilerek bırakıldı: kullanıcının kendi gitconfig'inde lfs filtresi
+ * tanımlıysa klonlama onunla çalışıyor. 13 MB için çalışan bir durumu hataya
+ * çevirmeye değmez.
+ */
+const TRIMMED_GIT_PATHS = [
+  'libexec/git-core/git-credential-manager',
+  'libexec/git-core/libSkiaSharp.so',
+  'libexec/git-core/libHarfBuzzSharp.so',
+  'share/locale',
+  'share/gitweb',
+];
+
+function trimEmbeddedGit(buildPath: string): void {
+  const gitRoot = path.join(buildPath, 'resources', 'git');
+  if (!fs.existsSync(gitRoot)) return;
+  for (const relative of TRIMMED_GIT_PATHS) {
+    fs.rmSync(path.join(gitRoot, relative), { recursive: true, force: true });
+  }
+}
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -53,6 +91,13 @@ const config: ForgeConfig = {
     executableName: process.platform === 'linux' ? 'urhoba-git-desktop' : undefined,
   },
   rebuildConfig: {},
+  hooks: {
+    // extraResource kopyalandıktan sonra çalışıyor; budama paketleme bittiğinde
+    // yapılıyor ki kaynak ağacındaki node_modules'a dokunulmasın.
+    postPackage: async (_config, { outputPaths }) => {
+      for (const outputPath of outputPaths) trimEmbeddedGit(outputPath);
+    },
+  },
   /*
    * RPM yalnızca `rpmbuild` kuruluysa listeye giriyor. Koşulsuz eklendiğinde
    * Forge bütün `make` işlemini daha başlamadan durduruyor ve rpm'e ihtiyacı
@@ -71,7 +116,22 @@ const config: ForgeConfig = {
         genericName: 'Git İstemcisi',
         description: 'Depolarını tek pencereden takip eden modern bir masaüstü Git istemcisi.',
         categories: ['Development'],
-        icon: 'assets/icon.png',
+        /*
+         * Üreticinin tipi `icon` alanını yalnızca dize sayıyor ama çalışan kod
+         * boyut→dosya nesnesini de kabul ediyor ve hicolor teması altına her
+         * boyutu ayrı yazıyor. Tek dosya verildiğinde ikon sadece pixmaps'e
+         * kopyalanıyor ve masaüstü onu ölçekleyerek bulanıklaştırıyor.
+         */
+        icon: {
+          '16x16': 'assets/icon-16.png',
+          '24x24': 'assets/icon-24.png',
+          '32x32': 'assets/icon-32.png',
+          '48x48': 'assets/icon-48.png',
+          '64x64': 'assets/icon-64.png',
+          '128x128': 'assets/icon-128.png',
+          '256x256': 'assets/icon-256.png',
+          '512x512': 'assets/icon.png',
+        } as unknown as string,
         homepage: 'https://github.com/urhoba/urhoba-git-desktop',
       },
     })] : []),
@@ -82,7 +142,22 @@ const config: ForgeConfig = {
         genericName: 'Git İstemcisi',
         description: 'Depolarını tek pencereden takip eden modern bir masaüstü Git istemcisi.',
         categories: ['Development'],
-        icon: 'assets/icon.png',
+        /*
+         * Üreticinin tipi `icon` alanını yalnızca dize sayıyor ama çalışan kod
+         * boyut→dosya nesnesini de kabul ediyor ve hicolor teması altına her
+         * boyutu ayrı yazıyor. Tek dosya verildiğinde ikon sadece pixmaps'e
+         * kopyalanıyor ve masaüstü onu ölçekleyerek bulanıklaştırıyor.
+         */
+        icon: {
+          '16x16': 'assets/icon-16.png',
+          '24x24': 'assets/icon-24.png',
+          '32x32': 'assets/icon-32.png',
+          '48x48': 'assets/icon-48.png',
+          '64x64': 'assets/icon-64.png',
+          '128x128': 'assets/icon-128.png',
+          '256x256': 'assets/icon-256.png',
+          '512x512': 'assets/icon.png',
+        } as unknown as string,
         homepage: 'https://github.com/urhoba/urhoba-git-desktop',
         // Gömülü git taşındığı için sistemde git kurulu olması gerekmiyor.
         depends: [],
