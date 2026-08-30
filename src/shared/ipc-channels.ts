@@ -98,6 +98,9 @@ export const IPC_CHANNELS = [
   // --- GitHub ---
   'github:status',
   'github:sign-in',
+  'github:device-start',
+  'github:device-wait',
+  'github:device-cancel',
   'github:sign-out',
   'github:repo-context',
   'github:repos',

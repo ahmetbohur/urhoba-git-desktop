@@ -193,6 +193,26 @@ depo ayarı üç durumlu: *Genel (açık/kapalı)*, *Açık*, *Kapalı*.
 taşıyan ayarlar ("Otomatik pull" hem genelde hem depoda) iki kez geçiyor ve
 hangisinin neyi etkilediği ancak bölüm başlığı okunarak anlaşılıyordu.
 
+### GitHub girişi
+
+İki yol var: **cihaz akışı** (önerilen) ve kişisel erişim jetonu.
+
+Cihaz akışı seçildi çünkü masaüstü uygulaması istemci sırrı saklayamaz — paketi
+açan herkes onu çıkarabilir. Klasik "authorization code" akışı kodu token'a
+çevirirken sırrı ister ve GitHub'ın OAuth App'leri PKCE desteklemez, yani sırrı
+atlamanın yolu yoktur. Cihaz akışı yalnızca herkese açık olması normal olan bir
+Client ID ister; `URHOBA_GITHUB_CLIENT_ID` ile ezilebilir.
+
+Jeton girişi duruyor: GitHub Enterprise kullananların ve ince ayarlı jeton
+tercih edenlerin tek yolu o.
+
+Uygulamaya ait OAuth App'te **"Expire user access tokens" kapalı olmalı**. Açık
+olursa token sekiz saatte dolar ve yenilemek yine istemci sırrı ister.
+
+Çıkış yapmak yereldir: yetkiyi GitHub tarafında iptal etmek
+(`DELETE /applications/{id}/grant`) sır ister. Uygulama jetonu siler, kullanıcıya
+da github.com/settings/applications bağlantısı gösterilir.
+
 ### GitHub'da yayınlama
 
 Sıra şu: depo oluştur → `origin` ekle → dalı upstream kurarak gönder. Ön koşullar

@@ -46,6 +46,19 @@ export const en: Record<string, string> = {
   'Depolar': 'Repositories',
   'Sabitlenenler': 'Pinned',
   'AI yardımı': 'AI assistance',
+  'GitHub ile giriş yap': 'Sign in with GitHub',
+  'Kişisel erişim jetonu kullan': 'Use a personal access token',
+  'Geri dön': 'Go back',
+  'Kodu kopyala': 'Copy the code',
+  'Onaylaman bekleniyor…': 'Waiting for your approval…',
+  'Tarayıcıda açılan sayfaya bu kodu gir:': 'Enter this code on the page that opened in your browser:',
+  'Sayfa açılmadıysa buradan aç': 'Open it here if the page did not open',
+  'Yetkiyi GitHub’dan da kaldır': 'Also revoke the authorisation on GitHub',
+  '“GitHub ile giriş yap”a bas; tarayıcı açılır.':
+    'Press “Sign in with GitHub”; your browser opens.',
+  'Ekranda çıkan kodu gir ve izni onayla.': 'Enter the code shown and approve the access.',
+  'Pull request’ler, depo yayınlama ve klonlama için GitHub hesabına bağlan.':
+    'Connect your GitHub account for pull requests, publishing and cloning.',
   'AI ile açıklama öner': 'Suggest a description with AI',
   'README’den {count} karakter gönderildi.': '{count} characters from the README were sent.',
   'README bulunamadı; yalnızca dosya listesi gönderildi.':

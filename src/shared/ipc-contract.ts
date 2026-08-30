@@ -12,6 +12,7 @@ import type {
   BranchRenameResult,
   CommitSuggestion,
   DescriptionSuggestion,
+  DeviceCodeInfo,
   ConflictFile,
   Diagnostics,
   GithubAuthStatus,
@@ -274,6 +275,10 @@ export const inputSchemas = {
   // --- GitHub ---
   'github:status': z.undefined(),
   'github:sign-in': z.object({ token: z.string().min(1) }),
+  'github:device-start': z.undefined(),
+  // Kullanıcı tarayıcıda onaylayana kadar açık kalıyor; iptal ayrı kanaldan.
+  'github:device-wait': z.undefined(),
+  'github:device-cancel': z.undefined(),
   'github:sign-out': z.undefined(),
   'github:repo-context': repoId,
   'github:repos': z.object({ query: z.string().optional() }),
@@ -397,6 +402,9 @@ export interface IpcOutputs {
 
   'github:status': GithubAuthStatus;
   'github:sign-in': GithubAuthStatus;
+  'github:device-start': DeviceCodeInfo;
+  'github:device-wait': GithubAuthStatus;
+  'github:device-cancel': void;
   'github:sign-out': void;
   'github:repo-context': RepoContext | null;
   'github:repos': GithubRepo[];

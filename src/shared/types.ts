@@ -302,6 +302,13 @@ export interface GithubUser {
   htmlUrl: string;
 }
 
+/** Cihaz akışında kullanıcıya gösterilen kod ve nereye gireceği. */
+export interface DeviceCodeInfo {
+  userCode: string;
+  verificationUri: string;
+  expiresInSeconds: number;
+}
+
 export interface GithubAuthStatus {
   authenticated: boolean;
   user: GithubUser | null;

@@ -10,6 +10,7 @@ import * as ai from '../ai/service';
 import * as diagnostics from '../services/diagnostics';
 import { buildMenu } from '../services/menu';
 import * as github from '../github/provider';
+import * as deviceFlow from '../github/device-flow';
 import * as publish from '../github/publish';
 import * as rewrite from '../git/rewrite';
 import * as tags from '../git/tags';
@@ -356,6 +357,9 @@ const handlers: Handlers = {
   // --- GitHub ---
   'github:status': () => github.getStatus(),
   'github:sign-in': ({ token }) => github.signIn(token),
+  'github:device-start': () => deviceFlow.start(),
+  'github:device-wait': () => deviceFlow.waitForToken(),
+  'github:device-cancel': () => deviceFlow.cancel(),
   'github:sign-out': () => github.signOut(),
   'github:repo-context': ({ repoId }) => {
     const repo = activateRepo(repoId);
