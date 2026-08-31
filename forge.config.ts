@@ -81,11 +81,28 @@ const TRIMMED_GIT_PATHS = [
   'share/gitweb',
 ];
 
+/**
+ * Gömülü git'in nereye kopyalandığı platforma göre değişiyor.
+ *
+ * Linux ve Windows'ta `resources/`, macOS'ta ise `<ad>.app/Contents/Resources/`.
+ * Yalnızca ilkine bakan bir budama macOS'ta sessizce hiçbir şey yapmıyordu:
+ * hata vermiyor, sadece paket 100 MB büyük çıkıyordu.
+ */
+function gitRoots(buildPath: string): string[] {
+  const candidates = [path.join(buildPath, 'resources', 'git')];
+  for (const entry of fs.readdirSync(buildPath, { withFileTypes: true })) {
+    if (entry.isDirectory() && entry.name.endsWith('.app')) {
+      candidates.push(path.join(buildPath, entry.name, 'Contents', 'Resources', 'git'));
+    }
+  }
+  return candidates.filter((candidate) => fs.existsSync(candidate));
+}
+
 function trimEmbeddedGit(buildPath: string): void {
-  const gitRoot = path.join(buildPath, 'resources', 'git');
-  if (!fs.existsSync(gitRoot)) return;
-  for (const relative of TRIMMED_GIT_PATHS) {
-    fs.rmSync(path.join(gitRoot, relative), { recursive: true, force: true });
+  for (const gitRoot of gitRoots(buildPath)) {
+    for (const relative of TRIMMED_GIT_PATHS) {
+      fs.rmSync(path.join(gitRoot, relative), { recursive: true, force: true });
+    }
   }
 }
 
@@ -123,6 +140,27 @@ const config: ForgeConfig = {
     executableName: targetPlatform() === 'linux' ? 'urhoba-git-desktop' : undefined,
 
     /*
+     * Gömülü git budaması imzalamadan ÖNCE yapılmak zorunda.
+     *
+     * Paketleyicinin sırası: extraResource kopyala → bu kanca → imzala →
+     * noter onayı → taşı. Forge'un `postPackage` kancası bu zincirin tamamından
+     * sonra çalışıyor; budama orada yapılınca imzalanmış paketten dosya
+     * siliniyor ve `_CodeSignature/CodeResources` mührü tutmuyor. Sonuç sinsi:
+     * derleme "başarılı" diyor, uygulama derleyen makinede açılıyor, başka bir
+     * Mac'te Gatekeeper reddediyor.
+     */
+    afterCopyExtraResources: [
+      (buildPath, _electronVersion, _platform, _arch, callback) => {
+        try {
+          trimEmbeddedGit(buildPath);
+          callback();
+        } catch (error) {
+          callback(error as Error);
+        }
+      },
+    ],
+
+    /*
      * İmzalama sertleştirilmiş çalışma zamanıyla yapılıyor; notarization bunu
      * zorunlu tutuyor. Gömülü git ikilileri de imzalanmalı: Apple paketin
      * içindeki her çalıştırılabilir dosyanın imzalı olmasını istiyor ve
@@ -133,10 +171,17 @@ const config: ForgeConfig = {
       ? {
           osxSign: {
             identity: appleIdentity,
+            /*
+             * Aynı hak listesi paketteki her ikiliye veriliyor. `@electron/osx-sign`
+             * `entitlementsInherit` diye bir seçenek tanımıyor — eskiden burada
+             * duruyordu ve sessizce yok sayılıyordu. Devralma zaten yalnızca kum
+             * havuzundaki uygulamalar için anlamlı; bu uygulama kum havuzunda
+             * değil (Developer ID ile dağıtılıyor) ve Forge'un belgelediği yol da
+             * tek dosya vermek.
+             */
             optionsForFile: () => ({
               hardenedRuntime: true,
               entitlements: 'assets/entitlements.mac.plist',
-              entitlementsInherit: 'assets/entitlements.mac.inherit.plist',
             }),
           } as NonNullable<ForgeConfig['packagerConfig']>['osxSign'],
         }
@@ -153,13 +198,6 @@ const config: ForgeConfig = {
       : {}),
   },
   rebuildConfig: {},
-  hooks: {
-    // extraResource kopyalandıktan sonra çalışıyor; budama paketleme bittiğinde
-    // yapılıyor ki kaynak ağacındaki node_modules'a dokunulmasın.
-    postPackage: async (_config, { outputPaths }) => {
-      for (const outputPath of outputPaths) trimEmbeddedGit(outputPath);
-    },
-  },
   /*
    * RPM yalnızca `rpmbuild` kuruluysa listeye giriyor. Koşulsuz eklendiğinde
    * Forge bütün `make` işlemini daha başlamadan durduruyor ve rpm'e ihtiyacı
