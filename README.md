@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ahmetbohur/urhoba-git-desktop/actions/workflows/ci.yml"><img src="https://github.com/ahmetbohur/urhoba-git-desktop/actions/workflows/ci.yml/badge.svg" alt="CI durumu" /></a>
   <img src="https://img.shields.io/badge/lisans-MIT-blue" alt="MIT lisansı" />
   <img src="https://img.shields.io/badge/platform-Linux%20%C2%B7%20Windows%20%C2%B7%20macOS-lightgrey" alt="Platformlar" />
   <img src="https://img.shields.io/badge/dil-T%C3%BCrk%C3%A7e%20%C2%B7%20English-informational" alt="Diller" />

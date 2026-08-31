@@ -176,6 +176,22 @@ src/
    kaldırmaz; arka plandaki otomatik pull kullanıcının commit'iyle çakışırsa
    `index.lock` hatası çıkar. Her deponun komutları tek bir sıraya diziliyor.
 
+### Sürekli tümleştirme
+
+İki iş var. Birincisi tip denetimi, lint ve bütün testleri Ubuntu'da koşuyor;
+uçtan uca testler gerçek bir Electron penceresi açtığı için sanal X sunucusu
+(`xvfb`) altında çalışıyorlar.
+
+İkincisi üç platformda (Ubuntu, macOS, Windows) yalnızca paketleme yapıyor.
+Amaç kurulum dosyası üretmek değil — o platforma özgü araçlar istiyor —
+uygulamanın her platformda derlenip derlenmediğini görmek. `fail-fast`
+kapalı: bir platformdaki hata diğerlerinin sonucunu gizlememeli.
+
+Paketlemeden sonra gömülü git'in pakete girdiği ayrıca doğrulanıyor. dugite
+git'i platforma özgü indiriyor ve girmediğinde uygulama hiçbir git komutu
+çalıştıramıyor; bunu çalışma anında fark etmektense derlemede yakalamak
+gerekiyor.
+
 ### İşlevsel doğrulama
 
 `e2e/functional.spec.ts` uygulamanın kendisini çalıştırıp her işlemi gerçek IPC

@@ -13,6 +13,13 @@ import path from 'node:path';
  */
 const SHOT_DIR = '/tmp/urhoba-shots';
 
+/*
+ * Taranacak klasör. Geliştiricinin ev dizini koda gömülüydü; başka bir
+ * makinede senaryo hiçbir depo bulamıyordu. `URHOBA_SCAN_DIR` ile
+ * değiştirilebiliyor.
+ */
+const SCAN_DIR = process.env.URHOBA_SCAN_DIR ?? path.join(os.homedir(), 'Documents/Projects');
+
 // Bu dosya normal test koşusunun dışında; `npm run screenshots` ile çalışıyor.
 /*
  * Senaryo uzun: her adım arayüzün yerleşmesi için bekliyor ve ekran görüntüsü
@@ -31,7 +38,7 @@ test('arayüz görüntüleri', async () => {
 
   await app.evaluate(async ({ dialog }, target) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [target] });
-  }, '/home/urhoba/Documents/Projects');
+  }, SCAN_DIR);
 
   // Ekle menüsü
   await page.getByRole('button', { name: 'Ekle' }).click();
@@ -52,7 +59,7 @@ test('arayüz görüntüleri', async () => {
   await page.getByRole('button', { name: 'Vazgeç' }).click();
   await page.evaluate(
     (repo) => window.urhoba.invoke('repo:add', { path: repo }),
-    '/home/urhoba/Documents/Projects/Individual/urhoba-git-desktop',
+    process.cwd(),
   );
   await page.reload();
   await page.waitForLoadState('domcontentloaded');
@@ -87,7 +94,7 @@ test('arayüz görüntüleri', async () => {
   // Gruplu kenar çubuğu: tarama sonuçlarını uygulayıp listeye bakıyoruz.
   await page.evaluate(async () => {
     const found = await window.urhoba.invoke('repo:scan', {
-      directory: '/home/urhoba/Documents/Projects',
+      directory: SCAN_DIR,
       maxDepth: 4,
     });
     await window.urhoba.invoke('repo:add-many', {

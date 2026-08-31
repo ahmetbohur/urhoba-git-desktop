@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Aynı dal için üst üste gelen koşularda eskisini iptal et: art arda push
+# yapıldığında yalnızca son hâlin sonucu ilgilendiriyor.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dogrulama:
+    name: Tip, lint ve testler
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tip denetimi
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Birim ve entegrasyon testleri
+        run: npm test
+
+      # Uçtan uca testler gerçek bir Electron penceresi açıyor; başsız
+      # çalıştırıcıda ekran olmadığı için sanal bir X sunucusu gerekiyor.
+      - name: Uçtan uca testler
+        run: xvfb-run --auto-servernum npm run test:e2e
+
+      - name: Başarısız koşunun izlerini yükle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-izleri
+          path: test-results/
+          retention-days: 7
+
+  paket:
+    name: Paketleme (${{ matrix.os }})
+    # Doğrulama geçmeden paketlemenin anlamı yok; çalıştırıcı zamanı boşa
+    # gitmesin.
+    needs: dogrulama
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Bir platformdaki hata diğerlerinin sonucunu gizlemesin.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Yalnızca paketleme: kurulum dosyası üretmek platforma özgü araçlar
+      # (rpmbuild, codesign) istiyor ve burada amaç uygulamanın her platformda
+      # derlenip derlenmediğini görmek.
+      - name: Paketle
+        run: npm run package
+
+      - name: Gömülü git pakete girdi mi
+        shell: bash
+        run: |
+          # dugite'in git'i platforma özgü indiriliyor; pakete girmezse
+          # uygulama hiçbir git komutu çalıştıramaz ve bunu ancak çalışma
+          # anında fark ederiz.
+          found=$(find out -type d -name git -path "*resources*" | head -1)
+          if [ -z "$found" ]; then
+            echo "Gömülü git paketin içinde bulunamadı"
+            exit 1
+          fi
+          echo "Bulundu: $found"
