@@ -109,22 +109,48 @@ jobs:
     name: Release'e yükle
     needs: paketle
     runs-on: ubuntu-latest
+    # Matrisin tamamını beklemiyor.
+    #
+    # `needs` bir işi bütün matrise bağlıyor ve tek bir yavaş koşucu yayının
+    # tamamını rehin alıyordu: macos-13 (Intel) kuyruğu saatlerce sürebiliyor
+    # ve o beklerken hazır olan üç paket de yüklenmiyordu. `!cancelled()` ile
+    # iş, kardeşleri düşse ya da atlansa da çalışıyor; eksik platform sonradan
+    # o işi yeniden çalıştırıp eklenebiliyor çünkü yükleme `--clobber` ile
+    # tekrarlanabilir.
+    #
     # Elle başlatıldığında etiket yok; o durumda yalnızca artefakt üretiliyor.
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: paketler
+        # Hiç artefakt yoksa indirme adımı kırılmasın; eksiklik aşağıda
+        # anlaşılır bir mesajla raporlanıyor.
+        continue-on-error: true
 
       - name: Dosyaları topla ve adlandır
         run: |
           mkdir -p yayin
           # Artefaktlar iç içe klasörlerde geliyor; hepsini tek düzleme alıyoruz.
           find paketler -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.zip' \) \
-            -exec cp {} yayin/ \;
+            -exec cp {} yayin/ \; 2>/dev/null || true
           cd yayin
           # Boşluklu adlar (macOS zip'i) indirme bağlantısını çirkinleştiriyor.
           for f in *\ *; do [ -e "$f" ] && mv "$f" "${f// /-}"; done
+
+          # Hiçbir paket üretilememişse yayın yapmanın anlamı yok.
+          if [ -z "$(ls -A 2>/dev/null)" ]; then
+            echo "::error::Hiçbir platform paket üretemedi; yayın yapılmıyor."
+            exit 1
+          fi
+
+          # Eksik platformlar sessizce geçmesin: yarım bir yayın, tam bir yayın
+          # gibi görünürse kimse fark etmez.
+          for beklenen in deb darwin win32; do
+            ls | grep -q "$beklenen" \
+              || echo "::warning::$beklenen paketi yok; o iş düşmüş ya da hâlâ kuyrukta olabilir."
+          done
+
           sha256sum * > SHA256SUMS
           ls -la
           cat SHA256SUMS
