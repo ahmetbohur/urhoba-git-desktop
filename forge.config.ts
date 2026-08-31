@@ -197,7 +197,24 @@ const config: ForgeConfig = {
         }
       : {}),
   },
-  rebuildConfig: {},
+  /*
+   * Yerel modül yeniden derlemesi kapalı.
+   *
+   * Uygulama çalışma anında hiçbir yerel modül yüklemiyor: dugite git'i ayrı
+   * bir süreç olarak çalıştırıyor, geri kalan `.node` dosyaları derleme
+   * araçlarına ait ve bundle'a girmiyor — üretilen `main.js` içinde `fsevents`
+   * hiç geçmiyor.
+   *
+   * Boş bırakıldığında bu adım macOS'ta `fsevents`i buluyor (o paket yalnızca
+   * darwin'e kuruluyor ve `binding.gyp` taşıyor) ve onu Electron başlıklarına
+   * karşı yeniden derlemeye kalkıyor. Başlıkları indirmek gerekiyor; indirme
+   * takılırsa paketleme sessizce donuyor — hata yok, ilerleme yok. Linux'ta
+   * hiç yaşanmıyor çünkü orada fsevents kurulmuyor.
+   *
+   * Hiçbir şeyi yeniden derlememek burada doğru davranış, yalnızca bir kaçamak
+   * değil: derlenen şey pakete girmiyordu.
+   */
+  rebuildConfig: { onlyModules: [] },
   /*
    * RPM yalnızca `rpmbuild` kuruluysa listeye giriyor. Koşulsuz eklendiğinde
    * Forge bütün `make` işlemini daha başlamadan durduruyor ve rpm'e ihtiyacı
