@@ -70,7 +70,7 @@ function showWindow(): void {
  * çubuğu simgeleri tek renk olmalı, renkli bir simge orada yamalı duruyor ve
  * koyu/açık menü çubuğuna uyum sağlamıyor.
  */
-function trayImage(): Electron.NativeImage {
+function trayIconPath(): string | null {
   const candidates = [
     path.join(process.resourcesPath, 'icon-24.png'),
     path.join(app.getAppPath(), 'assets', 'icon-24.png'),
@@ -78,18 +78,30 @@ function trayImage(): Electron.NativeImage {
     path.join(process.resourcesPath, 'icon.png'),
     path.join(app.getAppPath(), 'assets', 'icon.png'),
   ];
-  const found = candidates.find((candidate) => fs.existsSync(candidate));
-  if (!found) return nativeImage.createEmpty();
+  return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
+}
 
-  const image = nativeImage.createFromPath(found);
-  if (process.platform === 'darwin') {
-    const small = image.resize({ width: 18, height: 18 });
-    small.setTemplateImage(true);
-    return small;
-  }
-  // 512 piksellik uygulama ikonu bulunursa tepside bulanıklaşıyor; her
-  // durumda ölçekliyoruz ki hangi dosyanın bulunduğu sonucu değiştirmesin.
-  return image.getSize().width > 32 ? image.resize({ width: 22, height: 22 }) : image;
+/**
+ * Tepsi simgesinin görseli.
+ *
+ * Linux'ta `Tray`'e dosya yolu veriliyor, `NativeImage` değil. Sebebi
+ * ölçülerek bulundu: ölçeklenmiş bir görsel nesnesiyle simge D-Bus'a hiç
+ * kaydolmuyordu — `new Tray()` hata vermeden dönüyor, günlüğe bir şey
+ * düşmüyor, ama `org.kde.StatusNotifierWatcher` listesinde uygulama
+ * görünmüyordu. Appindicator simgeyi diskteki dosyadan okuyor.
+ *
+ * macOS'ta tersi gerekiyor: menü çubuğu simgeleri tek renk olmalı, bu da
+ * ancak şablon işaretli bir `NativeImage` ile söylenebiliyor. Renkli bir
+ * simge orada yamalı duruyor ve koyu/açık çubuğa uyum sağlamıyor.
+ */
+function trayIcon(): Electron.NativeImage | string {
+  const found = trayIconPath();
+  if (!found) return nativeImage.createEmpty();
+  if (process.platform !== 'darwin') return found;
+
+  const small = nativeImage.createFromPath(found).resize({ width: 18, height: 18 });
+  small.setTemplateImage(true);
+  return small;
 }
 
 function buildContextMenu(language: LanguagePreference): Electron.Menu {
@@ -132,9 +144,14 @@ function refreshMenu(): void {
 function create(): void {
   if (tray) return;
   try {
-    tray = new Tray(trayImage());
+    const icon = trayIcon();
+    tray = new Tray(icon);
     tray.setToolTip('Urhoba Git Desktop');
     refreshMenu();
+    log('info', 'Tepsi simgesi kuruldu', {
+      kaynak: typeof icon === 'string' ? icon : 'NativeImage',
+      yok: tray.isDestroyed(),
+    });
 
     /*
      * Sol tıklama pencereyi getirip götürüyor. macOS'ta bu davranış menü
@@ -187,10 +204,16 @@ function announceOnce(): void {
   const language = store.getSettings().language;
   const notification = new Notification({
     title: language === 'en' ? 'Still running' : 'Arka planda çalışıyor',
+    /*
+     * "Uygulamayı yeniden aç" cümlesi burada duruyor çünkü tepsi simgesinin
+     * görüneceği garanti değil: bazı masaüstlerinde simge hiç çizilmiyor ve o
+     * durumda tek geri dönüş yolu bu. Tek örnek kilidi sayesinde yeniden açmak
+     * ikinci bir örnek başlatmıyor, var olanın penceresini getiriyor.
+     */
     body:
       language === 'en'
-        ? 'Urhoba keeps running in the tray so background work continues. Quit from the tray menu, or turn this off in settings.'
-        : 'Urhoba tepside çalışmaya devam ediyor; arka plandaki işler sürüyor. Çıkmak için tepsi menüsünü kullan ya da ayarlardan kapat.',
+        ? 'Urhoba keeps running so background work continues. Open the app again to bring the window back, quit from the tray menu, or turn this off in settings.'
+        : 'Urhoba arka planda çalışmaya devam ediyor. Pencereyi geri getirmek için uygulamayı yeniden aç; çıkmak için tepsi menüsünü kullan ya da ayarlardan kapat.',
   });
   notification.on('click', showWindow);
   notification.show();
@@ -207,6 +230,12 @@ function announceOnce(): void {
 export function attachWindow(window: BrowserWindow): void {
   window.on('close', (event) => {
     if (quitting || !store.getSettings().tray) return;
+    /*
+     * Simge oluşturulamadıysa gizlemiyoruz. Görünür bir simge olmadan pencereyi
+     * gizlemek uygulamayı erişilemez kılıyor; ayar açık diye kullanıcıyı
+     * penceresiz bırakmaktansa kapatma düğmesinin normal davranması iyi.
+     */
+    if (!tray) return;
     event.preventDefault();
     window.hide();
     refreshMenu();

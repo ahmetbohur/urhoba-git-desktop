@@ -19,6 +19,38 @@ if (started) {
 }
 
 /**
+ * Tek örnek kilidi.
+ *
+ * İki gerekçesi var, ikincisi ilkinden ağır.
+ *
+ * Birincisi: iki örnek aynı `urhoba-store.json` dosyasına yazıyor. İkisi de
+ * dosyayı belleğe alıp kendi kopyasını geri yazdığı için sonradan yazan
+ * diğerinin değişikliklerini siliyor — depo listesi ya da ayarlar sessizce
+ * kayboluyor.
+ *
+ * İkincisi: tepsi açıkken pencere kapatıldığında uygulama gizleniyor. Tepsi
+ * simgesinin görüneceği garanti değil — Ubuntu'da `ubuntu-appindicators`
+ * eklentisi kurulu ama kapalı olabiliyor ve GNOME o zaman hiçbir simge
+ * çizmiyor. Simge yoksa ve uygulamayı yeniden açmak ikinci bir örnek
+ * başlatıyorsa, pencereyi geri getirmenin hiçbir yolu kalmıyor.
+ *
+ * Kilit bu iki durumu birden kapatıyor: ikinci açılış yeni örnek başlatmıyor,
+ * var olanın penceresini getiriyor. Tepsi çalışmasa bile uygulama simgesine
+ * tıklamak her zaman geri dönüş yolu.
+ */
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+}
+
+app.on('second-instance', () => {
+  const window = BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
+  if (!window) return;
+  if (window.isMinimized()) window.restore();
+  window.show();
+  window.focus();
+});
+
+/**
  * Gömülü git'in yerini dugite'e bildirir.
  *
  * Uygulama kendi git'ini taşıyor: kullanıcının makinesinde git kurulu olmasa da
