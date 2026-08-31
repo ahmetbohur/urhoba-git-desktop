@@ -883,6 +883,8 @@ export const en: Record<string, string> = {
   'Ayar klasörü': 'Settings folder',
   'Günlük dosyası': 'Log file',
 
+  '{repo}: {count} kaydedilmemiş değişiklik': '{repo}: {count} uncommitted changes',
+
   // Tepsi
   'Tepsi': 'Tray',
   'Kapatınca arka planda çalışmaya devam et': 'Keep running in the background when closed',

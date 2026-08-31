@@ -54,12 +54,22 @@ function useAppEvents(onShowAbout: () => void): void {
             break;
           case 'repo:changed':
             void client.invalidateQueries({ queryKey: ['repo', event.repoId] });
+            // Dosya izleyicisinden gelen değişiklik kenar çubuğundaki sayacı
+            // da etkiliyor; commit terminalden atıldığında rozet buradan
+            // güncelleniyor.
+            void client.invalidateQueries({ queryKey: ['dirty-counts'] });
             break;
           case 'git:command':
             pushCommandLog(event.entry);
             break;
           case 'autopull:result': {
             recordAutoPull(event.result);
+            /*
+             * Otomatik pull ekranda açık olmayan depolarda da çalışıyor ve
+             * dosya izleyicisi yalnızca aktif depoyu izliyor; o depoların
+             * sayacı başka hiçbir yerden tazelenmiyor.
+             */
+            void client.invalidateQueries({ queryKey: ['dirty-counts'] });
             // Arka plan işi olduğu için yalnızca gerçekten bir şey olduğunda
             // bildirim çıkarıyoruz; "zaten güncel" sessizce geçiyor.
             if (event.result.commitsPulled > 0) {

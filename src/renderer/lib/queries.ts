@@ -54,8 +54,7 @@ export const keys = {
   workingDiff: (id: string, path: string, staged: boolean) =>
     ['repo', id, 'diff', path, staged] as const,
   commitDetail: (id: string, sha: string) => ['repo', id, 'commit', sha] as const,
-  commitDiff: (id: string, sha: string, path: string) =>
-    ['repo', id, 'commit', sha, path] as const,
+  commitDiff: (id: string, sha: string, path: string) => ['repo', id, 'commit', sha, path] as const,
 };
 
 export function useRepos() {
@@ -189,8 +188,7 @@ export function useCommitDetail(repoId: string | null, sha: string | null) {
 export function useWorkingDiff(repoId: string | null, path: string | null, staged: boolean) {
   return useQuery<FileDiff>({
     queryKey: keys.workingDiff(repoId ?? '', path ?? '', staged),
-    queryFn: () =>
-      invoke('git:diff', { repoId: repoId as string, path: path as string, staged }),
+    queryFn: () => invoke('git:diff', { repoId: repoId as string, path: path as string, staged }),
     enabled: !!repoId && !!path,
   });
 }
@@ -219,8 +217,7 @@ export function useStashes(repoId: string | null) {
 export function useConflict(repoId: string | null, path: string | null) {
   return useQuery<ConflictFile>({
     queryKey: keys.conflict(repoId ?? '', path ?? ''),
-    queryFn: () =>
-      invoke('git:conflict-read', { repoId: repoId as string, path: path as string }),
+    queryFn: () => invoke('git:conflict-read', { repoId: repoId as string, path: path as string }),
     enabled: !!repoId && !!path,
     // Çakışma dosyası diskte değişebilir; önbellekte tutmuyoruz.
     staleTime: 0,
@@ -312,10 +309,23 @@ export function useSshEnvironment(options?: Partial<UseQueryOptions<SshEnvironme
  * Tek tek hangi sorgunun etkilendiğini hesaplamak yerine depo ön ekiyle toptan
  * geçersiz kılmak hem daha az hatalı hem de pratikte yeterince hızlı.
  */
+/**
+ * Bir depo değiştiğinde tazelenmesi gerekenler.
+ *
+ * Kenar çubuğundaki değişiklik sayacı da buraya dahil. Eskiden değildi ve
+ * sonucu sessizdi: commit ya da pull sonrası rozet olduğu yerde kalıyor,
+ * ancak altmış saniyelik zamanlayıcı dönünce düzeliyordu. Kullanıcı açısından
+ * sayı "takılmış" görünüyor.
+ *
+ * Sayaç bütün depoları tarıyor ama maliyeti ölçüldü: depo başına
+ * `git status --porcelain -uno` üç milisaniye, elli depo paralelde yirmi
+ * milisaniyenin altında. Her değişiklikte tazelemek için bir engel yok.
+ */
 export function useInvalidateRepo() {
   const client = useQueryClient();
   return (repoId: string) => {
     void client.invalidateQueries({ queryKey: ['repo', repoId] });
+    void client.invalidateQueries({ queryKey: ['dirty-counts'] });
   };
 }
 

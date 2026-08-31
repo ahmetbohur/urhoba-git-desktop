@@ -130,9 +130,16 @@ function RepoRow({
             </span>
           </button>
 
-          {/* Değişiklik rozeti yalnızca gerçekten değişiklik varken yer kaplasın. */}
+          {/*
+            Değişiklik rozeti yalnızca gerçekten değişiklik varken yer kaplasın.
+            Etiket olmadan ekran okuyucu çıplak bir sayı okuyor ve neyin sayısı
+            olduğu anlaşılmıyor.
+          */}
           {changes !== null && changes > 0 && (
-            <span className="shrink-0 rounded bg-warn-tint px-1.5 text-[10px] font-medium tabular-nums text-warn">
+            <span
+              aria-label={t('{repo}: {count} kaydedilmemiş değişiklik', { repo: repo.name, count: changes })}
+              className="shrink-0 rounded bg-warn-tint px-1.5 text-[10px] font-medium tabular-nums text-warn"
+            >
               {changes}
             </span>
           )}
@@ -619,7 +626,11 @@ function SidebarRowView({
             <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-ink-2">
               {row.name}
             </span>
-            {row.changes > 0 && <Badge tone="warn">{row.changes}</Badge>}
+            {row.changes > 0 && (
+              <Badge tone="warn" aria-label={t('{repo}: {count} kaydedilmemiş değişiklik', { repo: row.name, count: row.changes })}>
+                {row.changes}
+              </Badge>
+            )}
             <span className="shrink-0 text-[11px] tabular-nums text-ink-3">{row.count}</span>
           </button>
         </ContextMenu.Trigger>

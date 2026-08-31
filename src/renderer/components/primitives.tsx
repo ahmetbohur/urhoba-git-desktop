@@ -77,10 +77,16 @@ export function Badge({
   children,
   tone = 'neutral',
   className,
+  /*
+   * Rozet çoğu yerde çıplak bir sayı ya da kısaltma gösteriyor; ekran okuyucu
+   * bunu bağlamsız okuyor. Etiket verilebilsin diye açıkta.
+   */
+  'aria-label': ariaLabel,
 }: {
   children: ReactNode;
   tone?: 'neutral' | 'accent' | 'ok' | 'warn' | 'crit';
   className?: string;
+  'aria-label'?: string;
 }) {
   const tones = {
     neutral: 'bg-surface-2 text-ink-2 border-line-soft',
@@ -91,6 +97,7 @@ export function Badge({
   } as const;
   return (
     <span
+      aria-label={ariaLabel}
       className={cn(
         'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-medium tabular-nums',
         tones[tone],

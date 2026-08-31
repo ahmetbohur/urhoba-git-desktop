@@ -475,3 +475,34 @@ test('tepsi kapalıyken kapatma engellenmiyor', async () => {
   await call('settings:set', { tray: false });
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.show());
 });
+
+test('kenar çubuğundaki değişiklik rozeti kendiliğinden güncelleniyor', async () => {
+  /*
+   * Rozet eskiden yalnızca altmış saniyelik zamanlayıcıyla tazeleniyordu:
+   * commit ya da pull sonrası olduğu yerde kalıyordu.
+   *
+   * Test ekrana bakıyor, IPC'ye değil. `repo:dirty-counts` her çağrıldığında
+   * zaten yeniden hesaplıyor; onu sınamak hatanın olduğu yeri hiç denemez.
+   * Hata arayüzün önbelleğindeydi: sorgu geçersiz kılınmadığı için ekrandaki
+   * sayı eskimiş kalıyordu.
+   */
+  const { dir } = await addRepo('rozet-testi');
+  // Depo IPC ile eklendiği için depo listesi sorgusu kendiliğinden tazelenmiyor.
+  await page.reload();
+  await page.getByText('rozet-testi').first().click();
+
+  const rozet = page.locator('aside').getByLabel('rozet-testi: 1 kaydedilmemiş değişiklik');
+  await expect(rozet).toHaveCount(0);
+
+  // Dosya dışarıdan değişiyor; izleyici olayı yayınlamalı ve rozet çıkmalı.
+  fs.writeFileSync(path.join(dir, 'okuma.txt'), 'değişti\n');
+  await expect(rozet.first()).toBeVisible({ timeout: 15_000 });
+
+  /*
+   * Commit de dışarıdan atılıyor — kullanıcının terminalden commit atması gibi.
+   * On beş saniye, altmış saniyelik zamanlayıcıdan kısa: rozet ancak geçersiz
+   * kılma çalışırsa bu sürede kaybolur.
+   */
+  git(['commit', '-am', 'rozet sıfırlansın'], dir);
+  await expect(rozet).toHaveCount(0, { timeout: 15_000 });
+});
