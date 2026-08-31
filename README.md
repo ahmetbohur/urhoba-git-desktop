@@ -277,8 +277,12 @@ Kararların gerekçeleri ve her özelliğin nasıl çalıştığı
 
 Planlanan özelliklerin tamamı kodlandı. Kalanlar:
 
-- Kod imzalama (macOS ve Windows) ve otomatik güncelleme için ilk yayın
-- Sürekli tümleştirme (CI)
+- **İmzalı macOS ve Windows paketleri.** Üçü de CI'da derleniyor ama yalnızca
+  Linux paketi yayınlanıyor; imza olmadan diğer ikisi işletim sisteminin
+  uyarısına takılıyor.
+- **Yerinde otomatik güncelleme.** Uygulama yeni sürümü görüp haber veriyor
+  ama indirip kurmuyor: Electron'un güncelleyicisi Linux'u hiç desteklemiyor,
+  macOS ve Windows'ta ise imza istiyor.
 - GitLab / Bitbucket desteği — sağlayıcı arayüzü hazır, uygulaması yok
 
 ## Lisans

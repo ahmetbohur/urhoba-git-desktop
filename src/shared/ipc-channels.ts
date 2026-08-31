@@ -97,6 +97,9 @@ export const IPC_CHANNELS = [
   'app:autostart-get',
   'app:autostart-set',
   'app:open-logs',
+  'app:update-status',
+  'app:update-check',
+  'app:update-skip',
   // --- AI ---
   'ai:status',
   'ai:models',

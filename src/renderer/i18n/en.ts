@@ -882,4 +882,18 @@ export const en: Record<string, string> = {
   'Node': 'Node',
   'Ayar klasörü': 'Settings folder',
   'Günlük dosyası': 'Log file',
+
+  // Güncelleme kontrolü
+  'Güncelleme': 'Update',
+  'Şimdi kontrol et': 'Check now',
+  'Sürüm {version} çıktı': 'Version {version} is out',
+  'İndir': 'Download',
+  'İndirme sayfasını aç': 'Open the download page',
+  'Bu sürümü geç': 'Skip this version',
+  'En son sürümü kullanıyorsun.': 'You are on the latest version.',
+  'Henüz kontrol edilmedi.': 'Not checked yet.',
+  'Kontrol edilemedi: {reason}': 'Could not check: {reason}',
+  'Yeni sürümü GitHub’dan kontrol et': 'Check GitHub for new versions',
+  'Günde bir kez yayın sayfasına bakılır ve yenisi varsa listenin altında bir şerit çıkar. Uygulama hiçbir şey indirmez.':
+    'Checks the releases page once a day and shows a strip below the list when a newer version exists. The app downloads nothing.',
 };

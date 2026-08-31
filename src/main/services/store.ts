@@ -44,6 +44,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   activityPeriod: '24h',
   // Varsayılan kapalı: kimse istemediği bir bildirimle karşılaşmamalı.
   activityAuto: false,
+  // Varsayılan açık: eski bir sürümde takılı kalmak kullanıcının bilerek
+  // seçtiği bir şey olmalı, farkında olmadığı bir şey değil.
+  updateCheck: true,
   lastOpenedRepoId: null,
 };
 
@@ -63,6 +66,13 @@ interface StoreShape {
    * kapalıyken geçen süre atlanmasın ve iki özet çakışmasın.
    */
   lastActivityDigestAt?: string;
+  /** Son sürüm kontrolünün anı, ISO. Her açılışta GitHub'a gitmemek için diskte. */
+  lastUpdateCheckAt?: string;
+  /**
+   * Kullanıcının "şimdilik geç" dediği sürüm. Bundan sonrası yine soruluyor —
+   * bir sürümü atlamak güncellemeleri büsbütün kapatmak anlamına gelmemeli.
+   */
+  skippedUpdateVersion?: string;
 }
 
 let cache: StoreShape | null = null;
@@ -122,6 +132,8 @@ function load(): StoreShape {
     repoSettings: parsed.repoSettings ?? {},
     collapsedGroups: parsed.collapsedGroups ?? [],
     lastActivityDigestAt: parsed.lastActivityDigestAt,
+    lastUpdateCheckAt: parsed.lastUpdateCheckAt,
+    skippedUpdateVersion: parsed.skippedUpdateVersion,
   };
 
   /*
@@ -199,6 +211,28 @@ export function getLastActivityDigestAt(): Date | null {
 
 export function setLastActivityDigestAt(at: Date): void {
   load().lastActivityDigestAt = at.toISOString();
+  persist();
+}
+
+/** Son sürüm kontrolünün anı; hiç yapılmadıysa null. */
+export function getLastUpdateCheckAt(): Date | null {
+  const value = load().lastUpdateCheckAt;
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function setLastUpdateCheckAt(at: Date): void {
+  load().lastUpdateCheckAt = at.toISOString();
+  persist();
+}
+
+export function getSkippedUpdateVersion(): string | null {
+  return load().skippedUpdateVersion ?? null;
+}
+
+export function setSkippedUpdateVersion(version: string): void {
+  load().skippedUpdateVersion = version;
   persist();
 }
 

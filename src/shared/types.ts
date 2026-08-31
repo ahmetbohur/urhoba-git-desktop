@@ -422,6 +422,27 @@ export interface Diagnostics {
   logPath: string;
 }
 
+/**
+ * Yeni sürüm kontrolünün sonucu.
+ *
+ * "Bilmiyoruz" ile "yok" ayrı: `latestVersion` null iken hiç kontrol
+ * yapılamamış demek, `updateAvailable` false iken ise kontrol edildi ve
+ * güncelleme yok demek. Arayüz ikisini farklı gösteriyor.
+ */
+export interface UpdateStatus {
+  currentVersion: string;
+  /** GitHub'daki en son yayın; ulaşılamadıysa null. */
+  latestVersion: string | null;
+  /** Yenisi var ve kullanıcı onu atlamamış. */
+  updateAvailable: boolean;
+  releaseUrl: string | null;
+  releaseNotes: string | null;
+  publishedAt: string | null;
+  checkedAt: string | null;
+  /** Kontrol denendi ama ulaşılamadı; başarılı kontrolde null. */
+  error: string | null;
+}
+
 export interface GithubUser {
   login: string;
   name: string | null;
@@ -736,6 +757,12 @@ export interface AppSettings {
    * istemediği bir bildirimle karşılaşmamalı.
    */
   activityAuto: boolean;
+  /**
+   * Yeni sürüm için GitHub'a bakılsın mı. Varsayılan açık, ama kapatılabilir:
+   * uygulamanın dışarıyla konuştuğu tek yer AI ve bu; sessiz bir ağ isteği
+   * bırakmak doğru olmaz.
+   */
+  updateCheck: boolean;
   lastOpenedRepoId: string | null;
 }
 
@@ -780,4 +807,6 @@ export type AppEvent =
   | { type: 'autopull:result'; result: AutoPullResult }
   | { type: 'clone:progress'; progress: CloneProgress }
   /** Bildirime tıklanınca arayüz etkinlik penceresini açıyor. */
-  | { type: 'activity:open' };
+  | { type: 'activity:open' }
+  /** Arka plan kontrolü yeni sürüm buldu; rozet beklemeden çıksın. */
+  | { type: 'update:available'; status: UpdateStatus };

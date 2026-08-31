@@ -27,6 +27,7 @@ import type {
   SshEnvironment,
   Stash,
   Tag,
+  UpdateStatus,
   WorkingTreeStatus,
 } from '@shared/types';
 
@@ -268,6 +269,20 @@ export function useGithubRepos(query: string, enabled: boolean) {
  * depoya bağlı olmayan yerlerde gereken de o. Anahtar depoyu içeriyor; aksi
  * hâlde bir depoda okunan durum diğerinde önbellekten dönerdi.
  */
+/**
+ * Bilinen sürüm durumu.
+ *
+ * Sorgu ağa gitmiyor; ana süreçteki son kontrolün sonucunu okuyor. Kontrolün
+ * kendisi zamanlayıcıya bağlı — arayüzün her açılışında GitHub'a gitmek
+ * gereksiz istek demek.
+ */
+export function useUpdateStatus() {
+  return useQuery<UpdateStatus>({
+    queryKey: ['update-status'],
+    queryFn: () => invoke('app:update-status', undefined),
+  });
+}
+
 export function useAiStatus(repoId: string | null = null) {
   return useQuery<AiStatus>({
     queryKey: ['ai-status', repoId],

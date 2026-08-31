@@ -36,6 +36,7 @@ import { buildSidebarRows, type SidebarRow } from '../lib/repo-tree';
 import { relativeTime } from '../lib/format';
 import { useUi } from '../stores/ui';
 import { Badge, Button, EmptyState, SectionLabel, Spinner } from './primitives';
+import { UpdateBanner } from './UpdateBanner';
 import { CloneDialog } from './dialogs/CloneDialog';
 import { ScanDialog } from './dialogs/ScanDialog';
 import { RepoTagsDialog } from './dialogs/RepoTagsDialog';
@@ -525,6 +526,8 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
           </div>
         )}
       </div>
+
+      <UpdateBanner />
 
       <CloneDialog open={cloneOpen} onOpenChange={setCloneOpen} />
       <ScanDialog open={scanOpen} onOpenChange={setScanOpen} />

@@ -45,6 +45,7 @@ import type {
   SshTestResult,
   Stash,
   Tag,
+  UpdateStatus,
   WorkingTreeStatus,
 } from './types';
 
@@ -249,6 +250,7 @@ export const inputSchemas = {
     sideBySideDiff: z.boolean().optional(),
     activityPeriod: z.enum(['1h', '6h', '24h', '7d']).optional(),
     activityAuto: z.boolean().optional(),
+    updateCheck: z.boolean().optional(),
     lastOpenedRepoId: z.string().nullable().optional(),
     defaults: z
       .object({
@@ -292,6 +294,11 @@ export const inputSchemas = {
   'app:autostart-get': z.undefined(),
   'app:autostart-set': z.object({ enabled: z.boolean() }),
   'app:open-logs': z.undefined(),
+  // Bilinen durum: ağa gitmiyor, rozet ve Hakkında penceresi bunu okuyor.
+  'app:update-status': z.undefined(),
+  // Kullanıcı açıkça sorduğunda: ağa gidiyor, aralığa bakmıyor.
+  'app:update-check': z.undefined(),
+  'app:update-skip': z.object({ version: z.string().min(1).max(64) }),
 
   // --- AI ---
   // Depo verilmezse genel varsayılan durum dönüyor: gruplama gibi tek bir
@@ -443,6 +450,9 @@ export interface IpcOutputs {
   'app:autostart-get': AutostartStatus;
   'app:autostart-set': AutostartStatus;
   'app:open-logs': void;
+  'app:update-status': UpdateStatus;
+  'app:update-check': UpdateStatus;
+  'app:update-skip': UpdateStatus;
 
   'ai:status': AiStatus;
   'ai:models': string[];

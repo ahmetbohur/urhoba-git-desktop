@@ -187,9 +187,7 @@ export function SettingsDialog({
                 onClick={() => setScope(id)}
                 className={cn(
                   'flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-[12px] font-medium',
-                  scope === id
-                    ? 'bg-surface text-ink shadow-sm'
-                    : 'text-ink-2 hover:text-ink',
+                  scope === id ? 'bg-surface text-ink shadow-sm' : 'text-ink-2 hover:text-ink',
                 )}
               >
                 <Icon className="size-3.5" />
@@ -282,12 +280,16 @@ export function SettingsDialog({
               <section>
                 <SectionLabel>{t('Uzak sunucu davranışı')}</SectionLabel>
                 <p className="mt-1 text-[11px] text-ink-2">
-                  {t('Bütün depolar için geçerli. Bir depo istediği ayarı kendisi için değiştirebilir.')}
+                  {t(
+                    'Bütün depolar için geçerli. Bir depo istediği ayarı kendisi için değiştirebilir.',
+                  )}
                 </p>
                 <div className="mt-1 divide-y divide-line-soft">
                   <PlainToggle
                     label={t('Arka planda fetch')}
-                    hint={t('Uzak dalın kaç commit ilerde olduğunu tazeler; yerel dosyalara dokunmaz.')}
+                    hint={t(
+                      'Uzak dalın kaç commit ilerde olduğunu tazeler; yerel dosyalara dokunmaz.',
+                    )}
                     checked={settings.defaults.autoFetch}
                     onCheckedChange={(autoFetch) => saveDefaults({ autoFetch })}
                   />
@@ -336,9 +338,25 @@ export function SettingsDialog({
                 <div className="mt-1 divide-y divide-line-soft">
                   <PlainToggle
                     label={t('Kendiliğinden çıkar ve bildir')}
-                    hint={t('Aralık dolduğunda özet arka planda hazırlanır ve bildirim gösterilir. Hareket yoksa bildirim çıkmaz.')}
+                    hint={t(
+                      'Aralık dolduğunda özet arka planda hazırlanır ve bildirim gösterilir. Hareket yoksa bildirim çıkmaz.',
+                    )}
                     checked={settings.activityAuto}
                     onCheckedChange={(activityAuto) => saveApp.mutate({ activityAuto })}
+                  />
+                </div>
+              </section>
+
+              <section>
+                <SectionLabel>{t('Güncelleme')}</SectionLabel>
+                <div className="mt-1 divide-y divide-line-soft">
+                  <PlainToggle
+                    label={t('Yeni sürümü GitHub’dan kontrol et')}
+                    hint={t(
+                      'Günde bir kez yayın sayfasına bakılır ve yenisi varsa listenin altında bir şerit çıkar. Uygulama hiçbir şey indirmez.',
+                    )}
+                    checked={settings.updateCheck}
+                    onCheckedChange={(updateCheck) => saveApp.mutate({ updateCheck })}
                   />
                 </div>
               </section>
@@ -373,14 +391,18 @@ export function SettingsDialog({
               <section>
                 <SectionLabel>{t('Bu depoya özel')}</SectionLabel>
                 <p className="mt-1 text-[11px] text-ink-2">
-                  {t('“Genel” seçili kaldığı sürece ayar genel varsayılanı izler; genel ayarı değiştirdiğinde bu depo da güncellenir.')}
+                  {t(
+                    '“Genel” seçili kaldığı sürece ayar genel varsayılanı izler; genel ayarı değiştirdiğinde bu depo da güncellenir.',
+                  )}
                 </p>
                 {repoSettings && (
                   <>
                     <div className="mt-1 divide-y divide-line-soft">
                       <ScopedToggle
                         label={t('Arka planda fetch')}
-                        hint={t('Uzak dalın kaç commit ilerde olduğunu tazeler; yerel dosyalara dokunmaz.')}
+                        hint={t(
+                          'Uzak dalın kaç commit ilerde olduğunu tazeler; yerel dosyalara dokunmaz.',
+                        )}
                         value={repoSettings.autoFetch}
                         inheritedValue={settings.defaults.autoFetch}
                         isOverridden={repoSettings.overrides.autoFetch}
@@ -395,9 +417,7 @@ export function SettingsDialog({
                         onChange={(enabled) =>
                           saveRepo.mutate({
                             autoPull:
-                              enabled === null
-                                ? null
-                                : { ...settings.defaults.autoPull, enabled },
+                              enabled === null ? null : { ...settings.defaults.autoPull, enabled },
                           })
                         }
                       />

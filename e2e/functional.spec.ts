@@ -258,3 +258,122 @@ test('satır bazlı hazırlama yalnızca seçilen satırı commit’liyor', asyn
   expect(staged).toContain('+BİR');
   expect(staged).not.toContain('+ÜÇ');
 });
+
+test('sürüm kontrolü GitHub’a gidip gerçek yayını buluyor', async () => {
+  /*
+   * Ağa gerçekten çıkıyor. Sürüm kontrolünün kırıldığı yer istekten çok
+   * ayrıştırma oluyor: etiket `v1.2.0`, çalışan sürüm `1.2.0` ve baştaki harf
+   * unutulduğunda uygulama sonsuza kadar "yeni sürüm var" der.
+   */
+  const status = await call<{
+    currentVersion: string;
+    latestVersion: string | null;
+    updateAvailable: boolean;
+    releaseUrl: string | null;
+    error: string | null;
+  }>('app:update-check', undefined);
+
+  /*
+   * Ağ yoksa test atlanıyor, geçmiyor: sessizce geçen bir ağ testi hiçbir şey
+   * doğrulamadığı hâlde yeşil görünür.
+   */
+  test.skip(status.error !== null, `GitHub'a ulaşılamadı: ${status.error}`);
+
+  expect(status.latestVersion).toMatch(/^\d+\.\d+\.\d+$/);
+  expect(status.releaseUrl).toContain('urhoba-git-desktop/releases');
+
+  /*
+   * Yayındaki sürümü çalıştırırken rozet çıkmamalı, eskisini çalıştırırken
+   * çıkmalı. Karşılaştırma burada elle yazılıyor — testin uygulamanın kendi
+   * mantığını çağırıp kendini doğrulaması bir şey kanıtlamaz.
+   */
+  const parse = (value: string) => value.split('.').map(Number);
+  const compare = (a: number[], b: number[]) => {
+    for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+      const diff = (a[index] ?? 0) - (b[index] ?? 0);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  };
+  const newer = compare(parse(status.latestVersion as string), parse(status.currentVersion)) > 0;
+  expect(status.updateAvailable).toBe(newer);
+});
+
+test('atlanan sürüm bir daha bildirilmiyor', async () => {
+  // Gerçek yayından bağımsız: kullanıcının "geç" demesi kalıcı olmalı ve
+  // ağa yeniden gitmeden okunabilmeli.
+  const before = await call<{ currentVersion: string }>('app:update-status', undefined);
+  const [major] = before.currentVersion.split('.').map(Number);
+
+  await call('app:update-skip', { version: `${major + 5}.0.0` });
+  const after = await call<{ updateAvailable: boolean }>('app:update-status', undefined);
+  expect(after.updateAvailable).toBe(false);
+});
+
+test('yeni sürüm bulununca şerit çıkıyor ve “geç” onu kaldırıyor', async () => {
+  /*
+   * Uygulamanın kendi sürümü yayındakiyle aynı olduğu sürece şerit hiç
+   * çıkmıyor; dolayısıyla normal koşuda çizim yolu hiç denenmemiş oluyor.
+   * Burada ana süreçteki `fetch` teste özel olarak değiştiriliyor — üretim
+   * kodunda test için bir kapı açmak yerine testin kendi ortamı taklit ediliyor.
+   *
+   * Sahte etiket çalışan sürümden hesaplanıyor, sabit yazılmıyor: bu testte
+   * uygulama paketlenmemiş olarak açıldığı için `app.getVersion()` Electron'un
+   * sürümünü (44.x) döndürüyor, paketlenmiş uygulamada ise 1.x. Sabit bir
+   * etiket ikisinden birinde yanlış tarafta kalırdı.
+   */
+  const before = await call<{ currentVersion: string }>('app:update-status', undefined);
+  const nextMajor = Number(before.currentVersion.split('.')[0]) + 1;
+  const tag = `v${nextMajor}.0.0`;
+
+  await app.evaluate((_electron, fakeTag) => {
+    (globalThis as { fetch: unknown }).fetch = () =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            tag_name: fakeTag,
+            html_url: 'https://example.invalid/releases/tag/' + fakeTag,
+            body: 'Sahte yayın',
+            published_at: '2030-01-01T00:00:00Z',
+            draft: false,
+            prerelease: false,
+          }),
+      });
+  }, tag);
+
+  // Önceki test bir sürümü atlamıştı; o kayıt bunu bastırmasın.
+  await call('app:update-skip', { version: '0.0.0' });
+
+  const version = `${nextMajor}.0.0`;
+  const status = await call<{ updateAvailable: boolean; latestVersion: string | null }>(
+    'app:update-check',
+    undefined,
+  );
+  expect(status).toMatchObject({ updateAvailable: true, latestVersion: version });
+
+  /*
+   * Hakkında penceresi menüden açılıyor ve kontrol oradan tetikleniyor:
+   * kullanıcının gerçekten izlediği yol bu. IPC'yi doğrudan çağırmak arayüzün
+   * sonucu çizip çizmediğini hiç denemezdi.
+   */
+  await app.evaluate(({ Menu }) => {
+    const items = (Menu.getApplicationMenu()?.items ?? []).flatMap(
+      (item) => item.submenu?.items ?? [],
+    );
+    items.find((item) => item.label.includes('Hakkında'))?.click();
+  });
+
+  await page.getByRole('button', { name: 'Şimdi kontrol et' }).click();
+  await expect(page.getByText(`Sürüm ${version} çıktı`).first()).toBeVisible();
+
+  // Pencere kapanınca şerit kenar çubuğunda kalmalı.
+  await page.keyboard.press('Escape');
+  const banner = page.getByText(`Sürüm ${version} çıktı`);
+  await expect(banner).toBeVisible();
+
+  // "Geç" dedikten sonra bir daha çıkmamalı.
+  await page.getByRole('button', { name: 'Bu sürümü geç' }).click();
+  await expect(banner).toHaveCount(0);
+});

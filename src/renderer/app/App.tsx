@@ -77,12 +77,19 @@ function useAppEvents(onShowAbout: () => void): void {
             }
             break;
           }
+          /*
+            Arka plan kontrolü yeni sürüm buldu. Bildirim çıkarmıyoruz;
+            sorgu tazeleniyor, rozet kendiliğinden görünüyor.
+          */
+          case 'update:available':
+            client.setQueryData(['update-status'], event.status);
+            break;
           case 'clone:progress':
             // Klonlama ilerlemesini diyaloğun kendisi dinliyor.
             break;
         }
       }),
-    [client, pushCommandLog, recordAutoPull, toast, t, onShowAbout],
+    [client, pushCommandLog, recordAutoPull, toast, t, onShowAbout, setActivityOpen],
   );
 }
 
@@ -144,9 +151,8 @@ export function App() {
   useEffect(() => {
     if (activeRepoId || !repos || repos.length === 0) return;
     const remembered = settings?.lastOpenedRepoId;
-    const fallback = remembered && repos.some((repo) => repo.id === remembered)
-      ? remembered
-      : repos[0].id;
+    const fallback =
+      remembered && repos.some((repo) => repo.id === remembered) ? remembered : repos[0].id;
     setActiveRepo(fallback);
   }, [repos, settings, activeRepoId, setActiveRepo]);
 
@@ -210,7 +216,9 @@ export function App() {
             <EmptyState
               icon={<FolderGit2 className="size-6" />}
               title="Urhoba Git Desktop"
-              description={t('Başlamak için soldan bir depo ekle ya da uzak bir depoyu klonla. Komut paletini Ctrl/Cmd + K ile açabilirsin.')}
+              description={t(
+                'Başlamak için soldan bir depo ekle ya da uzak bir depoyu klonla. Komut paletini Ctrl/Cmd + K ile açabilirsin.',
+              )}
             />
           )}
         </main>

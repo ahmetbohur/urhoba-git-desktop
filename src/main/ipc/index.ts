@@ -9,6 +9,7 @@ import * as merge from '../git/merge';
 import * as autostart from '../services/autostart';
 import * as ai from '../ai/service';
 import * as diagnostics from '../services/diagnostics';
+import * as updateCheck from '../services/update-check';
 import { buildMenu } from '../services/menu';
 import * as github from '../github/provider';
 import * as deviceFlow from '../github/device-flow';
@@ -372,6 +373,9 @@ const handlers: Handlers = {
   'app:autostart-get': () => autostart.getStatus(),
   'app:autostart-set': ({ enabled }) => autostart.setEnabled(enabled),
   'app:open-logs': () => diagnostics.openLogFolder(),
+  'app:update-status': () => updateCheck.getUpdateStatus(),
+  'app:update-check': () => updateCheck.checkForUpdate(),
+  'app:update-skip': ({ version }) => updateCheck.skipUpdate(version),
 
   // --- AI ---
   'ai:status': (input) => ai.getStatusSummary(input.repoId),

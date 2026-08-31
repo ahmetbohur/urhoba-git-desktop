@@ -8,6 +8,7 @@ import { buildMenu } from './services/menu';
 import { initializeUpdates } from './services/updater';
 import * as autopull from './services/autopull';
 import { startActivitySchedule, stopActivitySchedule } from './services/activity-schedule';
+import { startUpdateSchedule, stopUpdateSchedule } from './services/update-check';
 import * as store from './services/store';
 import { stopWatching } from './services/watcher';
 
@@ -156,6 +157,7 @@ app.on('ready', () => {
   nativeTheme.themeSource = store.getSettings().theme;
   autopull.reconcileSchedules();
   startActivitySchedule();
+  startUpdateSchedule();
   initializeUpdates();
 
   createWindow();
@@ -172,5 +174,6 @@ app.on('activate', () => {
 app.on('before-quit', () => {
   autopull.stopAll();
   stopActivitySchedule();
+  stopUpdateSchedule();
   void stopWatching();
 });
