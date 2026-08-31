@@ -119,8 +119,16 @@ test('QA taraması', async () => {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(500);
 
+  // Etkinlik özeti koyu temada
+  await page.getByRole('button', { name: 'Etkinlik özeti' }).first().click();
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: `${SHOT_DIR}/08-koyu-etkinlik.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(500);
+
   await page.getByLabel('Ayarlar').click();
   await page.waitForTimeout(1200);
+  await page.screenshot({ path: `${SHOT_DIR}/09-koyu-genel-ayarlar.png` });
   await page.getByRole('tab', { name: 'Bu depo' }).click();
   await page.waitForTimeout(700);
   await page.screenshot({ path: `${SHOT_DIR}/07-koyu-depo-ayarlari.png` });
