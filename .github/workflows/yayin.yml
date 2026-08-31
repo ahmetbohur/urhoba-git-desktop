@@ -152,6 +152,11 @@ jobs:
       - name: Release'e yükle
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Bu işte `actions/checkout` yok — yalnızca artefaktları yüklüyor.
+          # `gh` deposunu git uzak sunucusundan çıkarıyor ve git deposu
+          # olmayan bir dizinde "base repo" belirleyemeyip düşüyor. Depoyu
+          # klonlamak yerine adını doğrudan veriyoruz.
+          GH_REPO: ${{ github.repository }}
         # Release varsa üzerine ekliyor, yoksa taslak olarak açıyor: notları
         # otomatik üretilen bir metinle değiştirmesin.
         run: |
@@ -230,6 +235,7 @@ jobs:
       - name: Release'e ekle
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           mkdir -p yayin
           find out/make -type f -name '*.zip' -exec cp {} yayin/ \;
