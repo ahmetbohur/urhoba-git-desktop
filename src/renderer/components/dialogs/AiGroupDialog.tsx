@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Sparkles } from 'lucide-react';
+import { Check, MessageSquare, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { useT } from '../../i18n';
 import { errorMessage, invoke } from '../../lib/ipc';
@@ -28,11 +28,18 @@ export function AiGroupDialog({
   const { data: status } = useAiStatus();
   const [suggestions, setSuggestions] = useState<GroupSuggestion[] | null>(null);
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
+  /*
+   * Kullanıcının yazdığı istekler birikiyor ve her seferinde hepsi birden
+   * gönderiliyor. Modelin kendi önceki çıktısını geri beslemek onu ona
+   * bağlıyor; "şunu da böl" dendiğinde eski hatayı taşımaya devam ediyordu.
+   */
+  const [instructions, setInstructions] = useState<string[]>([]);
+  const [draft, setDraft] = useState('');
   const client = useQueryClient();
   const toast = useUi((s) => s.toast);
 
   const ask = useMutation({
-    mutationFn: () => invoke('ai:suggest-groups', undefined),
+    mutationFn: (wanted: string[]) => invoke('ai:suggest-groups', { instructions: wanted }),
     onSuccess: (result) => {
       setSuggestions(result);
       setAccepted(new Set(result.map((suggestion) => suggestion.group)));
@@ -40,6 +47,16 @@ export function AiGroupDialog({
     onError: (error) =>
       toast({ kind: 'error', title: t('Öneri alınamadı'), description: errorMessage(error) }),
   });
+
+  /** İsteği listeye ekleyip yeni öneri ister. */
+  const send = () => {
+    const line = draft.trim();
+    if (line.length === 0) return;
+    const wanted = [...instructions, line];
+    setInstructions(wanted);
+    setDraft('');
+    ask.mutate(wanted);
+  };
 
   const apply = useMutation({
     mutationFn: () =>
@@ -72,7 +89,7 @@ export function AiGroupDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={t('AI ile grupla')}
-      description={t('Yalnızca depo adları gönderilir; kod gönderilmez.')}
+      description={t('Depo adları ve yazdığın istekler gönderilir; kod gönderilmez.')}
       width="lg"
       footer={
         <>
@@ -104,7 +121,7 @@ export function AiGroupDialog({
               {t('Depo adlarına bakıp anlamlı kümeler önerir. Klasör yapısının yakalayamadığı benzerlikleri bulur.')}
             </p>
             {status.isLocal && <Badge tone="ok">{t('yerel model — veri dışarı çıkmıyor')}</Badge>}
-            <Button variant="primary" loading={ask.isPending} onClick={() => ask.mutate()}>
+            <Button variant="primary" loading={ask.isPending} onClick={() => ask.mutate([])}>
               <Sparkles className="size-3.5" />
               {t('Öneri iste')}
             </Button>
@@ -155,6 +172,48 @@ export function AiGroupDialog({
                 );
               })}
             </ul>
+
+            <div className="flex flex-col gap-2 border-t border-line-soft pt-3">
+              {instructions.length > 0 && (
+                <ul className="flex flex-col gap-1">
+                  {instructions.map((line, index) => (
+                    <li
+                      key={`${index}-${line}`}
+                      className="flex items-start gap-1.5 text-[11px] text-ink-2"
+                    >
+                      <MessageSquare className="mt-0.5 size-3 shrink-0 text-ink-3" />
+                      <span className="min-w-0 flex-1">{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="flex gap-2">
+                <input
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' || draft.trim().length === 0) return;
+                    event.preventDefault();
+                    send();
+                  }}
+                  placeholder={t('Örn. backend’leri ayrı grupla')}
+                  aria-label={t('Gruplama isteği')}
+                  className="selectable h-8 w-full rounded-md border border-line bg-ground px-2 text-[12px] text-ink placeholder:text-ink-3 focus-visible:border-accent"
+                />
+                <Button
+                  variant="secondary"
+                  loading={ask.isPending}
+                  disabled={draft.trim().length === 0}
+                  onClick={send}
+                >
+                  {t('Gönder')}
+                </Button>
+              </div>
+              <p className="text-[11px] text-ink-3">
+                {t('İsteklerin birikiyor; model hepsine birden uyuyor.')}
+              </p>
+            </div>
           </>
         )}
       </div>

@@ -417,7 +417,7 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
                 <Sparkles className="mt-0.5 size-3.5 shrink-0 text-ink-3" />
                 <span>
                   <span className="block text-[13px] text-ink">{t('AI ile grupla…')}</span>
-                  <span className="block text-[11px] text-ink-3">{t('Yalnızca depo adları gönderilir')}</span>
+                  <span className="block text-[11px] text-ink-3">{t('Depo adları gönderilir, kod gönderilmez')}</span>
                 </span>
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-1 h-px bg-line-soft" />

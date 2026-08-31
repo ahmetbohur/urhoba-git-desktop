@@ -48,6 +48,13 @@ export const en: Record<string, string> = {
   'AI yardımı': 'AI assistance',
   'Etkinlik özeti': 'Activity summary',
   'AI ile özetle': 'Summarise with AI',
+  'Depo adları ve yazdığın istekler gönderilir; kod gönderilmez.':
+    'Repository names and the requests you type are sent; no code is sent.',
+  'Gruplama isteği': 'Grouping request',
+  'Depo adları gönderilir, kod gönderilmez': 'Repository names are sent, no code',
+  'Örn. backend’leri ayrı grupla': 'e.g. group the backends separately',
+  'İsteklerin birikiyor; model hepsine birden uyuyor.':
+    'Your requests accumulate; the model follows all of them at once.',
   'Kendiliğinden çıkar ve bildir': 'Produce automatically and notify',
   'Aralık dolduğunda özet arka planda hazırlanır ve bildirim gösterilir. Hareket yoksa bildirim çıkmaz.':
     'When the period elapses the summary is prepared in the background and a notification is shown. No activity, no notification.',

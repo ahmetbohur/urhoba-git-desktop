@@ -304,7 +304,10 @@ export const inputSchemas = {
   }),
   'ai:suggest-commit': repoId,
   'ai:suggest-description': repoId,
-  'ai:suggest-groups': z.undefined(),
+  // İstekler biriken bir liste; model her seferinde hepsine birden uyuyor.
+  'ai:suggest-groups': z.object({
+    instructions: z.array(z.string().max(500)).max(6).optional(),
+  }),
   // Özet zaten toplanmış durumda; yeniden taramak yerine olduğu gibi gönderiliyor.
   'ai:summarize-activity': z.object({ period: z.enum(['1h', '6h', '24h', '7d']) }),
   'ai:apply-groups': z.object({

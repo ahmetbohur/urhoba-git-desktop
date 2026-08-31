@@ -127,8 +127,23 @@ test('Ollama ile commit mesajı, tanıtım ve gruplama önerisi', async () => {
     await page.evaluate((repo) => window.urhoba.invoke('repo:add', { path: repo }), dir);
   }
 
-  const groups = await page.evaluate(() => window.urhoba.invoke('ai:suggest-groups', undefined));
+  const groups = await page.evaluate(() => window.urhoba.invoke('ai:suggest-groups', {}));
   console.log('GRUPLAR:', JSON.stringify(groups, null, 1));
+
+  // --- İstekle yönlendirilmiş gruplama ---
+  const yonlendirilmis = await page.evaluate(() =>
+    window.urhoba.invoke('ai:suggest-groups', {
+      instructions: ['hepsini tek bir grupta topla', 'grubun adı "Tümü" olsun'],
+    }),
+  );
+  console.log('İSTEKLİ GRUPLAR:', JSON.stringify(yonlendirilmis));
+  // Modelin isteğe uyup uymadığını cümle cümle denetlemiyoruz; biçimin
+  // bozulmadığını ve geçerli depo adları döndüğünü doğruluyoruz.
+  expect(Array.isArray(yonlendirilmis)).toBe(true);
+  for (const oneri of yonlendirilmis) {
+    expect(oneri.group.length).toBeGreaterThan(0);
+    expect(oneri.repoIds.length).toBeGreaterThan(0);
+  }
   expect(Array.isArray(groups)).toBe(true);
   // Model bulmaca oyunlarını bir araya getirebilmeli; en azından bir grup
   // önermesini ve önerdiği depoların gerçekten var olmasını bekliyoruz.

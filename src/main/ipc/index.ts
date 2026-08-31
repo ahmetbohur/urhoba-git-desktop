@@ -385,7 +385,7 @@ const handlers: Handlers = {
     const repo = activateRepo(repoId);
     return ai.suggestDescription(repo.id, repo.path, repo.name);
   },
-  'ai:suggest-groups': () => ai.suggestGroups(),
+  'ai:suggest-groups': ({ instructions }) => ai.suggestGroups(instructions ?? []),
   'ai:summarize-activity': async ({ period }) =>
     ai.summarizeActivity(await activity.collectActivity(period)),
   'ai:apply-groups': ({ assignments }) => {

@@ -149,7 +149,8 @@ açıksa üstüne bir paragraflık özet ekler. İstersen kendiliğinden çıkar
 bildirim gösterir.
 
 **AI yardımı (isteğe bağlı, varsayılan kapalı)** — Commit mesajı, depo tanıtımı
-ve gruplama önerisi; Ollama (yerel), OpenAI veya Claude ile.
+ve gruplama önerisi; Ollama (yerel), OpenAI veya Claude ile. Gruplamada
+istediğini yazarak öneriyi yönlendirebilirsin ("backend'leri ayrı grupla").
 
 **Commit imzaları** — İmzalı commit'lerde doğrulama durumu görünür.
 

@@ -401,9 +401,27 @@ const GROUP_SYSTEM = [
   'Yalnızca JSON dizisi döndür, başka hiçbir şey yazma.',
   'Biçim: [{"group":"grup adı","repos":["depo adı","depo adı"]}]',
   'Emin olamadığın depoları hiçbir gruba koyma.',
+  'Kullanıcı ek istek yazdıysa onlara uy; biçim kuralı her durumda geçerli.',
 ].join(' ');
 
-export async function suggestGroups(): Promise<GroupSuggestion[]> {
+/**
+ * Kullanıcının biriktirdiği istek sayısı için üst sınır.
+ *
+ * Gruplama uzun bir müzakere değil; sınırsız birikme hem istemi şişiriyor hem
+ * de eski isteklerin yenileriyle çelişmesine yol açıyor.
+ */
+const MAX_GROUP_INSTRUCTIONS = 6;
+
+/**
+ * Gruplama önerisi.
+ *
+ * Kullanıcının istekleri sohbet dökümü olarak değil, biriken bir liste olarak
+ * gönderiliyor: model her seferinde bütün kısıtlarla baştan türetiyor. Kendi
+ * önceki çıktısını geri beslemek onu ona bağlıyor ve "şunu da böl" dendiğinde
+ * eski hatayı taşımaya devam ediyordu. Ayrıca istemci sözleşmesi tek turlu;
+ * çok turlu mesaj üç sağlayıcının üçünde de ayrı biçim demek.
+ */
+export async function suggestGroups(instructions: string[] = []): Promise<GroupSuggestion[]> {
   const settings = store.getSettings().ai;
   // Gruplama bütün depoları birden ilgilendiriyor; tek bir deponun ayarına
   // bakmak anlamsız olurdu, genel varsayılan geçerli.
@@ -414,9 +432,24 @@ export async function suggestGroups(): Promise<GroupSuggestion[]> {
   const repos: Repo[] = store.getRepos();
   if (repos.length === 0) return [];
 
-  const user = repos
+  const listed = repos
     .map((repo) => `${repo.name}  (${repo.groupName ?? 'gruplanmamış'})`)
     .join('\n');
+
+  const wanted = instructions
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .slice(-MAX_GROUP_INSTRUCTIONS);
+
+  const user =
+    wanted.length === 0
+      ? listed
+      : [
+          listed,
+          '',
+          'Kullanıcının istekleri (hepsine birden uy):',
+          ...wanted.map((line, index) => `${index + 1}. ${line}`),
+        ].join('\n');
 
   const raw = await clientFor(settings).complete(
     { system: GROUP_SYSTEM, user, maxTokens: 1200 },
