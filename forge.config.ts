@@ -242,7 +242,12 @@ const config: ForgeConfig = {
       name: 'urhoba-git-desktop',
       setupIcon: 'assets/icon.ico',
     }),
-    new MakerZIP({}, ['darwin']),
+    /*
+     * Windows'ta da zip üretiliyor. Squirrel yükleyicisi imza olmadan
+     * SmartScreen'e takılıyor ve kurulum akışı kullanıcıyı daha çok uğraştırıyor;
+     * arşivi açıp çalıştırmak imzasız dağıtımda daha dürüst bir teslim biçimi.
+     */
+    new MakerZIP({}, ['darwin', 'win32']),
     ...(hasRpmbuild ? [new MakerRpm({
       options: {
         name: 'urhoba-git-desktop',

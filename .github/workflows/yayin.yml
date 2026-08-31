@@ -1,0 +1,144 @@
+name: Yayın
+
+# Etiket atıldığında üç platformda paketleyip release'e yükler.
+# macOS paketleri imzalanıp noter onayından geçer; gizli anahtarlar tanımlı
+# değilse imzasız üretilir ve iş kırılmaz.
+on:
+  push:
+    tags: ['v*']
+  # Etiket atmadan denemek için elle de başlatılabiliyor.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  paketle:
+    name: ${{ matrix.ad }}
+    runs-on: ${{ matrix.os }}
+    # Sertifika iş düzeyinde tanımlanıyor: `secrets` bağlamı adım koşullarında
+    # okunamıyor, `env` okunabiliyor. Gizli anahtar tanımsızsa imzalama adımı
+    # atlanıyor ve imzasız paket üretiliyor.
+    env:
+      APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+    strategy:
+      # Bir platform çuvallarsa diğerlerinin çıktısı yine de elimizde olsun.
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            ad: Linux x64
+            node: 24
+          - os: macos-latest
+            ad: macOS arm64
+            node: 24
+          # macos-13 Intel; macos-latest arm64. İkisi ayrı paket gerektiriyor.
+          - os: macos-13
+            ad: macOS x64
+            # Intel macOS'ta Node 24 paketlemeyi donduruyor: paketleyicinin
+            # kullandığı extract-zip 2.0.1 (2020) Electron arşivini açarken
+            # süresiz asılı kalıyor. arm64'te olmuyor, Node 22'de olmuyor.
+            node: 22
+          - os: windows-latest
+            ad: Windows x64
+            node: 24
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # Kilit dosyası npm 11 ile üretildi; npm 10 onu reddediyor. Node 22
+      # npm 10 ile geldiği için sürümü açıkça yükseltiyoruz.
+      - name: npm sürümünü sabitle
+        shell: bash
+        run: npm i -g npm@11
+
+      - run: npm ci
+
+      # Sertifika geçici bir anahtarlığa alınıyor; koşucu zaten her işten sonra
+      # yok ediliyor ama anahtarlık iş bitmeden de silinsin diye ayrı adım var.
+      - name: İmza sertifikasını yükle
+        if: startsWith(matrix.os, 'macos') && env.APPLE_CERTIFICATE_P12 != ''
+        env:
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/imza.keychain-db"
+          PAROLA="$(openssl rand -base64 24)"
+          security create-keychain -p "$PAROLA" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$PAROLA" "$KEYCHAIN"
+          printf '%s' "$APPLE_CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/sertifika.p12"
+          security import "$RUNNER_TEMP/sertifika.p12" -k "$KEYCHAIN" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          # Bu satır olmadan codesign anahtara erişmek için diyalog açmaya
+          # çalışıyor ve koşucuda kimse cevaplayamadığı için iş donuyor.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$PAROLA" "$KEYCHAIN" > /dev/null
+          security list-keychain -d user -s "$KEYCHAIN" login.keychain-db
+          rm -f "$RUNNER_TEMP/sertifika.p12"
+
+      - name: Paketle
+        shell: bash
+        env:
+          APPLE_IDENTITY: ${{ secrets.APPLE_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run make
+
+      - name: Anahtarlığı sil
+        if: always() && startsWith(matrix.os, 'macos')
+        run: security delete-keychain "$RUNNER_TEMP/imza.keychain-db" || true
+
+      # Dosya adları platforma göre çakışmıyor ama artefakt adları çakışmasın.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paket-${{ matrix.os }}
+          path: |
+            out/make/**/*.deb
+            out/make/**/*.rpm
+            out/make/**/*.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  yayinla:
+    name: Release'e yükle
+    needs: paketle
+    runs-on: ubuntu-latest
+    # Elle başlatıldığında etiket yok; o durumda yalnızca artefakt üretiliyor.
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: paketler
+
+      - name: Dosyaları topla ve adlandır
+        run: |
+          mkdir -p yayin
+          # Artefaktlar iç içe klasörlerde geliyor; hepsini tek düzleme alıyoruz.
+          find paketler -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.zip' \) \
+            -exec cp {} yayin/ \;
+          cd yayin
+          # Boşluklu adlar (macOS zip'i) indirme bağlantısını çirkinleştiriyor.
+          for f in *\ *; do [ -e "$f" ] && mv "$f" "${f// /-}"; done
+          sha256sum * > SHA256SUMS
+          ls -la
+          cat SHA256SUMS
+
+      - name: Release'e yükle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Release varsa üzerine ekliyor, yoksa taslak olarak açıyor: notları
+        # otomatik üretilen bir metinle değiştirmesin.
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" yayin/* --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" yayin/* \
+              --draft --title "Urhoba Git Desktop ${GITHUB_REF_NAME#v}" \
+              --generate-notes
+          fi
