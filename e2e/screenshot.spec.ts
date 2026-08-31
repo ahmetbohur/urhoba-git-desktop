@@ -14,11 +14,113 @@ import path from 'node:path';
 const SHOT_DIR = '/tmp/urhoba-shots';
 
 /*
- * Taranacak klasör. Geliştiricinin ev dizini koda gömülüydü; başka bir
- * makinede senaryo hiçbir depo bulamıyordu. `URHOBA_SCAN_DIR` ile
- * değiştirilebiliyor.
+ * Görüntüler uydurma bir çalışma alanında üretiliyor.
+ *
+ * Önce geliştiricinin kendi depoları taranıyordu; belgelere giren görüntülerde
+ * yayınlanmamış proje adları ve ev dizini görünüyordu. Ayrıca senaryo o
+ * makineye bağlıydı — başka birinde hiçbir depo bulunamıyordu.
+ *
+ * `URHOBA_SCAN_DIR` verilirse o klasör taranıyor; verilmezse aşağıdaki demo
+ * ağacı kuruluyor.
  */
-const SCAN_DIR = process.env.URHOBA_SCAN_DIR ?? path.join(os.homedir(), 'Documents/Projects');
+let scanDir: string;
+/** Ayrıntılı görüntülerin çekildiği, geçmişi dolu demo deposu. */
+let demoRepo: string;
+let demoWorkspaceRoot: string;
+const DEMO_REPO_NAME = 'portal';
+
+function run(args: string[], cwd: string): void {
+  execFileSync('git', args, {
+    cwd,
+    env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null' },
+  });
+}
+
+function initRepo(target: string): void {
+  fs.mkdirSync(target, { recursive: true });
+  run(['init', '--initial-branch=main'], target);
+  run(['config', 'user.name', 'Demo Geliştirici'], target);
+  run(['config', 'user.email', 'demo@urhoba.test'], target);
+  run(['config', 'commit.gpgsign', 'false'], target);
+}
+
+function commit(target: string, message: string): void {
+  run(['add', '-A'], target);
+  run(['commit', '-m', message], target);
+}
+
+/**
+ * Klasör yapısından grup çıkarımının görünmesi için depolar üst klasörlere
+ * dağıtılıyor; ana demo deposuna da blame, rebase ve reflog görüntülerinin
+ * anlamlı çıkması için gerçek bir geçmiş yazılıyor.
+ */
+function createDemoWorkspace(): { root: string; main: string } {
+  // Sabit ad: rastgele sonek belgelerdeki görüntülerde gereksiz gürültü.
+  const root = path.join(os.tmpdir(), 'urhoba-demo');
+  fs.rmSync(root, { recursive: true, force: true });
+  fs.mkdirSync(root, { recursive: true });
+  const projects = path.join(root, 'Projeler');
+
+  const layout: Record<string, string[]> = {
+    'portal-base': [DEMO_REPO_NAME, 'portal-backend'],
+    mobil: ['mobil-uygulama', 'mobil-api'],
+    araclar: ['log-toplayici', 'yedekleme', 'surum-notlari'],
+  };
+
+  for (const [group, repos] of Object.entries(layout)) {
+    for (const name of repos) {
+      const target = path.join(projects, group, name);
+      initRepo(target);
+      fs.writeFileSync(path.join(target, 'README.md'), `# ${name}\n`);
+      commit(target, 'ilk kurulum');
+    }
+  }
+
+  const main = path.join(projects, 'portal-base', DEMO_REPO_NAME);
+  const write = (name: string, contents: string) =>
+    fs.writeFileSync(path.join(main, name), contents);
+
+  write('ayar.ts', 'export const timeout = 30;\nexport const retries = 3;\nexport const host = "localhost";\n');
+  commit(main, 'ayarları ayrı dosyaya taşı');
+
+  write('istemci.ts', [
+    'import { timeout } from "./ayar";',
+    '',
+    'export async function iste(yol: string) {',
+    '  const yanit = await fetch(yol, { signal: AbortSignal.timeout(timeout) });',
+    '  if (!yanit.ok) throw new Error("istek başarısız");',
+    '  return yanit.json();',
+    '}',
+    '',
+  ].join('\n'));
+  commit(main, 'istek katmanını ekle');
+
+  write('istemci.ts', [
+    'import { timeout, retries } from "./ayar";',
+    '',
+    'export async function iste(yol: string) {',
+    '  for (let deneme = 0; deneme < retries; deneme += 1) {',
+    '    const yanit = await fetch(yol, { signal: AbortSignal.timeout(timeout) });',
+    '    if (yanit.ok) return yanit.json();',
+    '  }',
+    '  throw new Error("istek başarısız");',
+    '}',
+    '',
+  ].join('\n'));
+  commit(main, 'başarısız istekleri yeniden dene');
+
+  fs.copyFileSync('assets/icon-256.png', path.join(main, 'logo.png'));
+  commit(main, 'logoyu ekle');
+
+  write('surum.ts', 'export const surum = "1.0.0";\n');
+  commit(main, 'sürüm numarasını sabitle');
+
+  // Ekranda görünecek kaydedilmemiş değişiklikler.
+  write('ayar.ts', 'export const timeout = 60;\nexport const retries = 3;\nexport const host = "127.0.0.1";\n');
+  fs.copyFileSync('assets/icon-64.png', path.join(main, 'logo.png'));
+
+  return { root, main };
+}
 
 // Bu dosya normal test koşusunun dışında; `npm run screenshots` ile çalışıyor.
 /*
@@ -28,6 +130,11 @@ const SCAN_DIR = process.env.URHOBA_SCAN_DIR ?? path.join(os.homedir(), 'Documen
 test.setTimeout(240_000);
 
 test('arayüz görüntüleri', async () => {
+  const demo = createDemoWorkspace();
+  demoWorkspaceRoot = demo.root;
+  demoRepo = demo.main;
+  scanDir = process.env.URHOBA_SCAN_DIR ?? path.join(demo.root, 'Projeler');
+
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-shot-'));
   const app = await electron.launch({
     args: ['.vite/build/main.js', `--user-data-dir=${userData}`],
@@ -38,7 +145,7 @@ test('arayüz görüntüleri', async () => {
 
   await app.evaluate(async ({ dialog }, target) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [target] });
-  }, SCAN_DIR);
+  }, scanDir);
 
   // Ekle menüsü
   await page.getByRole('button', { name: 'Ekle' }).click();
@@ -59,7 +166,7 @@ test('arayüz görüntüleri', async () => {
   await page.getByRole('button', { name: 'Vazgeç' }).click();
   await page.evaluate(
     (repo) => window.urhoba.invoke('repo:add', { path: repo }),
-    process.cwd(),
+    demoRepo,
   );
   await page.reload();
   await page.waitForLoadState('domcontentloaded');
@@ -92,26 +199,32 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(400);
 
   // Gruplu kenar çubuğu: tarama sonuçlarını uygulayıp listeye bakıyoruz.
-  await page.evaluate(async () => {
+  // `scanDir` düğüm tarafında; tarayıcı bağlamına argüman olarak geçmeli.
+  await page.evaluate(async (directory) => {
     const found = await window.urhoba.invoke('repo:scan', {
-      directory: SCAN_DIR,
+      directory,
       maxDepth: 4,
     });
     await window.urhoba.invoke('repo:add-many', {
       paths: found.slice(0, 24).map((repo) => repo.path),
     });
-  });
+  }, scanDir);
   await page.reload();
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${SHOT_DIR}/10-gruplu-liste.png` });
+
 
   // Satır geçmişi: geçmişten bir commit açıp dosyasına çift tıklıyoruz.
   // Bu yol çalışma dizininin o anki durumundan bağımsız.
   await page.getByRole('tab', { name: 'Geçmiş' }).click();
   await page.waitForTimeout(2000);
   // Commit satırları alt kenarlıklı butonlar; ilkini seçiyoruz.
-  await page.locator('button.border-b').first().click();
+  /*
+   * Çok satırlı bir dosyaya dokunan commit seçiliyor: tek satırlık bir dosyada
+   * satır geçmişi ekranı hiçbir şey anlatmıyor.
+   */
+  await page.locator('button.border-b').nth(2).click();
   await page.waitForTimeout(2000);
   /*
    * Belirli bir dosya adı aramıyoruz: son commit'in hangi dosyalara dokunduğu
@@ -163,9 +276,10 @@ test('arayüz görüntüleri', async () => {
     await page.screenshot({ path: `${SHOT_DIR}/23-imza.png` });
 
     // Sonraki adımlar asıl depoda sürüyor; seçimi geri alıyoruz.
-    await page.getByPlaceholder('Depolarda ara').fill('urhoba-git-desktop');
+    await page.getByPlaceholder('Depolarda ara').fill(DEMO_REPO_NAME);
     await page.waitForTimeout(500);
-    await page.getByText('urhoba-git-desktop').first().click();
+    // Kesin eşleşme: "portal-backend" de "portal" alt dizesini içeriyor.
+  await page.getByText(DEMO_REPO_NAME, { exact: true }).first().click();
     await page.waitForTimeout(1500);
     await page.getByPlaceholder('Depolarda ara').fill('');
     await page.waitForTimeout(500);
@@ -204,9 +318,10 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${SHOT_DIR}/24-bisect.png` });
 
-  await page.getByPlaceholder('Depolarda ara').fill('urhoba-git-desktop');
+  await page.getByPlaceholder('Depolarda ara').fill(DEMO_REPO_NAME);
   await page.waitForTimeout(500);
-  await page.getByText('urhoba-git-desktop').first().click();
+  // Kesin eşleşme: "portal-backend" de "portal" alt dizesini içeriyor.
+  await page.getByText(DEMO_REPO_NAME, { exact: true }).first().click();
   await page.waitForTimeout(1500);
   await page.getByPlaceholder('Depolarda ara').fill('');
   await page.waitForTimeout(500);
@@ -493,6 +608,8 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${SHOT_DIR}/09-koyu-ana-ekran.png` });
 
+
   await app.close();
   fs.rmSync(userData, { recursive: true, force: true });
+  fs.rmSync(demoWorkspaceRoot, { recursive: true, force: true });
 });
