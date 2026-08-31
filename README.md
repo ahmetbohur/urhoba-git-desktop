@@ -170,6 +170,17 @@ tuş her zaman çalışan tuş.
 **Git komut günlüğü** — Çalışan her git komutu, süresi ve hatası görünür. Ne
 yaptığımızı gizlemiyoruz.
 
+### Tepsi
+
+Uygulama varsayılan olarak **tepside çalışmaya devam ediyor**: pencereyi
+kapatmak onu sonlandırmıyor, böylece otomatik pull, etkinlik özeti ve sürüm
+kontrolü sürüyor. İlk kapatmada bunu söyleyen bir bildirim çıkıyor; çıkmak için
+tepsi menüsündeki **Çıkış** var. Ayarlardan tümüyle kapatılabiliyor.
+
+Bazı Linux masaüstlerinde (eklentisiz sade GNOME gibi) tepsi simgesi hiç
+görünmüyor. Simge oluşturulamazsa uygulama açılmayı sürdürüyor, yalnızca
+günlüğe bir uyarı yazıyor.
+
 ## Gizlilik
 
 - **Jetonlar arayüze hiç ulaşmaz.** GitHub jetonu ve AI anahtarları yalnızca ana

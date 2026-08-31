@@ -9,6 +9,7 @@ import { initializeUpdates } from './services/updater';
 import * as autopull from './services/autopull';
 import { startActivitySchedule, stopActivitySchedule } from './services/activity-schedule';
 import { startUpdateSchedule, stopUpdateSchedule } from './services/update-check';
+import { attachWindow, markQuitting, reconcileTray } from './services/tray';
 import * as store from './services/store';
 import { stopWatching } from './services/watcher';
 
@@ -121,6 +122,10 @@ function createWindow(): void {
 
   mainWindow.once('ready-to-show', () => mainWindow.show());
 
+  // Kapatma düğmesi tepsi açıkken pencereyi gizliyor; ayar kapalıyken
+  // dokunmuyor. Ayrıntısı `tray.ts` içinde.
+  attachWindow(mainWindow);
+
   // Uygulama içinde harici bağlantı açılmasın; sistem tarayıcısına yönlendir.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) void shell.openExternal(url);
@@ -158,20 +163,34 @@ app.on('ready', () => {
   autopull.reconcileSchedules();
   startActivitySchedule();
   startUpdateSchedule();
+  reconcileTray();
   initializeUpdates();
 
   createWindow();
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  /*
+   * Tepsi açıkken pencere zaten gizleniyor, yok edilmiyor; bu olay normalde
+   * hiç gelmiyor. Yine de gelirse (pencere başka bir yoldan yok edildiyse)
+   * uygulamayı kapatmıyoruz: tepsi simgesi duruyor ve arka plandaki işler
+   * sürüyor demek.
+   */
+  if (process.platform !== 'darwin' && !store.getSettings().tray) app.quit();
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  const existing = BrowserWindow.getAllWindows().find((window) => !window.isDestroyed());
+  // Tepsi açıkken pencere yok edilmiyor, gizleniyor: yenisini kurmak yerine
+  // olanı geri getiriyoruz, yoksa açık depo ve sekme durumu sıfırlanıyor.
+  if (existing) existing.show();
+  else createWindow();
 });
 
 app.on('before-quit', () => {
+  // Bayrak kalkmazsa pencere kapanma dinleyicisi çıkışı da engelliyor ve
+  // uygulamadan çıkmanın hiçbir yolu kalmıyor.
+  markQuitting();
   autopull.stopAll();
   stopActivitySchedule();
   stopUpdateSchedule();

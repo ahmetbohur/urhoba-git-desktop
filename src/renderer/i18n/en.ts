@@ -883,6 +883,12 @@ export const en: Record<string, string> = {
   'Ayar klasörü': 'Settings folder',
   'Günlük dosyası': 'Log file',
 
+  // Tepsi
+  'Tepsi': 'Tray',
+  'Kapatınca arka planda çalışmaya devam et': 'Keep running in the background when closed',
+  'Tepsi simgesi çıkar ve pencereyi kapatmak uygulamayı sonlandırmaz; otomatik pull, etkinlik özeti ve sürüm kontrolü çalışmayı sürdürür. Çıkmak için tepsi menüsünü kullan. Bazı Linux masaüstlerinde simge görünmeyebilir.':
+    'Adds a tray icon and closing the window no longer quits the app; auto-pull, the activity summary and update checks keep running. Use the tray menu to quit. The icon may not appear on some Linux desktops.',
+
   // Güncelleme kontrolü
   'Güncelleme': 'Update',
   'Şimdi kontrol et': 'Check now',

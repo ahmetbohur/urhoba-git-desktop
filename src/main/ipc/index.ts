@@ -10,6 +10,7 @@ import * as autostart from '../services/autostart';
 import * as ai from '../ai/service';
 import * as diagnostics from '../services/diagnostics';
 import * as updateCheck from '../services/update-check';
+import { reconcileTray } from '../services/tray';
 import { buildMenu } from '../services/menu';
 import * as github from '../github/provider';
 import * as deviceFlow from '../github/device-flow';
@@ -350,6 +351,12 @@ const handlers: Handlers = {
     if (patch.theme) nativeTheme.themeSource = patch.theme;
     // Electron menüyü canlı güncellemiyor; dil değişince baştan kuruyoruz.
     if (patch.language) buildMenu(patch.language);
+    /*
+     * Tepsi ayarı ya da dil değişince simge yeniden kuruluyor. Ayarın etkisini
+     * yeniden başlatmaya bırakmak, kullanıcının anahtarı açıp hiçbir şey
+     * olmadığını görmesi demek olurdu.
+     */
+    if (patch.tray !== undefined || patch.language) reconcileTray();
     // Genel varsayılan değiştiğinde onu izleyen depoların zamanlayıcıları da
     // yeniden kurulmalı.
     autopull.reconcileSchedules();

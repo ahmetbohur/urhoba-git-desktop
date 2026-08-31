@@ -763,6 +763,12 @@ export interface AppSettings {
    * bırakmak doğru olmaz.
    */
   updateCheck: boolean;
+  /**
+   * Tepsi simgesi ve kapatınca arka planda kalma. İkisi tek ayar: simgesiz bir
+   * "kapatınca gizle" davranışı kullanıcıyı penceresiz bırakır, geri getirecek
+   * bir yol kalmaz.
+   */
+  tray: boolean;
   lastOpenedRepoId: string | null;
 }
 

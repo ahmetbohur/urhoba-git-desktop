@@ -348,6 +348,20 @@ export function SettingsDialog({
               </section>
 
               <section>
+                <SectionLabel>{t('Tepsi')}</SectionLabel>
+                <div className="mt-1 divide-y divide-line-soft">
+                  <PlainToggle
+                    label={t('Kapatınca arka planda çalışmaya devam et')}
+                    hint={t(
+                      'Tepsi simgesi çıkar ve pencereyi kapatmak uygulamayı sonlandırmaz; otomatik pull, etkinlik özeti ve sürüm kontrolü çalışmayı sürdürür. Çıkmak için tepsi menüsünü kullan. Bazı Linux masaüstlerinde simge görünmeyebilir.',
+                    )}
+                    checked={settings.tray}
+                    onCheckedChange={(tray) => saveApp.mutate({ tray })}
+                  />
+                </div>
+              </section>
+
+              <section>
                 <SectionLabel>{t('Güncelleme')}</SectionLabel>
                 <div className="mt-1 divide-y divide-line-soft">
                   <PlainToggle

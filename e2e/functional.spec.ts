@@ -377,3 +377,97 @@ test('yeni sürüm bulununca şerit çıkıyor ve “geç” onu kaldırıyor', 
   await page.getByRole('button', { name: 'Bu sürümü geç' }).click();
   await expect(banner).toHaveCount(0);
 });
+
+test('tepsi ayarı açılınca kapatma uygulamayı sonlandırmıyor', async () => {
+  /*
+   * Ayarın asıl vaadi kapatma düğmesinin anlamını değiştirmesi. Bunu yalnızca
+   * ayarın diske yazıldığını doğrulayarak sınamak bir şey kanıtlamaz; pencere
+   * gerçekten gizlenmeli ve uygulama ayakta kalmalı.
+   */
+  /*
+   * Varsayılan açık olmalı. Bu satır kasıtlı: varsayılanı sessizce kapalıya
+   * döndüren bir değişiklik, özelliğin tamamını işlevsiz bırakır ve hiçbir
+   * test kırılmadan geçer.
+   */
+  const varsayilan = await call<{ tray: boolean }>('settings:get', undefined);
+  expect(varsayilan.tray).toBe(true);
+
+  await call('settings:set', { tray: true });
+
+  const window = page.locator('body');
+  await expect(window).toBeVisible();
+
+  // Kapatmayı pencerenin kendi olayından tetikliyoruz: kullanıcının kapatma
+  // düğmesine basmasıyla aynı yol.
+  await app.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows()[0]?.close();
+  });
+
+  const state = await app.evaluate(({ BrowserWindow, app: instance }) => {
+    const first = BrowserWindow.getAllWindows()[0];
+    return {
+      pencereVar: !!first && !first.isDestroyed(),
+      görünür: first?.isVisible() ?? false,
+      uygulamaAyakta: !instance.isReady || true,
+    };
+  });
+
+  // Pencere yok edilmemiş, yalnızca gizlenmiş.
+  expect(state.pencereVar).toBe(true);
+  expect(state.görünür).toBe(false);
+
+  // Geri getirilebilmeli, yoksa kullanıcı uygulamayı kaybeder.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.show());
+  expect(
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isVisible()),
+  ).toBe(true);
+
+  // Ayarı geri kapat: sonraki testler normal kapatma davranışı bekliyor.
+  await call('settings:set', { tray: false });
+});
+
+test('tepsi kapalıyken kapatma engellenmiyor', async () => {
+  /*
+   * Varsayılan davranış korunmalı: ayar açılmadıkça kapatma düğmesi anlamını
+   * değiştirmemeli.
+   *
+   * Kapanma olayı gerçekten tetikleniyor ve `defaultPrevented` okunuyor —
+   * tepsi dinleyicisi `createWindow` içinde önce bağlandığı için bizden önce
+   * çalışıyor. Okuduktan sonra testin kendisi engelliyor, yoksa pencere yok
+   * olur ve sonraki testler çalışacak bir arayüz bulamaz.
+   */
+  await call('settings:set', { tray: false });
+  const kapaliyken = await app.evaluate(
+    ({ BrowserWindow }) =>
+      new Promise<boolean>((resolve) => {
+        const window = BrowserWindow.getAllWindows()[0];
+        window.once('close', (event) => {
+          const engellendi = event.defaultPrevented;
+          event.preventDefault();
+          resolve(engellendi);
+        });
+        window.close();
+      }),
+  );
+  expect(kapaliyken).toBe(false);
+
+  // Aynı ölçüm ayar açıkken tersini vermeli; yoksa test ayarı değil, hep
+  // aynı sonucu döndüren bir şeyi ölçüyor olurdu.
+  await call('settings:set', { tray: true });
+  const aciktken = await app.evaluate(
+    ({ BrowserWindow }) =>
+      new Promise<boolean>((resolve) => {
+        const window = BrowserWindow.getAllWindows()[0];
+        window.once('close', (event) => {
+          const engellendi = event.defaultPrevented;
+          event.preventDefault();
+          resolve(engellendi);
+        });
+        window.close();
+      }),
+  );
+  expect(aciktken).toBe(true);
+
+  await call('settings:set', { tray: false });
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.show());
+});

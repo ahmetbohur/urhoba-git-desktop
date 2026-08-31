@@ -47,6 +47,16 @@ const DEFAULT_SETTINGS: AppSettings = {
   // Varsayılan açık: eski bir sürümde takılı kalmak kullanıcının bilerek
   // seçtiği bir şey olmalı, farkında olmadığı bir şey değil.
   updateCheck: true,
+  /*
+   * Varsayılan açık: uygulamanın arka planda çalışan işleri var (otomatik
+   * pull, etkinlik özeti, sürüm kontrolü) ve pencere kapanınca hepsi
+   * susuyordu.
+   *
+   * Kapatma düğmesinin anlamının sessizce değişmesi kullanıcıyı yanıltır; bu
+   * yüzden ilk gizlenmede bir kez bildirim gösteriliyor ve `trayNoticeShown`
+   * ile bir daha gösterilmiyor.
+   */
+  tray: true,
   lastOpenedRepoId: null,
 };
 
@@ -73,6 +83,8 @@ interface StoreShape {
    * bir sürümü atlamak güncellemeleri büsbütün kapatmak anlamına gelmemeli.
    */
   skippedUpdateVersion?: string;
+  /** Tepsiye inme bildirimi bir kez gösterildi mi. */
+  trayNoticeShown?: boolean;
 }
 
 let cache: StoreShape | null = null;
@@ -134,6 +146,7 @@ function load(): StoreShape {
     lastActivityDigestAt: parsed.lastActivityDigestAt,
     lastUpdateCheckAt: parsed.lastUpdateCheckAt,
     skippedUpdateVersion: parsed.skippedUpdateVersion,
+    trayNoticeShown: parsed.trayNoticeShown,
   };
 
   /*
@@ -233,6 +246,15 @@ export function getSkippedUpdateVersion(): string | null {
 
 export function setSkippedUpdateVersion(version: string): void {
   load().skippedUpdateVersion = version;
+  persist();
+}
+
+export function wasTrayNoticeShown(): boolean {
+  return load().trayNoticeShown === true;
+}
+
+export function markTrayNoticeShown(): void {
+  load().trayNoticeShown = true;
   persist();
 }
 

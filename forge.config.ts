@@ -141,7 +141,7 @@ const config: ForgeConfig = {
      * İkon ayrıca kaynak olarak kopyalanıyor: Linux'ta paketleyici ikonu ikili
      * dosyaya gömmüyor, pencereye çalışma anında verilmesi gerekiyor.
      */
-    extraResource: [embeddedGitDir(), 'assets/icon.png'],
+    extraResource: [embeddedGitDir(), 'assets/icon.png', 'assets/icon-24.png'],
     /*
      * Uzantısız veriyoruz: her hedef kendi biçimini seçiyor — Windows .ico,
      * macOS .icns, Linux .png. Üçü de `assets/make-icon.py` ile üretiliyor.
