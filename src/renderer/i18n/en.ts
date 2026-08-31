@@ -886,8 +886,8 @@ export const en: Record<string, string> = {
   // Tepsi
   'Tepsi': 'Tray',
   'Kapatınca arka planda çalışmaya devam et': 'Keep running in the background when closed',
-  'Tepsi simgesi çıkar ve pencereyi kapatmak uygulamayı sonlandırmaz; otomatik pull, etkinlik özeti ve sürüm kontrolü çalışmayı sürdürür. Çıkmak için tepsi menüsünü kullan. Bazı Linux masaüstlerinde simge görünmeyebilir.':
-    'Adds a tray icon and closing the window no longer quits the app; auto-pull, the activity summary and update checks keep running. Use the tray menu to quit. The icon may not appear on some Linux desktops.',
+  'Tepsi simgesi çıkar ve pencereyi kapatmak uygulamayı sonlandırmaz; otomatik pull, etkinlik özeti ve sürüm kontrolü çalışmayı sürdürür. Çıkmak için tepsi menüsünü kullan. Linux’ta simge her masaüstünde görünmüyor; görünmezse uygulamayı yeniden açmak pencereyi geri getirir.':
+    'Adds a tray icon and closing the window no longer quits the app; auto-pull, the activity summary and update checks keep running. Use the tray menu to quit. On Linux the icon does not show on every desktop; if it is missing, opening the app again brings the window back.',
 
   // Güncelleme kontrolü
   'Güncelleme': 'Update',

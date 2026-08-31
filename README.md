@@ -172,14 +172,21 @@ yaptığımızı gizlemiyoruz.
 
 ### Tepsi
 
-Uygulama varsayılan olarak **tepside çalışmaya devam ediyor**: pencereyi
-kapatmak onu sonlandırmıyor, böylece otomatik pull, etkinlik özeti ve sürüm
-kontrolü sürüyor. İlk kapatmada bunu söyleyen bir bildirim çıkıyor; çıkmak için
-tepsi menüsündeki **Çıkış** var. Ayarlardan tümüyle kapatılabiliyor.
+Tepsi açıkken pencereyi kapatmak uygulamayı sonlandırmıyor: otomatik pull,
+etkinlik özeti ve sürüm kontrolü çalışmayı sürdürüyor. İlk kapatmada bunu
+söyleyen bir bildirim çıkıyor; çıkmak için tepsi menüsündeki **Çıkış** var.
 
-Bazı Linux masaüstlerinde (eklentisiz sade GNOME gibi) tepsi simgesi hiç
-görünmüyor. Simge oluşturulamazsa uygulama açılmayı sürdürüyor, yalnızca
-günlüğe bir uyarı yazıyor.
+Varsayılan **Windows ve macOS'ta açık, Linux'ta kapalı**. Linux'ta tepsi
+simgesinin görüneceği güvenilir değil: Ubuntu GNOME/Wayland üzerinde ölçtük,
+yalnızca `new Tray()` çağıran çıplak bir Electron uygulaması bile
+`org.kde.StatusNotifierWatcher` listesine kaydolmuyor — Electron tepsiyi
+Wayland'de çalışmayan eski GTK yoluna indiriyor. Hata vermiyor, sessizce
+görünmüyor. Böyle bir zeminde açık varsayılan, kapatma düğmesini "uygulamayı
+görünmez yap" hâline getirirdi. İsteyen ayarlardan açabiliyor.
+
+Simge görünmese bile uygulama kaybolmuyor: **tek örnek kilidi** var, uygulamayı
+yeniden açmak ikinci bir örnek başlatmak yerine var olan pencereyi geri
+getiriyor.
 
 ## Gizlilik
 

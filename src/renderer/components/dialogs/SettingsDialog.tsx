@@ -353,7 +353,7 @@ export function SettingsDialog({
                   <PlainToggle
                     label={t('Kapatınca arka planda çalışmaya devam et')}
                     hint={t(
-                      'Tepsi simgesi çıkar ve pencereyi kapatmak uygulamayı sonlandırmaz; otomatik pull, etkinlik özeti ve sürüm kontrolü çalışmayı sürdürür. Çıkmak için tepsi menüsünü kullan. Bazı Linux masaüstlerinde simge görünmeyebilir.',
+                      'Tepsi simgesi çıkar ve pencereyi kapatmak uygulamayı sonlandırmaz; otomatik pull, etkinlik özeti ve sürüm kontrolü çalışmayı sürdürür. Çıkmak için tepsi menüsünü kullan. Linux’ta simge her masaüstünde görünmüyor; görünmezse uygulamayı yeniden açmak pencereyi geri getirir.',
                     )}
                     checked={settings.tray}
                     onCheckedChange={(tray) => saveApp.mutate({ tray })}

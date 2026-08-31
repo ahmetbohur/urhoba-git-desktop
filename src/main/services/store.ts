@@ -48,15 +48,24 @@ const DEFAULT_SETTINGS: AppSettings = {
   // seçtiği bir şey olmalı, farkında olmadığı bir şey değil.
   updateCheck: true,
   /*
-   * Varsayılan açık: uygulamanın arka planda çalışan işleri var (otomatik
-   * pull, etkinlik özeti, sürüm kontrolü) ve pencere kapanınca hepsi
-   * susuyordu.
+   * Varsayılan Linux'ta kapalı, macOS ve Windows'ta açık.
    *
-   * Kapatma düğmesinin anlamının sessizce değişmesi kullanıcıyı yanıltır; bu
-   * yüzden ilk gizlenmede bir kez bildirim gösteriliyor ve `trayNoticeShown`
-   * ile bir daha gösterilmiyor.
+   * Gerekçe arka plan işleri: otomatik pull, etkinlik özeti ve sürüm kontrolü
+   * pencere kapanınca susuyordu. Ama bu ancak simge gerçekten görünüyorsa
+   * anlamlı — görünmezse kullanıcı pencereyi kaybediyor.
+   *
+   * Linux'ta görünmesi güvenilir değil. Ubuntu GNOME/Wayland üzerinde ölçüldü:
+   * yalnızca `new Tray()` çağıran çıplak bir Electron uygulaması bile
+   * `org.kde.StatusNotifierWatcher` listesine kaydolmuyor ve Electron tepsiyi
+   * Wayland'de çalışmayan eski GTK yoluna indiriyor. Hata vermiyor, sessizce
+   * görünmüyor. Böyle bir zeminde açık varsayılan, kapatma düğmesini
+   * "uygulamayı görünmez yap" hâline getiriyor.
+   *
+   * İsteyen ayarlardan açıyor; kapatma düğmesinin anlamı sessizce
+   * değişmediği sürece bu bilinçli bir tercih oluyor. Windows ve macOS'ta
+   * tepsi güvenilir olduğu için orada varsayılan açık kalıyor.
    */
-  tray: true,
+  tray: process.platform !== 'linux',
   lastOpenedRepoId: null,
 };
 

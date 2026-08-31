@@ -385,12 +385,16 @@ test('tepsi ayarı açılınca kapatma uygulamayı sonlandırmıyor', async () =
    * gerçekten gizlenmeli ve uygulama ayakta kalmalı.
    */
   /*
-   * Varsayılan açık olmalı. Bu satır kasıtlı: varsayılanı sessizce kapalıya
-   * döndüren bir değişiklik, özelliğin tamamını işlevsiz bırakır ve hiçbir
-   * test kırılmadan geçer.
+   * Varsayılan platforma bağlı: Linux'ta kapalı, diğerlerinde açık. Linux'ta
+   * tepsi simgesinin görüneceği güvenilir değil ve görünmezse kapatma düğmesi
+   * uygulamayı erişilemez kılıyor.
+   *
+   * Bu satır kasıtlı: varsayılanı sessizce çeviren bir değişiklik, ya özelliği
+   * işlevsiz bırakır ya da kullanıcıyı penceresiz bırakır — ikisi de başka
+   * hiçbir testi kırmadan geçer.
    */
   const varsayilan = await call<{ tray: boolean }>('settings:get', undefined);
-  expect(varsayilan.tray).toBe(true);
+  expect(varsayilan.tray).toBe(process.platform !== 'linux');
 
   await call('settings:set', { tray: true });
 
