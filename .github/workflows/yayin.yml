@@ -168,90 +168,10 @@ jobs:
               --generate-notes
           fi
 
-  # Intel macOS ayrı tutuluyor.
-  #
-  # `needs` bir işi kardeşlerinin *tamamlanmasına* bağlıyor ve macos-13
-  # koşucularının kuyruğu saatlerce açılmayabiliyor. Matriste dururken yayının
-  # tamamı o kuyruğa bağlı kalıyordu — `!cancelled()` bunu çözmüyor, çünkü
-  # kuyrukta bekleyen bir iş ne başarısız ne atlanmış sayılıyor.
-  #
-  # Burada yayından *sonra* çalışıyor ve paketi hazır olduğunda mevcut
-  # release'e ekliyor. Kuyruk hiç açılmazsa yayın çoktan yapılmış oluyor,
-  # yalnızca Intel paketi eksik kalıyor.
-  paketle-intel:
-    name: macOS x64 (Intel)
-    needs: yayinla
-    runs-on: macos-13
-    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') }}
-    env:
-      APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          # Intel macOS'ta Node 24 paketlemeyi donduruyor: paketleyicinin
-          # kullandığı extract-zip 2.0.1 (2020) Electron arşivini açarken
-          # süresiz asılı kalıyor. arm64'te olmuyor, Node 22'de olmuyor.
-          node-version: 22
-          cache: npm
-
-      # Kilit dosyası npm 11 ile üretildi; Node 22 npm 10 ile geliyor.
-      - run: npm i -g npm@11
-      - run: npm ci
-
-      - name: İmza sertifikasını yükle
-        if: env.APPLE_CERTIFICATE_P12 != ''
-        env:
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          KEYCHAIN="$RUNNER_TEMP/imza.keychain-db"
-          PAROLA="$(openssl rand -base64 24)"
-          security create-keychain -p "$PAROLA" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$PAROLA" "$KEYCHAIN"
-          printf '%s' "$APPLE_CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/sertifika.p12"
-          security import "$RUNNER_TEMP/sertifika.p12" -k "$KEYCHAIN" \
-            -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          # Onsuz codesign anahtara erişmek için diyalog açmaya çalışıyor ve
-          # koşucuda kimse cevaplayamadığı için iş donuyor.
-          security set-key-partition-list -S apple-tool:,apple:,codesign: \
-            -s -k "$PAROLA" "$KEYCHAIN" > /dev/null
-          security list-keychain -d user -s "$KEYCHAIN" login.keychain-db
-          rm -f "$RUNNER_TEMP/sertifika.p12"
-
-      - name: Paketle
-        env:
-          APPLE_IDENTITY: ${{ secrets.APPLE_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: npm run make
-
-      - name: Anahtarlığı sil
-        if: always()
-        run: security delete-keychain "$RUNNER_TEMP/imza.keychain-db" || true
-
-      - name: Release'e ekle
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          mkdir -p yayin
-          find out/make -type f -name '*.zip' -exec cp {} yayin/ \;
-          cd yayin
-          for f in *\ *; do [ -e "$f" ] && mv "$f" "${f// /-}"; done
-          ls -la
-          gh release upload "${GITHUB_REF_NAME}" ./* --clobber
-
-          # SHA256SUMS ana işte üretiliyor ve Intel paketi o an yok. Sonradan
-          # eklenen bir dosyanın özetinin yayınlanmaması, "hepsini
-          # doğrulayabilirsin" iddiasını sessizce deler; mevcut dosyaya
-          # ekleyip geri yüklüyoruz.
-          gh release download "${GITHUB_REF_NAME}" -p SHA256SUMS -O mevcut.txt --clobber \
-            || : > mevcut.txt
-          grep -v -e 'darwin-x64' mevcut.txt > SHA256SUMS || : > SHA256SUMS
-          sha256sum *.zip >> SHA256SUMS
-          sort -k2 SHA256SUMS -o SHA256SUMS
-          cat SHA256SUMS
-          gh release upload "${GITHUB_REF_NAME}" SHA256SUMS --clobber
+# macOS Intel (x64) paketi burada üretilmiyor.
+#
+# GitHub'ın macos-13 koşucularının kuyruğu saatlerce açılmayabiliyor; iş
+# başlamadan kuyrukta kalıyor ve her koşuda asılı bir iş bırakıyordu. Intel
+# paketi geliştiricinin kendi Intel Mac'inde üretiliyor ve release'e elle
+# ekleniyor. Yeniden CI'a alınacaksa dikkat: o makinede Node 22 gerekiyor,
+# Node 24'te paketleme extract-zip'te süresiz donuyor.

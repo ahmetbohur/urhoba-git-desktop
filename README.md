@@ -285,6 +285,12 @@ nvm use 22 && npm run make
 Node 22 npm 10 ile geliyor, dolayısıyla kilit dosyası yeniden yazılabilir;
 `npm i -g npm@11` bunu önlüyor.
 
+Etiket atıldığında GitHub Actions Linux, macOS (Apple Silicon) ve Windows
+paketlerini üretip release'e yüklüyor; macOS imzalaması da orada yapılıyor.
+**macOS Intel (x64)** paketi CI'da üretilmiyor — GitHub'ın Intel koşucu
+kuyruğu güvenilir biçimde açılmıyor — bir Intel Mac'te elle üretilip release'e
+ekleniyor.
+
 macOS imzalaması için dört ortam değişkeni gerekiyor. Tanımlı değillerse
 imzasız paket üretiliyor, derleme kırılmıyor:
 
