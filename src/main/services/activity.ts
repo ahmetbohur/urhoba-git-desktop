@@ -35,7 +35,17 @@ async function mapWithLimit<T, R>(
 }
 
 export async function collectActivity(period: ActivityPeriod): Promise<ActivitySummary> {
-  const since = periodStart(period, Date.now());
+  return collectSince(periodStart(period, Date.now()), period);
+}
+
+/**
+ * Belirli bir andan bugüne. Kendiliğinden çıkan özet bunu kullanıyor: uygulama
+ * kapalıyken geçen süre atlanmamalı, o yüzden aralık "son özetten beri" oluyor.
+ */
+export async function collectSince(
+  since: Date,
+  period: ActivityPeriod,
+): Promise<ActivitySummary> {
   const repos = store.getRepos();
 
   const collected = await mapWithLimit(repos, CONCURRENCY, async (repo) => {

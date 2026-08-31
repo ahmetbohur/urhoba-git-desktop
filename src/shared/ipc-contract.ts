@@ -248,6 +248,7 @@ export const inputSchemas = {
       .optional(),
     sideBySideDiff: z.boolean().optional(),
     activityPeriod: z.enum(['1h', '6h', '24h', '7d']).optional(),
+    activityAuto: z.boolean().optional(),
     lastOpenedRepoId: z.string().nullable().optional(),
     defaults: z
       .object({

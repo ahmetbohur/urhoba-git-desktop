@@ -39,6 +39,7 @@ function useAppEvents(onShowAbout: () => void): void {
   const pushCommandLog = useUi((s) => s.pushCommandLog);
   const recordAutoPull = useUi((s) => s.recordAutoPull);
   const toast = useUi((s) => s.toast);
+  const setActivityOpen = useUi((s) => s.setActivityOpen);
 
   useEffect(
     () =>
@@ -46,6 +47,10 @@ function useAppEvents(onShowAbout: () => void): void {
         switch (event.type) {
           case 'app:show-about':
             onShowAbout();
+            break;
+          // Bildirime tıklanınca özet penceresi açılıyor.
+          case 'activity:open':
+            setActivityOpen(true);
             break;
           case 'repo:changed':
             void client.invalidateQueries({ queryKey: ['repo', event.repoId] });

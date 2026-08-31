@@ -42,6 +42,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   sideBySideDiff: false,
   // Günlük ritme en yakın varsayılan; saatlik özet çoğu depoda boş çıkıyor.
   activityPeriod: '24h',
+  // Varsayılan kapalı: kimse istemediği bir bildirimle karşılaşmamalı.
+  activityAuto: false,
   lastOpenedRepoId: null,
 };
 
@@ -56,6 +58,11 @@ interface StoreShape {
   repoSettings: Record<string, Partial<ScopedSettings>>;
   /** Katlanmış grup adları — açık/kapalı durumu oturumlar arası korunuyor. */
   collapsedGroups?: string[];
+  /**
+   * Son kendiliğinden özetin çıkarıldığı an, ISO. Diskte tutuluyor ki uygulama
+   * kapalıyken geçen süre atlanmasın ve iki özet çakışmasın.
+   */
+  lastActivityDigestAt?: string;
 }
 
 let cache: StoreShape | null = null;
@@ -114,6 +121,7 @@ function load(): StoreShape {
     repos: Array.isArray(parsed.repos) ? parsed.repos : [],
     repoSettings: parsed.repoSettings ?? {},
     collapsedGroups: parsed.collapsedGroups ?? [],
+    lastActivityDigestAt: parsed.lastActivityDigestAt,
   };
 
   /*
@@ -179,6 +187,19 @@ export function updateRepo(id: string, patch: Partial<Repo>): Repo | undefined {
   Object.assign(repo, patch);
   persist();
   return repo;
+}
+
+/** Son kendiliğinden özetin anı; hiç çıkmadıysa null. */
+export function getLastActivityDigestAt(): Date | null {
+  const value = load().lastActivityDigestAt;
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function setLastActivityDigestAt(at: Date): void {
+  load().lastActivityDigestAt = at.toISOString();
+  persist();
 }
 
 export function getCollapsedGroups(): string[] {

@@ -7,6 +7,7 @@ import { installCrashHandlers, log } from './services/logger';
 import { buildMenu } from './services/menu';
 import { initializeUpdates } from './services/updater';
 import * as autopull from './services/autopull';
+import { startActivitySchedule, stopActivitySchedule } from './services/activity-schedule';
 import * as store from './services/store';
 import { stopWatching } from './services/watcher';
 
@@ -154,6 +155,7 @@ app.on('ready', () => {
 
   nativeTheme.themeSource = store.getSettings().theme;
   autopull.reconcileSchedules();
+  startActivitySchedule();
   initializeUpdates();
 
   createWindow();
@@ -169,5 +171,6 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   autopull.stopAll();
+  stopActivitySchedule();
   void stopWatching();
 });

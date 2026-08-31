@@ -48,6 +48,9 @@ export const en: Record<string, string> = {
   'AI yardımı': 'AI assistance',
   'Etkinlik özeti': 'Activity summary',
   'AI ile özetle': 'Summarise with AI',
+  'Kendiliğinden çıkar ve bildir': 'Produce automatically and notify',
+  'Aralık dolduğunda özet arka planda hazırlanır ve bildirim gösterilir. Hareket yoksa bildirim çıkmaz.':
+    'When the period elapses the summary is prepared in the background and a notification is shown. No activity, no notification.',
   'Özet alınamadı': 'Could not get a summary',
   '{count} commit gönderildi.': '{count} commits were sent.',
   '{count} depo bulut AI’ya kapalı olduğu için dışarıda bırakıldı.':

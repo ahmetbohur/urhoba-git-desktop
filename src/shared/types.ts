@@ -731,6 +731,11 @@ export interface AppSettings {
    * yok.
    */
   activityPeriod: ActivityPeriod;
+  /**
+   * Özet kendiliğinden çıkarılıp bildirilsin mi. Varsayılan kapalı: kimse
+   * istemediği bir bildirimle karşılaşmamalı.
+   */
+  activityAuto: boolean;
   lastOpenedRepoId: string | null;
 }
 
@@ -773,4 +778,6 @@ export type AppEvent =
   | { type: 'repo:changed'; repoId: string }
   | { type: 'git:command'; entry: GitLogEntry }
   | { type: 'autopull:result'; result: AutoPullResult }
-  | { type: 'clone:progress'; progress: CloneProgress };
+  | { type: 'clone:progress'; progress: CloneProgress }
+  /** Bildirime tıklanınca arayüz etkinlik penceresini açıyor. */
+  | { type: 'activity:open' };

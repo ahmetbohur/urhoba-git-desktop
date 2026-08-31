@@ -333,6 +333,14 @@ export function SettingsDialog({
                     </button>
                   ))}
                 </div>
+                <div className="mt-1 divide-y divide-line-soft">
+                  <PlainToggle
+                    label={t('Kendiliğinden çıkar ve bildir')}
+                    hint={t('Aralık dolduğunda özet arka planda hazırlanır ve bildirim gösterilir. Hareket yoksa bildirim çıkmaz.')}
+                    checked={settings.activityAuto}
+                    onCheckedChange={(activityAuto) => saveApp.mutate({ activityAuto })}
+                  />
+                </div>
               </section>
 
               <section>
