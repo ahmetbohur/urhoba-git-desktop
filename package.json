@@ -1,7 +1,7 @@
 {
   "name": "urhoba-git-desktop",
   "productName": "Urhoba Git Desktop",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Depolarını tek pencereden takip eden modern bir masaüstü Git istemcisi.",
   "main": ".vite/build/main.js",
   "private": true,
