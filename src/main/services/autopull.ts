@@ -17,7 +17,10 @@ import type { AutoPullResult, PullResult } from '@shared/types';
  */
 
 interface Scheduled {
-  timer: NodeJS.Timeout;
+  /** Düzenli aralık; ilk çalışma gecikmesi bitene kadar null. */
+  timer: NodeJS.Timeout | null;
+  /** Dağıtım gecikmesi; düzenli aralığa geçilince null. */
+  startTimer: NodeJS.Timeout | null;
   running: boolean;
 }
 
@@ -47,7 +50,11 @@ async function runOnce(repoId: string): Promise<PullResult> {
 export async function pullNow(repoId: string): Promise<PullResult> {
   const entry = scheduled.get(repoId);
   if (entry?.running) {
-    return { outcome: 'skipped-operation-in-progress', message: 'Zaten çekiliyor.', commitsPulled: 0 };
+    return {
+      outcome: 'skipped-operation-in-progress',
+      message: 'Zaten çekiliyor.',
+      commitsPulled: 0,
+    };
   }
   if (entry) entry.running = true;
   try {
@@ -57,28 +64,51 @@ export async function pullNow(repoId: string): Promise<PullResult> {
   }
 }
 
-function schedule(repoId: string, intervalMinutes: number): void {
+/**
+ * Bir deponun zamanlayıcısını kurar.
+ *
+ * `offsetRatio` depoyu aralık içinde bir noktaya yerleştiriyor (0 ile 1
+ * arasında). Buna ihtiyaç var çünkü zamanlayıcılar hep birlikte kuruluyor ve
+ * hepsi aynı aralığı kullanıyor: dağıtılmazsa elli deponun hepsi aynı saniyede
+ * fetch'e çıkıyor. Eşzamanlı süreç sınırı çökmeyi engelliyor ama elli fetch
+ * sırayla akarken uygulama saniyelerce meşgul kalıyor.
+ */
+function schedule(repoId: string, intervalMinutes: number, offsetRatio: number): void {
   clearFor(repoId);
-  const entry: Scheduled = {
-    running: false,
-    timer: setInterval(
-      () => {
-        if (entry.running) return;
-        entry.running = true;
-        void runOnce(repoId).finally(() => {
-          entry.running = false;
-        });
-      },
-      Math.max(1, intervalMinutes) * 60_000,
-    ),
+  const periodMs = Math.max(1, intervalMinutes) * 60_000;
+
+  const entry: Scheduled = { running: false, timer: null, startTimer: null };
+
+  const tick = () => {
+    if (entry.running) return;
+    entry.running = true;
+    void runOnce(repoId).finally(() => {
+      entry.running = false;
+    });
   };
+
+  /*
+   * İlk çalışma gecikmeyle başlıyor, sonrası düzenli aralıkla. Gecikme
+   * depoya göre değişiyor ama rastgele değil: aynı depo her açılışta aynı
+   * yere düşüyor, dolayısıyla davranış tekrarlanabilir kalıyor.
+   */
+  entry.startTimer = setTimeout(
+    () => {
+      entry.startTimer = null;
+      tick();
+      entry.timer = setInterval(tick, periodMs);
+    },
+    Math.floor(offsetRatio * periodMs),
+  );
+
   scheduled.set(repoId, entry);
 }
 
 function clearFor(repoId: string): void {
   const entry = scheduled.get(repoId);
   if (entry) {
-    clearInterval(entry.timer);
+    if (entry.startTimer) clearTimeout(entry.startTimer);
+    if (entry.timer) clearInterval(entry.timer);
     scheduled.delete(repoId);
   }
 }
@@ -89,11 +119,13 @@ function clearFor(repoId: string): void {
  */
 export function reconcileSchedules(): void {
   const active = new Set<string>();
-  for (const { repo, settings } of store.getAllRepoSettings()) {
-    if (!settings.autoPull.enabled) continue;
+  const acik = store.getAllRepoSettings().filter((entry) => entry.settings.autoPull.enabled);
+
+  acik.forEach(({ repo, settings }, index) => {
     active.add(repo.id);
-    schedule(repo.id, settings.autoPull.intervalMinutes);
-  }
+    // Depolar aralık boyunca eşit aralıklarla dağıtılıyor.
+    schedule(repo.id, settings.autoPull.intervalMinutes, acik.length > 1 ? index / acik.length : 0);
+  });
   for (const repoId of [...scheduled.keys()]) {
     if (!active.has(repoId)) clearFor(repoId);
   }

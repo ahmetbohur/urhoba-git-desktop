@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Tooltip } from 'radix-ui';
 import { FolderGit2, GitCommitHorizontal, GitPullRequest, History } from 'lucide-react';
 import { useT } from '../i18n';
@@ -19,6 +19,7 @@ import { PullRequestsView } from '../components/PullRequestsView';
 import { RepoSidebar } from '../components/RepoSidebar';
 import { Toasts } from '../components/Toasts';
 import { TopBar } from '../components/TopBar';
+import type { GitLogEntry } from '@shared/types';
 
 const TABS: Array<{ id: MainTab; label: string; icon: typeof History }> = [
   { id: 'changes', label: 'Değişiklikler', icon: GitCommitHorizontal },
@@ -36,10 +37,47 @@ const TABS: Array<{ id: MainTab; label: string; icon: typeof History }> = [
 function useAppEvents(onShowAbout: () => void): void {
   const t = useT();
   const client = useQueryClient();
-  const pushCommandLog = useUi((s) => s.pushCommandLog);
+  const pushCommandLogs = useUi((s) => s.pushCommandLogs);
   const recordAutoPull = useUi((s) => s.recordAutoPull);
   const toast = useUi((s) => s.toast);
   const setActivityOpen = useUi((s) => s.setActivityOpen);
+
+  /*
+   * Komut günlüğü olayları kısa bir pencerede biriktiriliyor.
+   *
+   * Depo sayacı bütün depoları tarıyor ve her git komutu ayrı bir olay
+   * yolluyor; elli depoda elli ayrı IPC mesajı geliyor. Ayrı mesajlar ayrı
+   * görevlerde işlendiği için React onları gruplamıyor ve panel elli kez
+   * yeniden çiziliyordu.
+   *
+   * Pencere kısa: günlük bir hata ayıklama aracı, yüz milisaniyelik gecikme
+   * fark edilmiyor. Buna karşılık tek komut çalıştığında da aynı yoldan
+   * geçiyor, yani davranış her iki uçta da aynı.
+   */
+  const buffer = useRef<GitLogEntry[]>([]);
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const bufferCommandLog = useCallback(
+    (entry: GitLogEntry) => {
+      buffer.current.push(entry);
+      if (flushTimer.current) return;
+      flushTimer.current = setTimeout(() => {
+        flushTimer.current = null;
+        const bekleyen = buffer.current;
+        buffer.current = [];
+        pushCommandLogs(bekleyen);
+      }, 100);
+    },
+    [pushCommandLogs],
+  );
+
+  // Bileşen sökülürken bekleyen kayıtlar kaybolmasın ve zamanlayıcı kalmasın.
+  useEffect(
+    () => () => {
+      if (flushTimer.current) clearTimeout(flushTimer.current);
+    },
+    [],
+  );
 
   useEffect(
     () =>
@@ -60,7 +98,8 @@ function useAppEvents(onShowAbout: () => void): void {
             void client.invalidateQueries({ queryKey: ['dirty-counts'] });
             break;
           case 'git:command':
-            pushCommandLog(event.entry);
+            // Tek tek değil, kısa bir pencerede biriktirilip topluca veriliyor.
+            bufferCommandLog(event.entry);
             break;
           case 'autopull:result': {
             recordAutoPull(event.result);
@@ -99,7 +138,7 @@ function useAppEvents(onShowAbout: () => void): void {
             break;
         }
       }),
-    [client, pushCommandLog, recordAutoPull, toast, t, onShowAbout, setActivityOpen],
+    [client, bufferCommandLog, recordAutoPull, toast, t, onShowAbout, setActivityOpen],
   );
 }
 

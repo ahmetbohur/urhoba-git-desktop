@@ -2,6 +2,7 @@ import type { ChildProcess } from 'node:child_process';
 import { exec as execGit } from 'dugite';
 import { randomUUID } from 'node:crypto';
 import { enqueue } from './queue';
+import { withLimit } from './limit';
 import { emitAppEvent } from '../services/events';
 import type { IpcErrorShape } from '@shared/ipc-channels';
 
@@ -159,14 +160,17 @@ export async function run(options: RunOptions): Promise<RunResult> {
 
     let result: { stdout: string; stderr: string; exitCode: number };
     try {
-      result = await execGit(args, repoPath, {
-        env: childEnv(extraEnv),
-        processCallback: onStderr
-          ? (child: ChildProcess) => {
-              child.stderr?.on('data', (chunk: Buffer) => onStderr(chunk.toString('utf8')));
-            }
-          : undefined,
-      });
+      // Eşzamanlı süreç sayısı burada sınırlanıyor; gerekçesi `limit.ts` içinde.
+      result = await withLimit(() =>
+        execGit(args, repoPath, {
+          env: childEnv(extraEnv),
+          processCallback: onStderr
+            ? (child: ChildProcess) => {
+                child.stderr?.on('data', (chunk: Buffer) => onStderr(chunk.toString('utf8')));
+              }
+            : undefined,
+        }),
+      );
     } catch (error) {
       // Buraya yalnızca git süreci hiç başlatılamazsa düşüyoruz; komutun
       // başarısız olması normal yoldan `exitCode` ile geliyor.
@@ -183,7 +187,10 @@ export async function run(options: RunOptions): Promise<RunResult> {
           at: new Date().toISOString(),
         },
       });
-      throw new GitCommandError('Git çalıştırılamadı. Uygulama kurulumu bozulmuş olabilir.', detail);
+      throw new GitCommandError(
+        'Git çalıştırılamadı. Uygulama kurulumu bozulmuş olabilir.',
+        detail,
+      );
     }
 
     const ok = result.exitCode === 0;

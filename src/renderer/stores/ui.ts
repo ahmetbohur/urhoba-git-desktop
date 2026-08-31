@@ -48,6 +48,7 @@ interface UiState {
   setGithubOpen: (open: boolean) => void;
   setActivityOpen: (open: boolean) => void;
   pushCommandLog: (entry: GitLogEntry) => void;
+  pushCommandLogs: (entries: GitLogEntry[]) => void;
   toast: (toast: Omit<Toast, 'id'>) => void;
   dismissToast: (id: string) => void;
   recordAutoPull: (result: AutoPullResult) => void;
@@ -68,8 +69,7 @@ export const useUi = create<UiState>((set) => ({
   toasts: [],
   lastAutoPull: {},
 
-  setActiveRepo: (id) =>
-    set({ activeRepoId: id, selection: { kind: 'none' }, tab: 'changes' }),
+  setActiveRepo: (id) => set({ activeRepoId: id, selection: { kind: 'none' }, tab: 'changes' }),
   setTab: (tab) => set({ tab, selection: { kind: 'none' } }),
   select: (selection) => set({ selection }),
   toggleCommandLog: () => set((state) => ({ commandLogOpen: !state.commandLogOpen })),
@@ -78,6 +78,18 @@ export const useUi = create<UiState>((set) => ({
   setActivityOpen: (activityOpen) => set({ activityOpen }),
   pushCommandLog: (entry) =>
     set((state) => ({ commandLog: [entry, ...state.commandLog].slice(0, MAX_LOG_ENTRIES) })),
+  /*
+   * Toplu ekleme. Depo sayacı bütün depoları tarıyor ve her git komutu ayrı
+   * bir olay yolluyor: elli depo, elli ayrı durum güncellemesi ve elli yeniden
+   * çizim demek. Olaylar ayrı IPC mesajları olarak geldiği için React onları
+   * kendiliğinden gruplamıyor; çağıran biriktirip tek seferde veriyor.
+   */
+  pushCommandLogs: (entries) =>
+    set((state) =>
+      entries.length === 0
+        ? state
+        : { commandLog: [...entries.reverse(), ...state.commandLog].slice(0, MAX_LOG_ENTRIES) },
+    ),
   toast: (toast) =>
     set((state) => ({
       toasts: [...state.toasts, { ...toast, id: crypto.randomUUID() }].slice(-4),
