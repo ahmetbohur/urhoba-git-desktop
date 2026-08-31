@@ -17,9 +17,9 @@ jobs:
     name: Tip, lint ve testler
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           # Geliştirme ortamıyla aynı sürüm. npm 10 ile npm 11 kilit
           # dosyasını farklı çözümlüyor ve biriyle üretilen kilidi diğeri
@@ -63,9 +63,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           # Geliştirme ortamıyla aynı sürüm. npm 10 ile npm 11 kilit
           # dosyasını farklı çözümlüyor ve biriyle üretilen kilidi diğeri
@@ -87,7 +87,9 @@ jobs:
           # dugite'in git'i platforma özgü indiriliyor; pakete girmezse
           # uygulama hiçbir git komutu çalıştıramaz ve bunu ancak çalışma
           # anında fark ederiz.
-          found=$(find out -type d -name git -path "*resources*" | head -1)
+          # `-ipath`: macOS'ta klasör "Resources", Linux ve Windows'ta
+          # "resources". Büyük/küçük harfe duyarlı arama macOS'ta boş dönüyordu.
+          found=$(find out -type d -name git -ipath "*resources*" | head -1)
           if [ -z "$found" ]; then
             echo "Gömülü git paketin içinde bulunamadı"
             exit 1

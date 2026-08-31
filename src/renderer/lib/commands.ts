@@ -286,5 +286,24 @@ export function useCommands(activeRepo: Repo | null): Command[] {
     });
 
     return commands;
-  }, [activeRepo, branches, repos, status, client, setActiveRepo, setTab, toggleCommandLog, toast, t]);
+    /*
+     * `remotes` ve `setPublishOpen` de listede: yayınlama komutunun kapalı
+     * olup olmaması uzak sunucu listesine bakıyor ve liste değiştiğinde
+     * komutun yeniden hesaplanması gerekiyor. Yoksa bir depo yayınlandıktan
+     * sonra palet eski durumu göstermeyi sürdürüyor.
+     */
+  }, [
+    activeRepo,
+    branches,
+    remotes,
+    repos,
+    status,
+    client,
+    setActiveRepo,
+    setTab,
+    setPublishOpen,
+    toggleCommandLog,
+    toast,
+    t,
+  ]);
 }
