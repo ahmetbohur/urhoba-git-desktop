@@ -54,6 +54,23 @@ function targetPlatform(): string {
 }
 
 /**
+ * Pakete girecek gömülü git'in kaynağı.
+ *
+ * dugite git'i kurulum sırasında **ana makinenin** platformuna göre indiriyor
+ * ve bunu geçersiz kılmanın bir yolu yok. Dolayısıyla Linux'tan Windows paketi
+ * üretmek istendiğinde `node_modules/dugite/git` yanlış ikiliyi taşıyor:
+ * paket sorunsuz çıkıyor ama açıldığı anda git çalışmıyor.
+ *
+ * `URHOBA_GIT_DIR` verildiğinde onun yerine o klasör kopyalanıyor. Doğru
+ * platformun ikilisini indirmek ve sağlamasını doğrulamak çağırana kalıyor —
+ * yapılandırmanın içine indirme mantığı koymak, her paketlemede ağa çıkan bir
+ * derleme demek olurdu.
+ */
+function embeddedGitDir(): string {
+  return process.env.URHOBA_GIT_DIR?.trim() || 'node_modules/dugite/git';
+}
+
+/**
  * Gömülü git'ten çıkarılan, uygulamanın hiç kullanmadığı parçalar.
  *
  * dugite git'i olduğu gibi taşıyor ve paketin yarısından fazlası buradan
@@ -124,7 +141,7 @@ const config: ForgeConfig = {
      * İkon ayrıca kaynak olarak kopyalanıyor: Linux'ta paketleyici ikonu ikili
      * dosyaya gömmüyor, pencereye çalışma anında verilmesi gerekiyor.
      */
-    extraResource: ['node_modules/dugite/git', 'assets/icon.png'],
+    extraResource: [embeddedGitDir(), 'assets/icon.png'],
     /*
      * Uzantısız veriyoruz: her hedef kendi biçimini seçiyor — Windows .ico,
      * macOS .icns, Linux .png. Üçü de `assets/make-icon.py` ile üretiliyor.

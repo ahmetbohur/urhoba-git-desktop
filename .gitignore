@@ -94,3 +94,6 @@ out/
 # Playwright çıktıları
 test-results/
 playwright-report/
+
+# Çapraz paketleme için indirilen platform ikilileri.
+.build/

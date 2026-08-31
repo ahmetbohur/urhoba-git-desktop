@@ -248,6 +248,52 @@ Geliştirme için **Node.js 24** gerekiyor. `npm ci` kilit dosyasına duyarlı:
 npm 10 ile npm 11 aynı kilidi farklı çözümlüyor ve biriyle üretileni diğeri
 reddediyor. `npm install` her iki sürümde de çalışıyor.
 
+### Paketleme
+
+```bash
+npm run package    # çalıştırılabilir paket
+npm run make       # dağıtım dosyaları (.deb, .zip)
+```
+
+**macOS'ta paketleme Node 24 ile donuyor.** Paketleyici Electron arşivini
+`extract-zip` ile açıyor; o kütüphane 2020'den beri güncellenmedi ve Node 24'te
+asılı kalıyor — hata vermiyor, ilerlemiyor, süresiz bekliyor. Node 22'de aynı
+adım saniyeler sürüyor:
+
+```bash
+nvm use 22 && npm run make
+```
+
+Node 22 npm 10 ile geliyor, dolayısıyla kilit dosyası yeniden yazılabilir;
+`npm i -g npm@11` bunu önlüyor.
+
+macOS imzalaması için dört ortam değişkeni gerekiyor. Tanımlı değillerse
+imzasız paket üretiliyor, derleme kırılmıyor:
+
+```bash
+export APPLE_IDENTITY="Developer ID Application: Ad Soyad (TEAMID)"
+export APPLE_ID="apple-kimliğin@example.com"   # parolayı üreten hesap
+export APPLE_TEAM_ID="TEAMID"
+export APPLE_PASSWORD="uygulamaya-özel-parola" # hesap parolası değil
+```
+
+`DEBUG` değişkenini geniş tutma: `electron-packager` ad alanı bu değerleri
+seçenek listesiyle birlikte düz metin yazdırıyor.
+
+Çapraz paketlemede gömülü git'i kendin sağlaman gerekiyor. dugite git'i **ana
+makinenin** platformuna göre indiriyor ve bunu geçersiz kılmanın yolu yok;
+`URHOBA_GIT_DIR` doğru ikilinin bulunduğu klasörü gösteriyor. Klasörün adı
+`git` olmalı — paketleyici kaynağı adıyla kopyalıyor ve uygulama
+`resources/git` yolunu arıyor:
+
+```bash
+URHOBA_GIT_DIR=.build/win32-x64/git \
+  npx electron-forge package --platform win32 --arch x64
+```
+
+İkilinin adresi ve sağlaması `node_modules/dugite/script/embedded-git.json`
+içinde.
+
 ### Test yaklaşımı
 
 Testler üç katmanda: ayrıştırıcılar saf fonksiyon olarak, git komutları geçici
