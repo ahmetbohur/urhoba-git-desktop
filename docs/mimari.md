@@ -192,6 +192,18 @@ git'i platforma özgü indiriyor ve girmediğinde uygulama hiçbir git komutu
 çalıştıramıyor; bunu çalışma anında fark etmektense derlemede yakalamak
 gerekiyor.
 
+### Node sürümü ve kilit dosyası
+
+`npm ci` npm sürümüne duyarlı: npm 10 ile npm 11 aynı `package-lock.json`
+dosyasını farklı çözümlüyor ve biriyle üretilen kilidi diğeri "senkron değil"
+diye reddediyor. Sebep iç içe geçmiş bir bağımlılık — `vitest` kendi `vite`
+sürümünü getiriyor ve o farklı bir `esbuild` istiyor.
+
+İkisini birden memnun eden bir kilit üretilemedi (denendi: npm 10 ile üretilen
+kilidi npm 11 reddediyor, tersi de doğru). Bu yüzden CI geliştirme ortamıyla
+aynı sürüme sabitlendi. `npm install` her iki sürümde de çalışıyor; yalnızca
+`npm ci` katı.
+
 ### İşlevsel doğrulama
 
 `e2e/functional.spec.ts` uygulamanın kendisini çalıştırıp her işlemi gerçek IPC

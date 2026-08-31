@@ -238,7 +238,9 @@ npm run qa          # uç durumları ve koyu temayı gezer
 npm run test:ai     # AI akışlarını gerçek bir Ollama sunucusuyla dener
 ```
 
-Geliştirme için Node.js 20+ yeterli.
+Geliştirme için **Node.js 24** gerekiyor. `npm ci` kilit dosyasına duyarlı:
+npm 10 ile npm 11 aynı kilidi farklı çözümlüyor ve biriyle üretileni diğeri
+reddediyor. `npm install` her iki sürümde de çalışıyor.
 
 ### Test yaklaşımı
 

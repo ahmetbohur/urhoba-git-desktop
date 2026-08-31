@@ -21,7 +21,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Geliştirme ortamıyla aynı sürüm. npm 10 ile npm 11 kilit
+          # dosyasını farklı çözümlüyor ve biriyle üretilen kilidi diğeri
+          # reddediyor; `npm ci` bu yüzden sürüme duyarlı.
+          node-version: 24
           cache: npm
 
       - run: npm ci
@@ -64,7 +67,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Geliştirme ortamıyla aynı sürüm. npm 10 ile npm 11 kilit
+          # dosyasını farklı çözümlüyor ve biriyle üretilen kilidi diğeri
+          # reddediyor; `npm ci` bu yüzden sürüme duyarlı.
+          node-version: 24
           cache: npm
 
       - run: npm ci
