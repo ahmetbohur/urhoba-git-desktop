@@ -22,6 +22,7 @@ import * as submodule from '../git/submodule';
 import * as worktree from '../git/worktree';
 import * as stash from '../git/stash';
 import * as status from '../git/status';
+import * as activity from '../services/activity';
 import * as autopull from '../services/autopull';
 import * as repos from '../services/repos';
 import { scanForRepositories } from '../services/scan';
@@ -261,6 +262,7 @@ const handlers: Handlers = {
     const repo = activateRepo(repoId);
     return history.getCommitFileDiff(repo.id, repo.path, sha, path);
   },
+  'activity:summary': ({ period }) => activity.collectActivity(period),
   'git:reflog': ({ repoId }) => {
     const repo = activateRepo(repoId);
     return history.getReflog(repo.id, repo.path);
@@ -384,6 +386,8 @@ const handlers: Handlers = {
     return ai.suggestDescription(repo.id, repo.path, repo.name);
   },
   'ai:suggest-groups': () => ai.suggestGroups(),
+  'ai:summarize-activity': async ({ period }) =>
+    ai.summarizeActivity(await activity.collectActivity(period)),
   'ai:apply-groups': ({ assignments }) => {
     for (const assignment of assignments) {
       for (const id of assignment.repoIds) {

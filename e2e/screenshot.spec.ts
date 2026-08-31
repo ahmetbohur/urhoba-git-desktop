@@ -214,6 +214,13 @@ test('arayüz görüntüleri', async () => {
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${SHOT_DIR}/10-gruplu-liste.png` });
 
+  // Etkinlik özeti: demo depolarda bu aralıkta yazılan commit'ler görünmeli.
+  await page.getByRole('button', { name: 'Etkinlik özeti' }).first().click();
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: `${SHOT_DIR}/30-etkinlik.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
 
   // Satır geçmişi: geçmişten bir commit açıp dosyasına çift tıklıyoruz.
   // Bu yol çalışma dizininin o anki durumundan bağımsız.

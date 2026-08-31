@@ -15,6 +15,8 @@ import type {
   AiProviderId,
   AiSettings,
   AiStatus,
+  ActivityDigest,
+  ActivitySummary,
   CommitSuggestion,
   DescriptionSuggestion,
   GroupSuggestion,
@@ -315,6 +317,80 @@ export async function suggestDescription(
     source: readme.length > 0 ? 'readme' : 'file-list',
     charactersSent: user.length,
     provider: settings.provider,
+  };
+}
+
+const DIGEST_SYSTEM = [
+  'Sana bir geliştiricinin belirli bir zaman aralığındaki git etkinliği veriliyor.',
+  'Kendi yazdığı commit’ler ve uzak sunucudan inen commit’ler ayrı ayrı listeleniyor.',
+  'Bunları kısa bir Türkçe özete çevir: neyin üzerinde çalışılmış, başkalarından ne gelmiş.',
+  'Depo adlarını kullan. En fazla beş cümle yaz.',
+  'Commit mesajlarını tek tek tekrar etme; anlamlı kümeler hâlinde topla.',
+  'Yalnızca özeti döndür, başlık ya da giriş cümlesi ekleme.',
+].join(' ');
+
+/**
+ * Etkinlik özetini metne çevirir.
+ *
+ * Commit mesajları depo adlarından çok daha fazla şey söylüyor. Bu yüzden
+ * bulut sağlayıcı seçiliyse, bulut AI'ya kapalı olan depolar özetten
+ * çıkarılıyor: o depo "kodum dışarı çıkmasın" demişse mesajları da çıkmamalı.
+ * Gruplama bu izni aramıyor çünkü yalnızca ad gönderiyor; burada durum farklı.
+ */
+export async function summarizeActivity(summary: ActivitySummary): Promise<ActivityDigest> {
+  const settings = store.getSettings().ai;
+  requireEnabled(null, settings);
+
+  const isCloud = settings.provider !== 'ollama';
+  const allowed = summary.repos.filter(
+    (repo) => !isCloud || store.getRepoSettings(repo.repoId).allowCloudAi,
+  );
+  const excludedRepos = summary.repos.length - allowed.length;
+
+  if (allowed.length === 0) {
+    throw new AiError(
+      excludedRepos > 0
+        ? 'Bütün depolar bulut AI’ya kapalı; özetlenecek bir şey kalmadı.'
+        : 'Bu aralıkta özetlenecek hareket yok.',
+    );
+  }
+
+  const parts: string[] = [];
+  let commitsSent = 0;
+  for (const repo of allowed) {
+    const lines: string[] = [`Depo: ${repo.repoName}`];
+    if (repo.authored.length > 0) {
+      lines.push('Yazdıkları:');
+      for (const commit of repo.authored) lines.push(`- ${commit.subject}`);
+      commitsSent += repo.authored.length;
+    }
+    if (repo.arrived.length > 0) {
+      lines.push('Uzaktan inenler:');
+      for (const commit of repo.arrived) {
+        lines.push(`- ${commit.subject} (${commit.authorName})`);
+      }
+      commitsSent += repo.arrived.length;
+    }
+    parts.push(lines.join('\n'));
+  }
+
+  const raw = await clientFor(settings).complete(
+    { system: DIGEST_SYSTEM, user: parts.join('\n\n'), maxTokens: 600 },
+    settings.model,
+  );
+
+  log('info', 'Etkinlik özeti üretildi', {
+    provider: settings.provider,
+    repos: allowed.length,
+    excludedRepos,
+    commits: commitsSent,
+  });
+
+  return {
+    text: raw.trim(),
+    provider: settings.provider,
+    excludedRepos,
+    commitsSent,
   };
 }
 

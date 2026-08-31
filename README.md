@@ -143,6 +143,10 @@ nerede açık oldukları yazar.
 
 ### Diğer
 
+**Etkinlik özeti** — Bütün depolarında seçtiğin aralıkta (1 saat, 6 saat, 24 saat
+ya da 7 gün) ne yazdığını ve uzaktan ne indiğini tek pencerede gösterir. AI
+açıksa üstüne bir paragraflık özet ekler.
+
 **AI yardımı (isteğe bağlı, varsayılan kapalı)** — Commit mesajı, depo tanıtımı
 ve gruplama önerisi; Ollama (yerel), OpenAI veya Claude ile.
 

@@ -40,6 +40,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     ollamaHost: 'http://127.0.0.1:11434',
   },
   sideBySideDiff: false,
+  // Günlük ritme en yakın varsayılan; saatlik özet çoğu depoda boş çıkıyor.
+  activityPeriod: '24h',
   lastOpenedRepoId: null,
 };
 

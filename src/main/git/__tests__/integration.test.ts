@@ -12,6 +12,7 @@ import { listSubmodules, updateSubmodules } from '../submodule';
 import * as bisect from '../bisect';
 import { getFilePreview } from '../preview';
 import { listWorktrees } from '../worktree';
+import { repoActivity } from '../activity';
 
 /**
  * Gerçek git süreçlerine karşı uçtan uca testler.
@@ -556,5 +557,74 @@ describe('çalışma ağaçları', () => {
     } finally {
       git(['worktree', 'remove', '--force', second]);
     }
+  });
+});
+
+describe('etkinlik özeti', () => {
+  it('yazdıklarını gelenlerden ayırır', async () => {
+    /*
+     * Gerçek bir uzak sunucu kurulumu: biz commit atıyoruz, başkası da atıp
+     * gönderiyor, biz çekiyoruz. Özet ikisini karıştırmamalı.
+     */
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'urhoba-etkinlik-'));
+    const bare = path.join(root, 'uzak.git');
+    const other = path.join(root, 'digeri');
+
+    git(['init', '--bare', '--initial-branch=main', bare], root);
+
+    write('a.txt', 'ilk\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'benim commitim']);
+    git(['remote', 'add', 'origin', bare]);
+    git(['push', '-u', 'origin', 'main']);
+
+    git(['clone', bare, other], root);
+    git(['config', 'user.name', 'Diğer Kişi'], other);
+    git(['config', 'user.email', 'digeri@example.com'], other);
+    fs.writeFileSync(path.join(other, 'b.txt'), 'onun\n');
+    git(['add', '-A'], other);
+    git(['commit', '-m', 'onun commiti'], other);
+    git(['push', 'origin', 'main'], other);
+
+    git(['pull', '--ff-only']);
+
+    const since = new Date(Date.now() - 3600_000);
+    const activity = await repoActivity(REPO_ID, 'test', repoPath, since);
+
+    expect(activity.hasRemote).toBe(true);
+    expect(activity.authored.map((commit) => commit.subject)).toContain('benim commitim');
+    // Başkasının commit'i yalnızca "gelenler" tarafında olmalı.
+    expect(activity.arrived.map((commit) => commit.subject)).toEqual(['onun commiti']);
+    expect(activity.authored.map((commit) => commit.subject)).not.toContain('onun commiti');
+
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('uzak sunucusu olmayan depoda gelenler boş kalır', async () => {
+    write('a.txt', 'bir\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'yerel commit']);
+
+    const activity = await repoActivity(
+      REPO_ID,
+      'test',
+      repoPath,
+      new Date(Date.now() - 3600_000),
+    );
+
+    expect(activity.hasRemote).toBe(false);
+    expect(activity.arrived).toEqual([]);
+    expect(activity.authored).toHaveLength(1);
+  });
+
+  it('aralık dışındaki commit’leri saymaz', async () => {
+    write('a.txt', 'bir\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'eski commit']);
+
+    // Aralık gelecekte başlıyor: hiçbir şey girmemeli.
+    const activity = await repoActivity(REPO_ID, 'test', repoPath, new Date(Date.now() + 3600_000));
+
+    expect(activity.authored).toEqual([]);
   });
 });

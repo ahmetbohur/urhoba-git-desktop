@@ -8,6 +8,8 @@ import type {
   CommitDetail,
   AiStatus,
   AutostartStatus,
+  ActivityDigest,
+  ActivitySummary,
   BisectState,
   BlameResult,
   BranchRenameResult,
@@ -170,6 +172,8 @@ export const inputSchemas = {
   'git:commit-detail': repoId.extend({ sha: z.string().min(1) }),
   'git:commit-file-diff': repoId.extend({ sha: z.string().min(1), path: z.string().min(1) }),
   'git:reflog': repoId,
+  // Bütün depolara birden bakıyor; depo kimliği almıyor.
+  'activity:summary': z.object({ period: z.enum(['1h', '6h', '24h', '7d']) }),
   'git:bisect-start': repoId.extend({ goodSha: z.string().min(4) }),
   'git:bisect-mark': repoId.extend({ verdict: z.enum(['good', 'bad', 'skip']) }),
   'git:bisect-reset': repoId,
@@ -243,6 +247,7 @@ export const inputSchemas = {
       })
       .optional(),
     sideBySideDiff: z.boolean().optional(),
+    activityPeriod: z.enum(['1h', '6h', '24h', '7d']).optional(),
     lastOpenedRepoId: z.string().nullable().optional(),
     defaults: z
       .object({
@@ -299,6 +304,8 @@ export const inputSchemas = {
   'ai:suggest-commit': repoId,
   'ai:suggest-description': repoId,
   'ai:suggest-groups': z.undefined(),
+  // Özet zaten toplanmış durumda; yeniden taramak yerine olduğu gibi gönderiliyor.
+  'ai:summarize-activity': z.object({ period: z.enum(['1h', '6h', '24h', '7d']) }),
   'ai:apply-groups': z.object({
     assignments: z.array(z.object({ group: z.string().min(1), repoIds: z.array(z.string()) })),
   }),
@@ -396,6 +403,7 @@ export interface IpcOutputs {
   'git:commit-file-diff': FileDiff;
   'git:blame': BlameResult;
   'git:reflog': ReflogEntry[];
+  'activity:summary': ActivitySummary;
   'git:bisect-start': BisectState;
   'git:bisect-mark': BisectState;
   'git:bisect-reset': void;
@@ -438,6 +446,7 @@ export interface IpcOutputs {
   'ai:suggest-commit': CommitSuggestion;
   'ai:suggest-description': DescriptionSuggestion;
   'ai:suggest-groups': GroupSuggestion[];
+  'ai:summarize-activity': ActivityDigest;
   'ai:apply-groups': void;
 
   'github:status': GithubAuthStatus;

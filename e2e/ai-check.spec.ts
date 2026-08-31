@@ -105,6 +105,16 @@ test('Ollama ile commit mesajı, tanıtım ve gruplama önerisi', async () => {
   // Tek satır olmalı: GitHub description alanı satır sonu kabul etmiyor.
   expect(described.description).not.toContain('\n');
 
+  // --- Etkinlik özeti ---
+  const digest = await page.evaluate(() =>
+    window.urhoba.invoke('ai:summarize-activity', { period: '24h' }),
+  );
+  console.log('ETKİNLİK ÖZETİ:', digest.text.slice(0, 300));
+  console.log('GÖNDERİLEN:', digest.commitsSent, 'commit |', 'dışlanan depo:', digest.excludedRepos);
+
+  expect(digest.text.length).toBeGreaterThan(20);
+  expect(digest.commitsSent).toBeGreaterThan(0);
+
   // --- Gruplama önerisi ---
   // Tek depoyla öneri anlamsız; modelin örüntü görebilmesi için birkaç ilgili
   // proje ekliyoruz.

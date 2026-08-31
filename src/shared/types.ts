@@ -672,6 +672,51 @@ export interface RepoSettings extends ScopedSettings {
   overrides: SettingsOverrides;
 }
 
+/** Etkinlik özetinin kapsadığı süre. */
+export type ActivityPeriod = '1h' | '6h' | '24h' | '7d';
+
+/** Özette görünen tek bir commit. */
+export interface ActivityCommit {
+  sha: string;
+  shortSha: string;
+  subject: string;
+  authorName: string;
+  authoredAt: string;
+}
+
+export interface RepoActivity {
+  repoId: string;
+  repoName: string;
+  /** Senin yazdıkların. */
+  authored: ActivityCommit[];
+  /** Uzak sunucudan bu aralıkta inen, başkalarının commit'leri. */
+  arrived: ActivityCommit[];
+  /** Uzak sunucusu yoksa "gelenler" bölümü hiç gösterilmiyor. */
+  hasRemote: boolean;
+}
+
+export interface ActivitySummary {
+  /** Aralığın başlangıcı, ISO. */
+  since: string;
+  period: ActivityPeriod;
+  /** Yalnızca içinde bir şey olan depolar. */
+  repos: RepoActivity[];
+  authoredCount: number;
+  arrivedCount: number;
+}
+
+export interface ActivityDigest {
+  /** Modelin ürettiği özet metni. */
+  text: string;
+  provider: AiProviderId;
+  /**
+   * Bulut AI'ya kapalı olduğu için özetten çıkarılan depo sayısı. Sessizce
+   * eksiltmek yanlış olurdu; kullanıcı neyin dışarıda kaldığını bilmeli.
+   */
+  excludedRepos: number;
+  commitsSent: number;
+}
+
 export interface AppSettings {
   theme: ThemePreference;
   language: LanguagePreference;
@@ -680,6 +725,12 @@ export interface AppSettings {
   defaults: ScopedSettings;
   /** Commit ekranında diff'i yan yana göster. */
   sideBySideDiff: boolean;
+  /**
+   * Etkinlik özetinin varsayılan aralığı. Depo bazlı değil: özet bütün
+   * depolara birden bakıyor, "bu depo için 6 saat" diye bir şeyin karşılığı
+   * yok.
+   */
+  activityPeriod: ActivityPeriod;
   lastOpenedRepoId: string | null;
 }
 

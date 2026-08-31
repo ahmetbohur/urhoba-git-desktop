@@ -68,6 +68,7 @@ export function useCommands(activeRepo: Repo | null): Command[] {
   const setTab = useUi((s) => s.setTab);
   const toggleCommandLog = useUi((s) => s.toggleCommandLog);
   const setPublishOpen = useUi((s) => s.setPublishOpen);
+  const setActivityOpen = useUi((s) => s.setActivityOpen);
   const toast = useUi((s) => s.toast);
 
   return useMemo(() => {
@@ -120,6 +121,16 @@ export function useCommands(activeRepo: Repo | null): Command[] {
         group: 'Görünüm',
         shortcut: 'mod+3',
         run: () => setTab('pulls'),
+      },
+      {
+        id: 'view.activity',
+        label: 'Etkinlik özeti',
+        group: 'Görünüm',
+        hint: 'Bütün depolarda ne yazdın, ne indi',
+        run: () => {
+          setActivityOpen(true);
+          return Promise.resolve();
+        },
       },
       {
         id: 'view.commandlog',
@@ -302,6 +313,7 @@ export function useCommands(activeRepo: Repo | null): Command[] {
     setActiveRepo,
     setTab,
     setPublishOpen,
+    setActivityOpen,
     toggleCommandLog,
     toast,
     t,

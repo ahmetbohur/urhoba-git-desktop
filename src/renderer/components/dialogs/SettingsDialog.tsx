@@ -14,6 +14,7 @@ import { RemoteSettings } from '../RemoteSettings';
 import { SectionLabel } from '../primitives';
 import { DialogShell } from './DialogShell';
 import type {
+  ActivityPeriod,
   AppSettings,
   AutoPullSettings,
   AutostartStatus,
@@ -38,6 +39,17 @@ const LANGUAGES: Array<{ value: LanguagePreference; label: string }> = [
 ];
 
 type Scope = 'global' | 'repo';
+
+/**
+ * Etkinlik özetinin aralığı. Depo bazlı değil: özet bütün depolara birden
+ * bakıyor, "bu depo için 6 saat" diye bir şeyin karşılığı yok.
+ */
+const ACTIVITY_PERIODS: Array<{ value: ActivityPeriod; label: string }> = [
+  { value: '1h', label: '1 saat' },
+  { value: '6h', label: '6 saat' },
+  { value: '24h', label: '24 saat' },
+  { value: '7d', label: '7 gün' },
+];
 
 function Row({
   label,
@@ -296,6 +308,30 @@ export function SettingsDialog({
                     }
                     intervalLabel={t('Aralık')}
                   />
+                </div>
+              </section>
+
+              <section>
+                <SectionLabel>{t('Etkinlik özeti')}</SectionLabel>
+                <p className="mt-1 text-[11px] text-ink-2">
+                  {t('Özetin varsayılan aralığı. Pencerede geçici olarak değiştirilebilir.')}
+                </p>
+                <div className="mt-2 flex gap-1">
+                  {ACTIVITY_PERIODS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => saveApp.mutate({ activityPeriod: option.value })}
+                      className={cn(
+                        'h-8 flex-1 rounded-md border text-[12px]',
+                        settings.activityPeriod === option.value
+                          ? 'border-accent bg-accent-tint text-accent-ink'
+                          : 'border-line bg-surface text-ink-2 hover:bg-surface-2',
+                      )}
+                    >
+                      {t(option.label)}
+                    </button>
+                  ))}
                 </div>
               </section>
 

@@ -53,6 +53,7 @@ export const IPC_CHANNELS = [
   'git:commit-file-diff',
   'git:blame',
   'git:reflog',
+  'activity:summary',
   'git:bisect-start',
   'git:bisect-mark',
   'git:bisect-reset',
@@ -103,6 +104,7 @@ export const IPC_CHANNELS = [
   'ai:suggest-commit',
   'ai:suggest-description',
   'ai:suggest-groups',
+  'ai:summarize-activity',
   'ai:apply-groups',
   // --- GitHub ---
   'github:status',

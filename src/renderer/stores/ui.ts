@@ -33,6 +33,8 @@ interface UiState {
    * penceresi giriş yapılmamışken oraya bir düğme koyuyor.
    */
   githubOpen: boolean;
+  /** Etkinlik özeti penceresi; kenar çubuğu ve komut paleti açıyor. */
+  activityOpen: boolean;
   commandLog: GitLogEntry[];
   toasts: Toast[];
   /** Depo başına son otomatik pull sonucu — arayüzde "en son ne oldu" göstergesi. */
@@ -44,6 +46,7 @@ interface UiState {
   toggleCommandLog: () => void;
   setPublishOpen: (open: boolean) => void;
   setGithubOpen: (open: boolean) => void;
+  setActivityOpen: (open: boolean) => void;
   pushCommandLog: (entry: GitLogEntry) => void;
   toast: (toast: Omit<Toast, 'id'>) => void;
   dismissToast: (id: string) => void;
@@ -60,6 +63,7 @@ export const useUi = create<UiState>((set) => ({
   commandLogOpen: false,
   publishOpen: false,
   githubOpen: false,
+  activityOpen: false,
   commandLog: [],
   toasts: [],
   lastAutoPull: {},
@@ -71,6 +75,7 @@ export const useUi = create<UiState>((set) => ({
   toggleCommandLog: () => set((state) => ({ commandLogOpen: !state.commandLogOpen })),
   setPublishOpen: (publishOpen) => set({ publishOpen }),
   setGithubOpen: (githubOpen) => set({ githubOpen }),
+  setActivityOpen: (activityOpen) => set({ activityOpen }),
   pushCommandLog: (entry) =>
     set((state) => ({ commandLog: [entry, ...state.commandLog].slice(0, MAX_LOG_ENTRIES) })),
   toast: (toast) =>

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ContextMenu, DropdownMenu } from 'radix-ui';
 import {
+  Activity,
   ChevronDown,
   ChevronRight,
   CloudDownload,
@@ -38,6 +39,7 @@ import { Badge, Button, EmptyState, SectionLabel, Spinner } from './primitives';
 import { CloneDialog } from './dialogs/CloneDialog';
 import { ScanDialog } from './dialogs/ScanDialog';
 import { RepoTagsDialog } from './dialogs/RepoTagsDialog';
+import { ActivityDialog } from './dialogs/ActivityDialog';
 import { AiGroupDialog } from './dialogs/AiGroupDialog';
 import type { Repo } from '@shared/types';
 
@@ -270,6 +272,8 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
   const activeRepoId = useUi((s) => s.activeRepoId);
   const setActiveRepo = useUi((s) => s.setActiveRepo);
   const toast = useUi((s) => s.toast);
+  const activityOpen = useUi((s) => s.activityOpen);
+  const setActivityOpen = useUi((s) => s.setActivityOpen);
   const client = useQueryClient();
 
   const [filter, setFilter] = useState('');
@@ -357,6 +361,19 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-line bg-surface">
       <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
         <SectionLabel>{t('Depolar')}</SectionLabel>
+        {/*
+          Etkinlik özeti bütün depolara birden bakıyor; bu yüzden bir deponun
+          içinde değil, listenin başında duruyor.
+        */}
+        <button
+          type="button"
+          aria-label={t('Etkinlik özeti')}
+          title={t('Etkinlik özeti')}
+          onClick={() => setActivityOpen(true)}
+          className="ml-auto rounded p-1 text-ink-3 hover:bg-surface-2 hover:text-ink"
+        >
+          <Activity className="size-3.5" />
+        </button>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <Button size="sm" variant="secondary" loading={addRepo.isPending}>
@@ -512,6 +529,7 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
       <CloneDialog open={cloneOpen} onOpenChange={setCloneOpen} />
       <ScanDialog open={scanOpen} onOpenChange={setScanOpen} />
       <AiGroupDialog open={aiGroupOpen} onOpenChange={setAiGroupOpen} />
+      <ActivityDialog open={activityOpen} onOpenChange={setActivityOpen} />
       <RepoTagsDialog
         key={tagsTarget?.id ?? 'none'}
         repo={tagsTarget}
