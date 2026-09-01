@@ -58,6 +58,6 @@ export async function withLimit<T>(task: () => Promise<T>): Promise<T> {
 }
 
 /** Test için: o an çalışan ve bekleyen iş sayısı. */
-export function limitDurumu(): { active: number; waiting: number; limit: number } {
+export function limitState(): { active: number; waiting: number; limit: number } {
   return { active, waiting: bekleyenler.length, limit: LIMIT };
 }

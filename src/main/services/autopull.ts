@@ -67,13 +67,13 @@ export async function pullNow(repoId: string): Promise<PullResult> {
 /**
  * Bir deponun zamanlayıcısını kurar.
  *
- * `offsetRatio` depoyu aralık içinde bir noktaya yerleştiriyor (0 ile 1
- * arasında). Buna ihtiyaç var çünkü zamanlayıcılar hep birlikte kuruluyor ve
- * hepsi aynı aralığı kullanıyor: dağıtılmazsa elli deponun hepsi aynı saniyede
- * fetch'e çıkıyor. Eşzamanlı süreç sınırı çökmeyi engelliyor ama elli fetch
- * sırayla akarken uygulama saniyelerce meşgul kalıyor.
+ * `startDelayMs` ilk çalışmayı geciktiriyor; hesabı `startDelays` yapıyor.
+ * Buna ihtiyaç var çünkü zamanlayıcılar hep birlikte kuruluyor ve hepsi aynı
+ * aralığı kullanıyor: dağıtılmazsa elli deponun hepsi aynı saniyede fetch'e
+ * çıkıyor. Eşzamanlı süreç sınırı çökmeyi engelliyor ama elli fetch sırayla
+ * akarken uygulama saniyelerce meşgul kalıyor.
  */
-function schedule(repoId: string, intervalMinutes: number, offsetRatio: number): void {
+function schedule(repoId: string, intervalMinutes: number, startDelayMs: number): void {
   clearFor(repoId);
   const periodMs = Math.max(1, intervalMinutes) * 60_000;
 
@@ -92,14 +92,11 @@ function schedule(repoId: string, intervalMinutes: number, offsetRatio: number):
    * depoya göre değişiyor ama rastgele değil: aynı depo her açılışta aynı
    * yere düşüyor, dolayısıyla davranış tekrarlanabilir kalıyor.
    */
-  entry.startTimer = setTimeout(
-    () => {
-      entry.startTimer = null;
-      tick();
-      entry.timer = setInterval(tick, periodMs);
-    },
-    Math.floor(offsetRatio * periodMs),
-  );
+  entry.startTimer = setTimeout(() => {
+    entry.startTimer = null;
+    tick();
+    entry.timer = setInterval(tick, periodMs);
+  }, startDelayMs);
 
   scheduled.set(repoId, entry);
 }
@@ -117,14 +114,33 @@ function clearFor(repoId: string): void {
  * Ayarlar her değiştiğinde çağrılır: kayıtlı bütün depoları gezip
  * zamanlayıcıları güncel ayara göre yeniden kurar.
  */
+/**
+ * Depoların ilk çalışma gecikmeleri, milisaniye.
+ *
+ * Zamanlayıcılar hep birlikte kuruluyor ve çoğu depo aynı aralığı kullanıyor;
+ * dağıtılmazsa hepsi aynı saniyede fetch'e çıkıyor. Her depo kendi aralığı
+ * içinde eşit aralıklı bir noktaya yerleşiyor.
+ *
+ * Saf fonksiyon: yanlış hesap sessiz kalıyor — gecikmeler sıfır çıksa da
+ * uygulama sorunsuz çalışır, yalnızca dağıtım hiç olmaz ve kimse fark etmez.
+ */
+export function startDelays(intervalMinutes: number[]): number[] {
+  const total = intervalMinutes.length;
+  if (total <= 1) return intervalMinutes.map(() => 0);
+  return intervalMinutes.map((minutes, index) => {
+    const periodMs = Math.max(1, minutes) * 60_000;
+    return Math.floor((index / total) * periodMs);
+  });
+}
+
 export function reconcileSchedules(): void {
   const active = new Set<string>();
-  const acik = store.getAllRepoSettings().filter((entry) => entry.settings.autoPull.enabled);
+  const enabled = store.getAllRepoSettings().filter((entry) => entry.settings.autoPull.enabled);
+  const delays = startDelays(enabled.map((entry) => entry.settings.autoPull.intervalMinutes));
 
-  acik.forEach(({ repo, settings }, index) => {
+  enabled.forEach(({ repo, settings }, index) => {
     active.add(repo.id);
-    // Depolar aralık boyunca eşit aralıklarla dağıtılıyor.
-    schedule(repo.id, settings.autoPull.intervalMinutes, acik.length > 1 ? index / acik.length : 0);
+    schedule(repo.id, settings.autoPull.intervalMinutes, delays[index]);
   });
   for (const repoId of [...scheduled.keys()]) {
     if (!active.has(repoId)) clearFor(repoId);

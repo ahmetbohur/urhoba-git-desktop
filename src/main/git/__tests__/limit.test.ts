@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { limitDurumu, withLimit } from '../limit';
+import { limitState, withLimit } from '../limit';
 
 /**
  * Eşzamanlı süreç sınırı.
@@ -21,7 +21,7 @@ function bekleyen() {
 
 describe('withLimit', () => {
   it('sınırın üstünde iş çalıştırmıyor', async () => {
-    const limit = limitDurumu().limit;
+    const limit = limitState().limit;
     let anlik = 0;
     let enYuksek = 0;
 
@@ -54,7 +54,7 @@ describe('withLimit', () => {
      * `finally` olmadan hata veren bir komut slotu kalıcı olarak tutardı ve
      * yeterince hatadan sonra bütün git komutları donardı — en sinsi hâli.
      */
-    const limit = limitDurumu().limit;
+    const limit = limitState().limit;
     for (let index = 0; index < limit * 2; index += 1) {
       await expect(
         withLimit(async () => {
@@ -62,14 +62,14 @@ describe('withLimit', () => {
         }),
       ).rejects.toThrow('patla');
     }
-    expect(limitDurumu().active).toBe(0);
+    expect(limitState().active).toBe(0);
 
     // Sınır dolmadıysa yeni iş beklemeden çalışmalı.
     await expect(withLimit(async () => 'çalıştı')).resolves.toBe('çalıştı');
   });
 
   it('sınır dolunca bekletiyor, boşalınca devam ediyor', async () => {
-    const limit = limitDurumu().limit;
+    const limit = limitState().limit;
     const tutulanlar = Array.from({ length: limit }, () => bekleyen());
     const calisan = tutulanlar.map((t) => withLimit(() => t.sozu));
 
@@ -80,7 +80,7 @@ describe('withLimit', () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 5));
     expect(basladi).toBe(false);
-    expect(limitDurumu().waiting).toBeGreaterThan(0);
+    expect(limitState().waiting).toBeGreaterThan(0);
 
     tutulanlar[0].bitir();
     await sonraki;
@@ -88,6 +88,6 @@ describe('withLimit', () => {
 
     tutulanlar.slice(1).forEach((t) => t.bitir());
     await Promise.all(calisan);
-    expect(limitDurumu().active).toBe(0);
+    expect(limitState().active).toBe(0);
   });
 });

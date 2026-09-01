@@ -2,6 +2,7 @@ import { spawn } from 'dugite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { childEnv } from './client';
+import { withLimit } from './limit';
 import { parseLfsPointer } from './lfs';
 import type { FilePreview, PreviewKind } from '@shared/types';
 
@@ -75,26 +76,35 @@ export function previewTypeFor(filePath: string): { mime: string; kind: PreviewK
  * doğrudan başlatılıp stdout buffer olarak toplanıyor.
  */
 function readBlob(repoPath: string, ref: string, filePath: string): Promise<Buffer | null> {
-  return new Promise((resolve) => {
-    const child = spawn(['show', `${ref}:${filePath}`], repoPath, { env: childEnv() });
-    const chunks: Buffer[] = [];
-    let size = 0;
+  /*
+   * Bu yol `run()` üzerinden geçmiyor (ikili çıktı metne çevrilmesin diye
+   * süreci doğrudan başlatıyoruz), dolayısıyla eşzamanlı süreç sınırını da
+   * kendisi uygulamak zorunda. Önizleme az sayıda süreç açıyor ama sınırın
+   * "git'i çalıştıran her yer" kuralı delik kalırsa anlamını yitiriyor.
+   */
+  return withLimit(
+    () =>
+      new Promise<Buffer | null>((resolve) => {
+        const child = spawn(['show', `${ref}:${filePath}`], repoPath, { env: childEnv() });
+        const chunks: Buffer[] = [];
+        let size = 0;
 
-    child.stdout.on('data', (chunk: Buffer) => {
-      size += chunk.length;
-      // Sınırı aşan dosyada okumayı sürdürmenin anlamı yok; süreci kesiyoruz.
-      if (size > SIZE_LIMIT) {
-        child.kill();
-        resolve(null);
-        return;
-      }
-      chunks.push(chunk);
-    });
+        child.stdout.on('data', (chunk: Buffer) => {
+          size += chunk.length;
+          // Sınırı aşan dosyada okumayı sürdürmenin anlamı yok; süreci kesiyoruz.
+          if (size > SIZE_LIMIT) {
+            child.kill();
+            resolve(null);
+            return;
+          }
+          chunks.push(chunk);
+        });
 
-    // Dosya o ref'te yoksa git hata veriyor; bu bir arıza değil, "yoktu" demek.
-    child.on('close', (code) => resolve(code === 0 ? Buffer.concat(chunks) : null));
-    child.on('error', () => resolve(null));
-  });
+        // Dosya o ref'te yoksa git hata veriyor; bu bir arıza değil, "yoktu" demek.
+        child.on('close', (code) => resolve(code === 0 ? Buffer.concat(chunks) : null));
+        child.on('error', () => resolve(null));
+      }),
+  );
 }
 
 function readWorkingTree(repoPath: string, filePath: string): Buffer | null {
