@@ -783,6 +783,18 @@ export interface AppSettings {
    */
   updateCheck: boolean;
   /**
+   * Ayarlanabilir bölme genişlikleri, piksel.
+   *
+   * Depo başına değil genel: dosya listesini genişleten kullanıcı bunu her
+   * depoda ister. Değerler okunurken de pencereye göre kırpılıyor, dolayısıyla
+   * buradaki bir sayı arayüzü kullanılamaz hâle getiremiyor.
+   */
+  layout?: {
+    sidebar?: number;
+    changesFiles?: number;
+    historyCommits?: number;
+  };
+  /**
    * Tepsi simgesi ve kapatınca arka planda kalma. İkisi tek ayar: simgesiz bir
    * "kapatınca gizle" davranışı kullanıcıyı penceresiz bırakır, geri getirecek
    * bir yol kalmaz.

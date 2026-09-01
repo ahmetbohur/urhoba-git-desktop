@@ -188,6 +188,21 @@ Simge görünmese bile uygulama kaybolmuyor: **tek örnek kilidi** var, uygulama
 yeniden açmak ikinci bir örnek başlatmak yerine var olan pencereyi geri
 getiriyor.
 
+### Bölme genişlikleri
+
+Depo listesi, değişikliklerdeki dosya listesi ve geçmişteki commit listesi
+aralarındaki çizgiden sürüklenerek yeniden boyutlandırılabiliyor. Genişlikler
+genel ayar olarak saklanıyor, depo başına değil.
+
+Kullanıcının kendini köşeye sıkıştırması engelleniyor: her bölmenin alt ve üst
+sınırı var, ayrıca yanında her zaman belli bir alan kalıyor. Kırpma hem
+sürüklerken hem de okunurken çalışıyor — geniş pencerede yapılmış bir ayar dar
+pencerede kendiliğinden daralıyor.
+
+Geri dönüş için üç yol var: ayırıcıya **çift tıklamak** o bölmeyi varsayılana
+döndürüyor, ayırıcı klavyeyle de taşınabiliyor (ok tuşları, `Home`, `End`) ve
+`Ayarlar → Genel → Bölme genişlikleri` altındaki düğme hepsini sıfırlıyor.
+
 ### Klasörü kaybolan depo
 
 Bir deponun klasörü dışarıdan silinir ya da taşınırsa uygulama bunu fark edip

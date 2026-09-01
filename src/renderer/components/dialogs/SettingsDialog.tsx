@@ -11,7 +11,7 @@ import { PlainToggle, ScopedToggle } from './ScopedSetting';
 import { AutoPullFields } from '../AutoPullFields';
 import { DiagnosticsPanel } from '../DiagnosticsPanel';
 import { RemoteSettings } from '../RemoteSettings';
-import { SectionLabel } from '../primitives';
+import { Button, SectionLabel } from '../primitives';
 import { DialogShell } from './DialogShell';
 import type {
   ActivityPeriod,
@@ -344,6 +344,31 @@ export function SettingsDialog({
                     checked={settings.activityAuto}
                     onCheckedChange={(activityAuto) => saveApp.mutate({ activityAuto })}
                   />
+                </div>
+              </section>
+
+              <section>
+                <SectionLabel>{t('Bölme genişlikleri')}</SectionLabel>
+                <div className="mt-1 flex items-start justify-between gap-4 py-2">
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-ink">{t('Yerleşimi sıfırla')}</p>
+                    <p className="text-[11px] text-ink-2">
+                      {t(
+                        'Sürükleyerek değiştirdiğin bölme genişliklerini varsayılana döndürür. Tek bir ayırıcıyı sıfırlamak için ona çift tıklaman yeterli.',
+                      )}
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    onClick={() => saveApp.mutate({ layout: {} })}
+                    disabled={
+                      // Varsayılandayken düğmeyi etkin göstermek, tıklayınca
+                      // hiçbir şey olmayan bir düğme demek olurdu.
+                      Object.keys(settings.layout ?? {}).length === 0
+                    }
+                  >
+                    {t('Sıfırla')}
+                  </Button>
                 </div>
               </section>
 

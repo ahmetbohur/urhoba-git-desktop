@@ -294,7 +294,14 @@ function RepoActions({
   );
 }
 
-export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> }) {
+export function RepoSidebar({
+  autoPullRepoIds,
+  width,
+}: {
+  autoPullRepoIds: Set<string>;
+  /** Genişlik App tarafından yönetiliyor: ayırıcı kenar çubuğu ile ana alanın arasında duruyor. */
+  width: number;
+}) {
   const t = useT();
   const { data: repos, isLoading } = useRepos();
   const { data: allTags } = useAllTags();
@@ -312,7 +319,7 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
   const clonePreset = useUi((s) => s.clonePreset);
   const [scanOpen, setScanOpen] = useState(false);
   const [aiGroupOpen, setAiGroupOpen] = useState(false);
-  const [tagsTarget, setTagsTarget] = useState<Repo | null>(null);
+  const [tagsTarget, setTagsTarget] = useState<RepoEntry | null>(null);
   const [renaming, setRenaming] = useState<{ from: string; value: string } | null>(null);
 
   const { data: dirty } = useDirtyCounts((repos?.length ?? 0) > 0);
@@ -393,7 +400,10 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
   );
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-line bg-surface">
+    <aside
+      style={{ width }}
+      className="flex h-full shrink-0 flex-col border-r border-line bg-surface"
+    >
       <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
         <SectionLabel>{t('Depolar')}</SectionLabel>
         {/*

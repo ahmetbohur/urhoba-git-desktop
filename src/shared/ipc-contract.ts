@@ -253,6 +253,13 @@ export const inputSchemas = {
     activityPeriod: z.enum(['1h', '6h', '24h', '7d']).optional(),
     activityAuto: z.boolean().optional(),
     updateCheck: z.boolean().optional(),
+    layout: z
+      .object({
+        sidebar: z.number().optional(),
+        changesFiles: z.number().optional(),
+        historyCommits: z.number().optional(),
+      })
+      .optional(),
     tray: z.boolean().optional(),
     lastOpenedRepoId: z.string().nullable().optional(),
     defaults: z

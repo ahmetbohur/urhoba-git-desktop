@@ -66,6 +66,9 @@ const DEFAULT_SETTINGS: AppSettings = {
    * tepsi güvenilir olduğu için orada varsayılan açık kalıyor.
    */
   tray: process.platform !== 'linux',
+  // Boş bırakılıyor: varsayılanlar arayüz tarafında, kırpma mantığının yanında
+  // duruyor. İki yerde varsayılan tutmak ikisinin ayrışmasına açık olurdu.
+  layout: {},
   lastOpenedRepoId: null,
 };
 

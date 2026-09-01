@@ -1,7 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ContextMenu } from 'radix-ui';
-import { EyeOff, ExternalLink, GitCommitHorizontal, History, Sparkles, TriangleAlert } from 'lucide-react';
+import {
+  EyeOff,
+  ExternalLink,
+  GitCommitHorizontal,
+  History,
+  Sparkles,
+  TriangleAlert,
+} from 'lucide-react';
 import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { directoryName, fileName, formatCount } from '../lib/format';
@@ -19,6 +26,8 @@ import {
 import { useUi } from '../stores/ui';
 import { Badge, Button, EmptyState, SectionLabel } from './primitives';
 import { ConflictView } from './ConflictView';
+import { Splitter } from './Splitter';
+import { usePane } from '../lib/use-pane';
 import { DiffView } from './DiffView';
 import { BlameDialog } from './dialogs/BlameDialog';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
@@ -212,7 +221,11 @@ function CommitBox({
       setSubject('');
       setBody('');
       setAmend(false);
-      toast({ kind: 'success', title: t('Commit oluşturuldu'), description: result.sha.slice(0, 8) });
+      toast({
+        kind: 'success',
+        title: t('Commit oluşturuldu'),
+        description: result.sha.slice(0, 8),
+      });
     },
     onError: (error) =>
       toast({ kind: 'error', title: t('Commit başarısız'), description: errorMessage(error) }),
@@ -314,6 +327,13 @@ function CommitBox({
 
 export function ChangesView({ repoId }: { repoId: string }) {
   const t = useT();
+  const {
+    attach,
+    width: paneWidth,
+    available: paneAvailable,
+    preview: panePreview,
+    commit: paneCommit,
+  } = usePane('changesFiles');
   const { data: status } = useStatus(repoId);
   const { data: settings } = useSettings();
   const selection = useUi((s) => s.selection);
@@ -389,7 +409,10 @@ export function ChangesView({ repoId }: { repoId: string }) {
     onSuccess: (_result, paths) => {
       invalidate(repoId);
       select({ kind: 'none' });
-      toast({ kind: 'info', title: t('{count} dosyanın değişiklikleri geri alındı', { count: paths.length }) });
+      toast({
+        kind: 'info',
+        title: t('{count} dosyanın değişiklikleri geri alındı', { count: paths.length }),
+      });
     },
     onError: (error) =>
       toast({ kind: 'error', title: t('Geri alınamadı'), description: errorMessage(error) }),
@@ -445,17 +468,26 @@ export function ChangesView({ repoId }: { repoId: string }) {
 
   const selectedPath = selection.kind === 'working' ? selection.path : null;
   const selectedStaged = selection.kind === 'working' ? selection.staged : false;
-  const { data: diff, isLoading: diffLoading } = useWorkingDiff(repoId, selectedPath, selectedStaged);
+  const { data: diff, isLoading: diffLoading } = useWorkingDiff(
+    repoId,
+    selectedPath,
+    selectedStaged,
+  );
 
   const totalChanges =
-    (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) + (status?.conflicted.length ?? 0);
+    (status?.staged.length ?? 0) +
+    (status?.unstaged.length ?? 0) +
+    (status?.conflicted.length ?? 0);
 
   const stagedPaths = status?.staged.map((file) => file.path) ?? [];
   const unstagedPaths = status?.unstaged.map((file) => file.path) ?? [];
 
   return (
-    <div className="flex min-h-0 flex-1">
-      <div className="flex w-80 shrink-0 flex-col border-r border-line bg-surface">
+    <div ref={attach} className="flex min-h-0 flex-1">
+      <div
+        style={{ width: paneWidth }}
+        className="flex shrink-0 flex-col border-r border-line bg-surface"
+      >
         <div className="flex items-center justify-between gap-2 border-b border-line-soft px-3 py-2">
           <SectionLabel>
             {totalChanges > 0
@@ -465,7 +497,11 @@ export function ChangesView({ repoId }: { repoId: string }) {
           {totalChanges > 0 && (
             <div className="flex gap-1">
               {unstagedPaths.length > 0 && (
-                <Button size="sm" variant="ghost" onClick={() => stageMutation.mutate(unstagedPaths)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => stageMutation.mutate(unstagedPaths)}
+                >
                   {t('Tümünü hazırla')}
                 </Button>
               )}
@@ -552,6 +588,15 @@ export function ChangesView({ repoId }: { repoId: string }) {
         />
       </div>
 
+      <Splitter
+        pane="changesFiles"
+        width={paneWidth}
+        available={paneAvailable}
+        onPreview={panePreview}
+        onCommit={paneCommit}
+        label={t('Dosya listesi genişliği')}
+      />
+
       <div className="min-w-0 flex-1">
         {selection.kind === 'conflict' ? (
           <ConflictView key={selection.path} repoId={repoId} path={selection.path} />
@@ -584,8 +629,7 @@ export function ChangesView({ repoId }: { repoId: string }) {
             }}
             onApplyLines={
               selectedPath
-                ? (mode, selections) =>
-                    applyLines.mutate({ path: selectedPath, mode, selections })
+                ? (mode, selections) => applyLines.mutate({ path: selectedPath, mode, selections })
                 : undefined
             }
           />
@@ -609,7 +653,9 @@ export function ChangesView({ repoId }: { repoId: string }) {
       >
         <p className="text-[13px] text-ink-2">
           <span className="font-mono text-ink">{discardTarget}</span>{' '}
-          {t('dosyasındaki kaydedilmemiş değişiklikler kalıcı olarak silinecek. Bu işlem geri alınamaz.')}
+          {t(
+            'dosyasındaki kaydedilmemiş değişiklikler kalıcı olarak silinecek. Bu işlem geri alınamaz.',
+          )}
         </p>
       </ConfirmDialog>
     </div>

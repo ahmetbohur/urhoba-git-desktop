@@ -7,6 +7,7 @@ import { matchesShortcut, useCommands, type Command } from '../lib/commands';
 import { onAppEvent } from '../lib/ipc';
 import { useAutoPullRepoIds, useQueryClient, useRepos, useSettings } from '../lib/queries';
 import { useUi, type MainTab } from '../stores/ui';
+import { usePane } from '../lib/use-pane';
 import { ChangesView } from '../components/ChangesView';
 import { CommandLogPanel } from '../components/CommandLogPanel';
 import { CommandPalette } from '../components/CommandPalette';
@@ -18,6 +19,7 @@ import { SubmoduleBar } from '../components/SubmoduleBar';
 import { PullRequestsView } from '../components/PullRequestsView';
 import { MissingRepoView } from '../components/MissingRepoView';
 import { RepoSidebar } from '../components/RepoSidebar';
+import { Splitter } from '../components/Splitter';
 import { Toasts } from '../components/Toasts';
 import { TopBar } from '../components/TopBar';
 import type { GitLogEntry } from '@shared/types';
@@ -208,16 +210,31 @@ export function App() {
 
   const activeRepo = repos?.find((repo) => repo.id === activeRepoId) ?? null;
   const commands = useCommands(activeRepo);
+  const {
+    attach: sidebarAttach,
+    width: sidebarWidth,
+    available: sidebarAvailable,
+    preview: sidebarPreview,
+    commit: sidebarCommit,
+  } = usePane('sidebar');
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   useShortcuts(commands, openPalette);
 
   return (
     <Tooltip.Provider delayDuration={400}>
-      <div className="flex h-full">
+      <div ref={sidebarAttach} className="flex h-full">
         <a href="#ana-icerik" className="skip-link">
           {t('İçeriğe atla')}
         </a>
-        <RepoSidebar autoPullRepoIds={autoPullRepoIds} />
+        <RepoSidebar autoPullRepoIds={autoPullRepoIds} width={sidebarWidth} />
+        <Splitter
+          pane="sidebar"
+          width={sidebarWidth}
+          available={sidebarAvailable}
+          onPreview={sidebarPreview}
+          onCommit={sidebarCommit}
+          label={t('Depo listesi genişliği')}
+        />
 
         <main id="ana-icerik" className="flex min-w-0 flex-1 flex-col bg-ground">
           {activeRepo?.missing ? (

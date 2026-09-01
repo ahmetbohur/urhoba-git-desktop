@@ -885,6 +885,20 @@ export const en: Record<string, string> = {
 
   '{repo}: {count} kaydedilmemiş değişiklik': '{repo}: {count} uncommitted changes',
 
+  // Yerleşim
+  //
+  // Bölüm adı "Görünüm" değil: o anahtar menüde "View" karşılığıyla zaten
+  // kullanılıyor ve sözlük Türkçe metni anahtar aldığı için aynı kelime iki
+  // anlama gelemiyor. "Bölme genişlikleri" hem çakışmıyor hem daha açık.
+  'Bölme genişlikleri': 'Pane widths',
+  'Yerleşimi sıfırla': 'Reset layout',
+  'Sürükleyerek değiştirdiğin bölme genişliklerini varsayılana döndürür. Tek bir ayırıcıyı sıfırlamak için ona çift tıklaman yeterli.':
+    'Restores the pane widths you changed by dragging. To reset a single divider, double-click it.',
+  'Sürükleyerek genişliği değiştir, çift tıklayarak sıfırla': 'Drag to resize, double-click to reset',
+  'Depo listesi genişliği': 'Repository list width',
+  'Dosya listesi genişliği': 'File list width',
+  'Commit listesi genişliği': 'Commit list width',
+
   // Kayıp depo
   '{repo}: klasör bulunamadı': '{repo}: folder not found',
   '“{name}” klasörü bulunamadı': 'Cannot find the folder for “{name}”',

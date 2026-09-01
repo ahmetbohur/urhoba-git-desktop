@@ -32,6 +32,8 @@ import {
 } from '../lib/queries';
 import { useUi } from '../stores/ui';
 import { Badge, Button, EmptyState, SectionLabel, Spinner } from './primitives';
+import { Splitter } from './Splitter';
+import { usePane } from '../lib/use-pane';
 import { CommitGraph } from './CommitGraph';
 import { DiffView } from './DiffView';
 import { HistoryFilterBar } from './HistoryFilterBar';
@@ -124,13 +126,7 @@ function RefBadge({ commitRef }: { commitRef: CommitRef }) {
  * İmzasız commit'te hiçbir şey gösterilmiyor: imzasızlık çoğu depoda
  * olağan ve her satıra "imzasız" yazmak gürültüden başka bir şey değil.
  */
-function SignatureBadge({
-  signature,
-  signer,
-}: {
-  signature: SignatureStatus;
-  signer: string;
-}) {
+function SignatureBadge({ signature, signer }: { signature: SignatureStatus; signer: string }) {
   const t = useT();
   if (signature === 'none') return null;
 
@@ -232,9 +228,7 @@ function CommitRow({
                 <RefBadge key={`${commitRef.kind}-${commitRef.name}`} commitRef={commitRef} />
               ))}
               {commit.refs.length > 3 && (
-                <span className="shrink-0 text-[11px] text-ink-3">
-                  +{commit.refs.length - 3}
-                </span>
+                <span className="shrink-0 text-[11px] text-ink-3">+{commit.refs.length - 3}</span>
               )}
             </span>
           </span>
@@ -300,6 +294,13 @@ function CommitRow({
 
 export function HistoryView({ repoId }: { repoId: string }) {
   const t = useT();
+  const {
+    attach,
+    width: paneWidth,
+    available: paneAvailable,
+    preview: panePreview,
+    commit: paneCommit,
+  } = usePane('historyCommits');
   const [filter, setFilter] = useState<LogFilter>({});
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useLog(
     repoId,
@@ -465,12 +466,18 @@ export function HistoryView({ repoId }: { repoId: string }) {
           onOpenChange={(next) => !next && setRebaseBase(null)}
           repoId={repoId}
           baseSha={rebaseBase.sha}
-          commits={commits.slice(0, commits.findIndex((item) => item.sha === rebaseBase.sha))}
+          commits={commits.slice(
+            0,
+            commits.findIndex((item) => item.sha === rebaseBase.sha),
+          )}
         />
       )}
 
-      <div className="flex min-h-0 flex-1">
-        <div className="flex w-96 shrink-0 flex-col border-r border-line bg-surface">
+      <div ref={attach} className="flex min-h-0 flex-1">
+        <div
+          style={{ width: paneWidth }}
+          className="flex shrink-0 flex-col border-r border-line bg-surface"
+        >
           {commits.length === 0 ? (
             <EmptyState
               title={hasFilter ? t('Filtreye uyan commit yok') : t('Geçmiş boş')}
@@ -528,6 +535,15 @@ export function HistoryView({ repoId }: { repoId: string }) {
             </div>
           )}
         </div>
+
+        <Splitter
+          pane="historyCommits"
+          width={paneWidth}
+          available={paneAvailable}
+          onPreview={panePreview}
+          onCommit={paneCommit}
+          label={t('Commit listesi genişliği')}
+        />
 
         {selectedSha ? (
           <>

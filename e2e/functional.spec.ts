@@ -535,3 +535,48 @@ test('klasörü silinen depo kayıp olarak gösteriliyor', async () => {
   // Eski yanlış davranışın izi kalmamalı.
   await expect(page.locator('main')).not.toContainText('Çalışma dizini temiz');
 });
+
+test('bölme genişliği sürüklenip kalıcı oluyor ve sıfırlanabiliyor', async () => {
+  /*
+   * Üç şeyi birden sınıyor: sürükleme genişliği değiştiriyor mu, değişiklik
+   * yeniden yüklendikten sonra duruyor mu, sıfırlama varsayılana döndürüyor mu.
+   *
+   * Kalıcılık ayrıca önemli: yalnızca ekranda değişip diske yazılmasaydı hiçbir
+   * hata çıkmazdı, kullanıcı her açılışta ayarı yeniden yapardı.
+   */
+  const ayirici = page.getByRole('separator', { name: 'Depo listesi genişliği' });
+  const kenar = page.locator('aside').first();
+
+  const genislik = async () => (await kenar.boundingBox())?.width ?? 0;
+  const once = await genislik();
+  expect(once).toBeGreaterThan(0);
+
+  const kutu = await ayirici.boundingBox();
+  if (!kutu) throw new Error('Ayırıcı bulunamadı');
+  await page.mouse.move(kutu.x + kutu.width / 2, kutu.y + kutu.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(kutu.x + kutu.width / 2 + 90, kutu.y + kutu.height / 2, { steps: 8 });
+  await page.mouse.up();
+
+  await expect.poll(genislik).toBeGreaterThan(once + 50);
+  const sonra = await genislik();
+
+  // Yeniden yükleme: değer diske yazılmış olmalı.
+  await page.reload();
+  await page.waitForSelector('text=Depolar');
+  await expect.poll(genislik).toBeGreaterThan(once + 50);
+
+  // Sınırın ötesine sürüklemek işe yaramamalı.
+  const kutu2 = await ayirici.boundingBox();
+  if (!kutu2) throw new Error('Ayırıcı bulunamadı');
+  await page.mouse.move(kutu2.x + kutu2.width / 2, kutu2.y + kutu2.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(kutu2.x + 4000, kutu2.y + kutu2.height / 2, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(genislik).toBeLessThanOrEqual(480);
+
+  // Çift tıklama o bölmeyi varsayılana döndürüyor.
+  await ayirici.dblclick();
+  await expect.poll(genislik).toBe(256);
+  expect(sonra).not.toBe(256);
+});
