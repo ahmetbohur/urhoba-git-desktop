@@ -1,4 +1,4 @@
-import type { Repo, RepoDirtyCount } from '@shared/types';
+import type { RepoDirtyCount, RepoEntry } from '@shared/types';
 
 /**
  * Depo listesini kenar çubuğunun çizeceği satırlara çevirir.
@@ -12,10 +12,10 @@ import type { Repo, RepoDirtyCount } from '@shared/types';
 export type SidebarRow =
   | { kind: 'section'; id: string; label: string }
   | { kind: 'group'; id: string; name: string; count: number; collapsed: boolean; changes: number }
-  | { kind: 'repo'; id: string; repo: Repo; changes: number | null; indented: boolean };
+  | { kind: 'repo'; id: string; repo: RepoEntry; changes: number | null; indented: boolean };
 
 export interface BuildOptions {
-  repos: Repo[];
+  repos: RepoEntry[];
   query: string;
   activeTags: string[];
   collapsed: string[];
@@ -24,7 +24,7 @@ export interface BuildOptions {
 
 const UNGROUPED = '__ungrouped__';
 
-function matches(repo: Repo, needle: string): boolean {
+function matches(repo: RepoEntry, needle: string): boolean {
   if (needle.length === 0) return true;
   const haystack = [repo.name, repo.path, repo.groupName ?? '', ...(repo.tags ?? [])]
     .join(' ')
@@ -46,7 +46,7 @@ export function buildSidebarRows(options: BuildOptions): SidebarRow[] {
   });
 
   const rows: SidebarRow[] = [];
-  const changesOf = (repo: Repo) => changesById.get(repo.id) ?? null;
+  const changesOf = (repo: RepoEntry) => changesById.get(repo.id) ?? null;
 
   const pinned = visible.filter((repo) => repo.pinned);
   if (pinned.length > 0) {
@@ -57,7 +57,7 @@ export function buildSidebarRows(options: BuildOptions): SidebarRow[] {
   }
 
   const rest = visible.filter((repo) => !repo.pinned);
-  const byGroup = new Map<string, Repo[]>();
+  const byGroup = new Map<string, RepoEntry[]>();
   for (const repo of rest) {
     const key = repo.groupName ?? UNGROUPED;
     const list = byGroup.get(key) ?? [];
@@ -105,6 +105,6 @@ export function buildSidebarRows(options: BuildOptions): SidebarRow[] {
   return rows;
 }
 
-function sortRepos(repos: Repo[]): Repo[] {
+function sortRepos(repos: RepoEntry[]): RepoEntry[] {
   return [...repos].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 }

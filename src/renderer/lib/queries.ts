@@ -20,9 +20,9 @@ import type {
   LogFilter,
   PullRequest,
   Remote,
-  Repo,
   RepoContext,
   RepoDirtyCount,
+  RepoEntry,
   RepoSettings,
   SshEnvironment,
   Stash,
@@ -58,7 +58,10 @@ export const keys = {
 };
 
 export function useRepos() {
-  return useQuery<Repo[]>({ queryKey: keys.repos, queryFn: () => invoke('repo:list', undefined) });
+  return useQuery<RepoEntry[]>({
+    queryKey: keys.repos,
+    queryFn: () => invoke('repo:list', undefined),
+  });
 }
 
 export function useDirtyCounts(enabled: boolean) {

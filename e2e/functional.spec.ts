@@ -506,3 +506,32 @@ test('kenar çubuğundaki değişiklik rozeti kendiliğinden güncelleniyor', as
   git(['commit', '-am', 'rozet sıfırlansın'], dir);
   await expect(rozet).toHaveCount(0, { timeout: 15_000 });
 });
+
+test('klasörü silinen depo kayıp olarak gösteriliyor', async () => {
+  /*
+   * Eskiden uygulama yanlış bilgi veriyordu: klasör silinse bile depo normal
+   * açılıyor ve "çalışma dizini temiz" yazıyordu. Ana süreç baştan beri net
+   * bir hata döndürüyordu; arayüz hata durumu ile "değişiklik yok" durumunu
+   * ayırt etmiyordu.
+   */
+  const { dir } = await addRepo('kaybolan-depo');
+  await page.reload();
+  await page.getByText('kaybolan-depo').first().click();
+  await expect(page.locator('main')).toContainText('Değişiklikler');
+
+  fs.rmSync(dir, { recursive: true, force: true });
+  await page.reload();
+  await page.getByText('kaybolan-depo').first().click();
+
+  // Sahte "temiz" ekranı yerine gerçek durum.
+  await expect(page.locator('main')).toContainText('klasörü bulunamadı', { timeout: 15_000 });
+  await expect(page.locator('main')).toContainText(dir);
+  await expect(page.getByRole('button', { name: 'Klasörü göster…' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Listeden kaldır' })).toBeVisible();
+
+  // Kenar çubuğunda da işaretli olmalı.
+  await expect(page.locator('aside').getByLabel('kaybolan-depo: klasör bulunamadı')).toBeVisible();
+
+  // Eski yanlış davranışın izi kalmamalı.
+  await expect(page.locator('main')).not.toContainText('Çalışma dizini temiz');
+});

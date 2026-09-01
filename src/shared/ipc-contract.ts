@@ -35,6 +35,7 @@ import type {
   PushResult,
   Remote,
   Repo,
+  RepoEntry,
   RepoContext,
   RepoDirtyCount,
   RepoSettings,
@@ -72,6 +73,7 @@ export const inputSchemas = {
     taskId: z.string().min(1),
   }),
   'repo:pick-directory': z.undefined(),
+  'repo:relocate': z.object({ repoId: z.string().min(1) }),
   'repo:scan': z.object({
     directory: z.string().min(1),
     maxDepth: z.number().int().min(1).max(8).optional(),
@@ -363,12 +365,13 @@ export const inputSchemas = {
 export type IpcInput<C extends IpcChannel> = z.infer<(typeof inputSchemas)[C]>;
 
 export interface IpcOutputs {
-  'repo:list': Repo[];
+  'repo:list': RepoEntry[];
   'repo:add': Repo;
   'repo:add-dialog': Repo | null;
   'repo:remove': void;
   'repo:clone': Repo;
   'repo:pick-directory': string | null;
+  'repo:relocate': Repo | null;
   'repo:scan': ScannedRepo[];
   'repo:add-many': Repo[];
   'repo:reveal': void;

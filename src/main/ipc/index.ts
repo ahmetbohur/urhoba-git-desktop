@@ -64,7 +64,7 @@ function activateRepo(repoId: string): { id: string; path: string; name: string 
 
 const handlers: Handlers = {
   // --- Depo yönetimi ---
-  'repo:list': () => store.getRepos(),
+  'repo:list': () => repos.listRepos(),
   'repo:add': ({ path }) => repos.addRepo(path),
   'repo:add-dialog': () => repos.addRepoViaDialog(),
   'repo:remove': ({ id }) => {
@@ -75,6 +75,7 @@ const handlers: Handlers = {
   'repo:clone': ({ url, parentDir, name, taskId }) =>
     repos.cloneRepo(url, parentDir, name, taskId),
   'repo:pick-directory': () => repos.pickDirectory(),
+  'repo:relocate': ({ repoId }) => repos.relocateRepo(repoId),
   'repo:scan': ({ directory, maxDepth }) => scanForRepositories(directory, maxDepth),
   'repo:add-many': async ({ paths }) => {
     // Bir yol eklenemezse (silinmiş, artık depo değil) tarama sonucunun tamamını
@@ -303,9 +304,12 @@ const handlers: Handlers = {
   },
 
   // --- Uzak sunucular ---
-  'git:remotes': ({ repoId }) => {
+  'git:remotes': async ({ repoId }) => {
     const repo = activateRepo(repoId);
-    return remote.getRemotes(repo.id, repo.path);
+    const list = await remote.getRemotes(repo.id, repo.path);
+    // Adres kayda geçiyor: klasör sonradan silinirse yeniden klonlanabilsin.
+    repos.rememberRemoteUrl(repo.id, list);
+    return list;
   },
   'git:fetch': ({ repoId }) => {
     const repo = activateRepo(repoId);

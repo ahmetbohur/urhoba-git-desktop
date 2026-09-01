@@ -99,6 +99,7 @@ describe('QA — kenar çubuğu düzeni', () => {
     tags: [],
     lastOpenedAt: '2026-01-01T00:00:00Z',
     addedAt: '2026-01-01T00:00:00Z',
+    missing: false,
   });
 
   it('depo yokken boş liste döner', () => {

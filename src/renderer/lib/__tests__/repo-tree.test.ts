@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { buildSidebarRows, type SidebarRow } from '../repo-tree';
-import type { Repo } from '@shared/types';
+import type { RepoEntry } from '@shared/types';
 
-function repo(name: string, extra: Partial<Repo> = {}): Repo {
+function repo(name: string, extra: Partial<RepoEntry> = {}): RepoEntry {
   return {
     id: name,
     name,
     path: `/p/${name}`,
     addedAt: '2026-01-01T00:00:00Z',
+    missing: false,
     lastOpenedAt: '2026-01-01T00:00:00Z',
     ...extra,
   };
 }
 
-function build(repos: Repo[], overrides: Partial<Parameters<typeof buildSidebarRows>[0]> = {}) {
+function build(repos: RepoEntry[], overrides: Partial<Parameters<typeof buildSidebarRows>[0]> = {}) {
   return buildSidebarRows({ repos, query: '', activeTags: [], collapsed: [], dirty: [], ...overrides });
 }
 

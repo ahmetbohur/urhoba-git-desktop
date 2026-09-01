@@ -7,7 +7,7 @@ import { inferGroup } from './grouping';
 import { parseCloneProgress } from '../git/clone-progress';
 import { emitAppEvent } from './events';
 import * as store from './store';
-import type { Repo } from '@shared/types';
+import type { Remote, Repo, RepoEntry } from '@shared/types';
 
 /**
  * Depo kayıtları. Bir klasörün gerçekten git deposu olduğunu `rev-parse` ile
@@ -50,6 +50,68 @@ export async function addRepo(candidatePath: string): Promise<Repo> {
     lastOpenedAt: now,
     groupName: inferGroup(root) ?? undefined,
   });
+}
+
+/**
+ * Depo listesi, her birinin diskte durup durmadığıyla.
+ *
+ * Varlık kontrolü her listelemede yeniden yapılıyor; kalıcı bir alan olsaydı
+ * kullanıcı klasörü geri koyduğunda ya da taşıdığında bayat kalırdı. Elli
+ * depoda `existsSync` mikrosaniyelerle ölçülüyor.
+ */
+export function listRepos(): RepoEntry[] {
+  return store.getRepos().map((repo) => ({ ...repo, missing: !fs.existsSync(repo.path) }));
+}
+
+/**
+ * Deponun `origin` adresini kayda yazar.
+ *
+ * Klasör silindiğinde `.git/config` de gidiyor; adresi önceden kopyalamazsak
+ * "yeniden klonla" sunulamıyor. Uzak sunucu listesi zaten arayüz tarafından
+ * çekiliyor, o çağrının yan ürünü olarak kaydediliyor — ayrıca git komutu
+ * çalıştırmıyor.
+ */
+/**
+ * Kaybolmuş bir deponun yerini yeniden gösterir.
+ *
+ * Kullanıcı klasörü taşımış olabiliyor; kaydı silip yeniden eklemek grup,
+ * etiket ve depoya özel ayarları da götürürdü. Yalnızca yol güncelleniyor,
+ * geri kalan kayıt olduğu gibi kalıyor.
+ */
+export async function relocateRepo(repoId: string): Promise<Repo | null> {
+  const repo = store.findRepo(repoId);
+  if (!repo) throw new Error('Depo listede bulunamadı.');
+
+  const result = await dialog.showOpenDialog({
+    title: `"${repo.name}" klasörünü göster`,
+    buttonLabel: 'Bu klasörü kullan',
+    properties: ['openDirectory'],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+
+  // Seçilen klasörün gerçekten bir depo olduğu doğrulanıyor; yanlış klasör
+  // seçmek kaydı sessizce bozardı.
+  const root = await resolveRepoRoot(result.filePaths[0]);
+
+  /*
+   * Başka bir kayıt zaten o yolu gösteriyorsa iki kayıt aynı depoya bakar ve
+   * hangisinin ayarlarının geçerli olduğu belirsizleşir.
+   */
+  const conflict = store.findRepoByPath(root);
+  if (conflict && conflict.id !== repoId) {
+    throw new Error(`Bu klasör zaten listede: "${conflict.name}".`);
+  }
+
+  return store.updateRepo(repoId, { path: root, name: path.basename(root) }) ?? null;
+}
+
+export function rememberRemoteUrl(repoId: string, remotes: Remote[]): void {
+  const origin = remotes.find((entry) => entry.name === 'origin') ?? remotes[0];
+  const url = origin?.fetchUrl?.trim();
+  if (!url) return;
+  const repo = store.findRepo(repoId);
+  if (repo?.remoteUrl === url) return;
+  store.updateRepo(repoId, { remoteUrl: url });
 }
 
 export async function addRepoViaDialog(): Promise<Repo | null> {

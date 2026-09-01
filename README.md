@@ -188,6 +188,18 @@ Simge görünmese bile uygulama kaybolmuyor: **tek örnek kilidi** var, uygulama
 yeniden açmak ikinci bir örnek başlatmak yerine var olan pencereyi geri
 getiriyor.
 
+### Klasörü kaybolan depo
+
+Bir deponun klasörü dışarıdan silinir ya da taşınırsa uygulama bunu fark edip
+listede işaretliyor ve depoyu açtığında ne olduğunu söylüyor. Üç çıkış yolu
+sunuluyor, çünkü yokluğun üç sebebi olabiliyor: **klasörü göster** (taşınmış),
+**yeniden klonla** (silinmiş ama uzakta duruyor), **listeden kaldır** (artık
+gerekmiyor).
+
+Yeniden klonlama için uzak adres gerekiyor ve o adres deponun kendi ayarında,
+yani klasörle birlikte siliniyor. Bu yüzden adres depo her açıldığında kayda
+kopyalanıyor; hiç açılmamış bir depo için yeniden klonlama sunulamıyor.
+
 ## Gizlilik
 
 - **Jetonlar arayüze hiç ulaşmaz.** GitHub jetonu ve AI anahtarları yalnızca ana

@@ -34,6 +34,15 @@ interface UiState {
    */
   githubOpen: boolean;
   /** Etkinlik özeti penceresi; kenar çubuğu ve komut paleti açıyor. */
+  cloneOpen: boolean;
+  /**
+   * Klonlama penceresi hazır değerlerle açılabiliyor.
+   *
+   * Kaybolmuş bir depo yeniden klonlandığında eski kayıt da elden çıkmalı;
+   * `replacesRepoId` bunu taşıyor. Aksi hâlde listede biri çalışan biri kırık
+   * iki kayıt kalırdı.
+   */
+  clonePreset: { url: string; replacesRepoId?: string } | null;
   activityOpen: boolean;
   commandLog: GitLogEntry[];
   toasts: Toast[];
@@ -47,6 +56,8 @@ interface UiState {
   setPublishOpen: (open: boolean) => void;
   setGithubOpen: (open: boolean) => void;
   setActivityOpen: (open: boolean) => void;
+  setCloneOpen: (open: boolean) => void;
+  setClonePreset: (preset: { url: string; replacesRepoId?: string } | null) => void;
   pushCommandLog: (entry: GitLogEntry) => void;
   pushCommandLogs: (entries: GitLogEntry[]) => void;
   toast: (toast: Omit<Toast, 'id'>) => void;
@@ -64,6 +75,8 @@ export const useUi = create<UiState>((set) => ({
   commandLogOpen: false,
   publishOpen: false,
   githubOpen: false,
+  cloneOpen: false,
+  clonePreset: null,
   activityOpen: false,
   commandLog: [],
   toasts: [],
@@ -76,6 +89,10 @@ export const useUi = create<UiState>((set) => ({
   setPublishOpen: (publishOpen) => set({ publishOpen }),
   setGithubOpen: (githubOpen) => set({ githubOpen }),
   setActivityOpen: (activityOpen) => set({ activityOpen }),
+  // Pencere kapanınca hazır değer de sıfırlanıyor; kalırsa bir sonraki
+  // klonlama beklenmedik biçimde dolu açılır.
+  setCloneOpen: (cloneOpen) => set(cloneOpen ? { cloneOpen } : { cloneOpen, clonePreset: null }),
+  setClonePreset: (clonePreset) => set({ clonePreset }),
   pushCommandLog: (entry) =>
     set((state) => ({ commandLog: [entry, ...state.commandLog].slice(0, MAX_LOG_ENTRIES) })),
   /*

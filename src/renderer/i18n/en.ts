@@ -885,6 +885,19 @@ export const en: Record<string, string> = {
 
   '{repo}: {count} kaydedilmemiş değişiklik': '{repo}: {count} uncommitted changes',
 
+  // Kayıp depo
+  '{repo}: klasör bulunamadı': '{repo}: folder not found',
+  '“{name}” klasörü bulunamadı': 'Cannot find the folder for “{name}”',
+  'En son burada duruyordu. Klasör taşınmış, silinmiş ya da bağlı olmayan bir diskte olabilir.':
+    'It was last seen here. The folder may have been moved, deleted, or be on a drive that is not connected.',
+  'Klasörü göster…': 'Locate folder…',
+  'Yeniden klonla…': 'Clone again…',
+  'Listeden kaldır': 'Remove from list',
+  'Depo bulundu': 'Repository found',
+  'Klasör kullanılamadı': 'Could not use that folder',
+  'Bu deponun uzak adresi kayıtlı değil, bu yüzden yeniden klonlanamıyor.':
+    'No remote address is recorded for this repository, so it cannot be cloned again.',
+
   // Tepsi
   'Tepsi': 'Tray',
   'Kapatınca arka planda çalışmaya devam et': 'Keep running in the background when closed',

@@ -23,6 +23,25 @@ export interface Repo {
   pinned?: boolean;
   /** Serbest etiketler — bir depo birden çok etiket taşıyabilir. */
   tags?: string[];
+  /**
+   * `origin` uzak adresi, son görüldüğü hâliyle.
+   *
+   * Deponun kendi `.git/config` dosyasında da duruyor ama klasör silindiğinde
+   * o da gidiyor. Burada kopyası tutulduğu için silinen bir depo yeniden
+   * klonlanabiliyor; kayıt olmasaydı nereden klonlanacağı bilinemezdi.
+   */
+  remoteUrl?: string;
+}
+
+/**
+ * Listede gösterilen depo.
+ *
+ * `missing` kalıcı değil, her listelemede diske bakılarak hesaplanıyor:
+ * kullanıcı klasörü dışarıdan silmiş ya da taşımış olabilir ve bunu haber
+ * veren bir şey yok.
+ */
+export interface RepoEntry extends Repo {
+  missing: boolean;
 }
 
 /** Kenar çubuğundaki bir grup ve durumu. */

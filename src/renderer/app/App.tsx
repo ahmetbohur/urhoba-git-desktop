@@ -16,6 +16,7 @@ import { HistoryView } from '../components/HistoryView';
 import { OperationBar } from '../components/OperationBar';
 import { SubmoduleBar } from '../components/SubmoduleBar';
 import { PullRequestsView } from '../components/PullRequestsView';
+import { MissingRepoView } from '../components/MissingRepoView';
 import { RepoSidebar } from '../components/RepoSidebar';
 import { Toasts } from '../components/Toasts';
 import { TopBar } from '../components/TopBar';
@@ -219,7 +220,15 @@ export function App() {
         <RepoSidebar autoPullRepoIds={autoPullRepoIds} />
 
         <main id="ana-icerik" className="flex min-w-0 flex-1 flex-col bg-ground">
-          {activeRepo ? (
+          {activeRepo?.missing ? (
+            /*
+             * Klasör diskte yoksa depo görünümü hiç çizilmiyor. Eskiden
+             * çiziliyordu ve bütün sorgular hata verdiği için ekranda
+             * "çalışma dizini temiz" yazıyordu — depo hiç yokken verilen bu
+             * bilgi, sessiz kalmaktan kötüydü.
+             */
+            <MissingRepoView repo={activeRepo} />
+          ) : activeRepo ? (
             <>
               <TopBar repo={activeRepo} />
 

@@ -17,7 +17,10 @@ import { DialogShell, Field, TextInput } from './DialogShell';
 
 /** URL'den klasör adı türetir; kullanıcı isterse üzerine yazabilir. */
 function suggestName(url: string): string {
-  const trimmed = url.trim().replace(/\.git$/, '').replace(/\/$/, '');
+  const trimmed = url
+    .trim()
+    .replace(/\.git$/, '')
+    .replace(/\/$/, '');
   if (trimmed.length === 0) return '';
   return trimmed.split(/[/:]/).pop() ?? '';
 }
@@ -30,7 +33,13 @@ export function CloneDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [url, setUrl] = useState('');
+  /*
+   * Kaybolmuş bir depo yeniden klonlanırken adres hazır geliyor. Efektle
+   * senkronlamak yerine başlangıç değeri olarak veriliyor; pencere hazır değer
+   * değiştiğinde `key` ile yeniden kuruluyor. Efekt kullanmak kullanıcının
+   * yazdığı adresi geri alma riski taşırdı.
+   */
+  const [url, setUrl] = useState(useUi.getState().clonePreset?.url ?? '');
   const [parentDir, setParentDir] = useState('');
   const [name, setName] = useState('');
   const [progress, setProgress] = useState<string | null>(null);
@@ -46,6 +55,7 @@ export function CloneDialog({
   const client = useQueryClient();
   const setActiveRepo = useUi((s) => s.setActiveRepo);
   const toast = useUi((s) => s.toast);
+  const preset = useUi((s) => s.clonePreset);
 
   const reset = () => {
     setUrl('');
@@ -80,7 +90,20 @@ export function CloneDialog({
         unsubscribe();
       }
     },
-    onSuccess: (repo) => {
+    onSuccess: async (repo) => {
+      /*
+       * Yeniden klonlamada eski kayıt siliniyor. Kalsaydı listede biri çalışan
+       * biri kırık iki kayıt olurdu ve kullanıcı hangisinin doğru olduğunu
+       * ayırt edemezdi.
+       */
+      if (preset?.replacesRepoId && preset.replacesRepoId !== repo.id) {
+        try {
+          await invoke('repo:remove', { id: preset.replacesRepoId });
+        } catch {
+          // Eski kaydı silememek klonlamayı başarısız saymayı gerektirmiyor;
+          // kullanıcı yeni depoya kavuştu, eskisini elle kaldırabilir.
+        }
+      }
       void client.invalidateQueries({ queryKey: keys.repos });
       setActiveRepo(repo.id);
       toast({ kind: 'success', title: t('{name} klonlandı', { name: repo.name }) });
@@ -109,7 +132,9 @@ export function CloneDialog({
         if (!next) reset();
       }}
       title={t('Depo klonla')}
-      description={t('SSH adresi kullanman önerilir; HTTPS’te her işlemde kimlik doğrulaması gerekir.')}
+      description={t(
+        'SSH adresi kullanman önerilir; HTTPS’te her işlemde kimlik doğrulaması gerekir.',
+      )}
       width="lg"
       footer={
         <>

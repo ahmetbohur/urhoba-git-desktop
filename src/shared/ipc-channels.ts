@@ -15,6 +15,7 @@ export const IPC_CHANNELS = [
   'repo:remove',
   'repo:clone',
   'repo:pick-directory',
+  'repo:relocate',
   'repo:scan',
   'repo:add-many',
   'repo:reveal',

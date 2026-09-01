@@ -8,6 +8,7 @@ import {
   FolderGit2,
   FolderOpen,
   FolderSearch,
+  FolderX,
   MoreVertical,
   Pencil,
   Pin,
@@ -42,7 +43,7 @@ import { ScanDialog } from './dialogs/ScanDialog';
 import { RepoTagsDialog } from './dialogs/RepoTagsDialog';
 import { ActivityDialog } from './dialogs/ActivityDialog';
 import { AiGroupDialog } from './dialogs/AiGroupDialog';
-import type { Repo } from '@shared/types';
+import type { RepoEntry } from '@shared/types';
 
 /**
  * Depo listesi.
@@ -66,7 +67,7 @@ function RepoRow({
   onMoveToGroup,
   onEditTags,
 }: {
-  repo: Repo;
+  repo: RepoEntry;
   changes: number | null;
   indented: boolean;
   active: boolean;
@@ -114,9 +115,26 @@ function RepoRow({
                   active ? 'text-accent-ink' : 'text-ink',
                 )}
               >
-                <span className="truncate">{repo.name}</span>
-                {autoPullOn && (
-                  <RefreshCcwDot className="size-3 shrink-0 text-ok" aria-label={t('Otomatik pull açık')} />
+                <span className={cn('truncate', repo.missing && 'text-ink-3 line-through')}>
+                  {repo.name}
+                </span>
+                {/*
+                  Klasörü diskte olmayan depo listede işaretleniyor. Eskiden
+                  normal görünüyordu ve tıklayınca "çalışma dizini temiz"
+                  diyordu; kullanıcının deponun kaybolduğunu anlaması için
+                  hiçbir işaret yoktu.
+                */}
+                {repo.missing && (
+                  <FolderX
+                    className="size-3 shrink-0 text-warn"
+                    aria-label={t('{repo}: klasör bulunamadı', { repo: repo.name })}
+                  />
+                )}
+                {autoPullOn && !repo.missing && (
+                  <RefreshCcwDot
+                    className="size-3 shrink-0 text-ok"
+                    aria-label={t('Otomatik pull açık')}
+                  />
                 )}
               </span>
               <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-ink-3">
@@ -135,9 +153,12 @@ function RepoRow({
             Etiket olmadan ekran okuyucu çıplak bir sayı okuyor ve neyin sayısı
             olduğu anlaşılmıyor.
           */}
-          {changes !== null && changes > 0 && (
+          {changes !== null && changes > 0 && !repo.missing && (
             <span
-              aria-label={t('{repo}: {count} kaydedilmemiş değişiklik', { repo: repo.name, count: changes })}
+              aria-label={t('{repo}: {count} kaydedilmemiş değişiklik', {
+                repo: repo.name,
+                count: changes,
+              })}
               className="shrink-0 rounded bg-warn-tint px-1.5 text-[10px] font-medium tabular-nums text-warn"
             >
               {changes}
@@ -198,7 +219,7 @@ function RepoActions({
   onEditTags,
   Menu,
 }: {
-  repo: Repo;
+  repo: RepoEntry;
   groups: string[];
   onRemove: () => void;
   onTogglePin: () => void;
@@ -286,7 +307,9 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
 
   const [filter, setFilter] = useState('');
   const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [cloneOpen, setCloneOpen] = useState(false);
+  const cloneOpen = useUi((s) => s.cloneOpen);
+  const setCloneOpen = useUi((s) => s.setCloneOpen);
+  const clonePreset = useUi((s) => s.clonePreset);
   const [scanOpen, setScanOpen] = useState(false);
   const [aiGroupOpen, setAiGroupOpen] = useState(false);
   const [tagsTarget, setTagsTarget] = useState<Repo | null>(null);
@@ -342,7 +365,11 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
       setRenaming(null);
     },
     onError: (error) =>
-      toast({ kind: 'error', title: t('Grup adı değiştirilemedi'), description: errorMessage(error) }),
+      toast({
+        kind: 'error',
+        title: t('Grup adı değiştirilemedi'),
+        description: errorMessage(error),
+      }),
   });
 
   const groupNames = useMemo(
@@ -425,7 +452,9 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
                 <Sparkles className="mt-0.5 size-3.5 shrink-0 text-ink-3" />
                 <span>
                   <span className="block text-[13px] text-ink">{t('AI ile grupla…')}</span>
-                  <span className="block text-[11px] text-ink-3">{t('Depo adları gönderilir, kod gönderilmez')}</span>
+                  <span className="block text-[11px] text-ink-3">
+                    {t('Depo adları gönderilir, kod gönderilmez')}
+                  </span>
                 </span>
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-1 h-px bg-line-soft" />
@@ -526,7 +555,9 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
                 onSelect={setActiveRepo}
                 onRemove={(id) => removeRepo.mutate(id)}
                 onTogglePin={(repo) => updateRepo.mutate({ id: repo.id, pinned: !repo.pinned })}
-                onMoveToGroup={(repo, group) => updateRepo.mutate({ id: repo.id, groupName: group })}
+                onMoveToGroup={(repo, group) =>
+                  updateRepo.mutate({ id: repo.id, groupName: group })
+                }
                 onEditTags={setTagsTarget}
               />
             ))}
@@ -536,7 +567,11 @@ export function RepoSidebar({ autoPullRepoIds }: { autoPullRepoIds: Set<string> 
 
       <UpdateBanner />
 
-      <CloneDialog open={cloneOpen} onOpenChange={setCloneOpen} />
+      {/*
+        `key` hazır değere bağlı: değiştiğinde pencere baştan kuruluyor ve
+        adres alanı yeni değerle başlıyor. Efektle senkronlamaktan daha güvenli.
+      */}
+      <CloneDialog key={clonePreset?.url ?? 'bos'} open={cloneOpen} onOpenChange={setCloneOpen} />
       <ScanDialog open={scanOpen} onOpenChange={setScanOpen} />
       <AiGroupDialog open={aiGroupOpen} onOpenChange={setAiGroupOpen} />
       <ActivityDialog open={activityOpen} onOpenChange={setActivityOpen} />
@@ -575,9 +610,9 @@ function SidebarRowView({
   onToggleCollapse: (name: string, collapsed: boolean) => void;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
-  onTogglePin: (repo: Repo) => void;
-  onMoveToGroup: (repo: Repo, group: string | null) => void;
-  onEditTags: (repo: Repo) => void;
+  onTogglePin: (repo: RepoEntry) => void;
+  onMoveToGroup: (repo: RepoEntry, group: string | null) => void;
+  onEditTags: (repo: RepoEntry) => void;
 }) {
   const t = useT();
 
@@ -627,7 +662,13 @@ function SidebarRowView({
               {row.name}
             </span>
             {row.changes > 0 && (
-              <Badge tone="warn" aria-label={t('{repo}: {count} kaydedilmemiş değişiklik', { repo: row.name, count: row.changes })}>
+              <Badge
+                tone="warn"
+                aria-label={t('{repo}: {count} kaydedilmemiş değişiklik', {
+                  repo: row.name,
+                  count: row.changes,
+                })}
+              >
                 {row.changes}
               </Badge>
             )}
