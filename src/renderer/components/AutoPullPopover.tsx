@@ -26,6 +26,9 @@ const OUTCOME_TONE: Record<PullOutcome, string> = {
   'skipped-no-upstream': 'text-warn',
   'skipped-diverged': 'text-warn',
   'skipped-operation-in-progress': 'text-warn',
+  // Klasörün yokluğu geçici bir aksaklık değil; kullanıcının müdahalesini
+  // gerektiriyor, o yüzden diğer atlamalardan daha güçlü bir renkte.
+  'skipped-missing-folder': 'text-crit',
   error: 'text-crit',
 };
 

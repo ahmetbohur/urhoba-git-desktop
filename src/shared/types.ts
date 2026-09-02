@@ -351,6 +351,8 @@ export type PullOutcome =
   | 'skipped-no-upstream'
   | 'skipped-diverged'
   | 'skipped-operation-in-progress'
+  /** Depo klasörü diskte yok; pull denenmedi. */
+  | 'skipped-missing-folder'
   | 'error';
 
 export interface PullResult {

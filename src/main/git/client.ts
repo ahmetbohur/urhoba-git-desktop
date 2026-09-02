@@ -1,4 +1,5 @@
 import type { ChildProcess } from 'node:child_process';
+import fs from 'node:fs';
 import { exec as execGit } from 'dugite';
 import { randomUUID } from 'node:crypto';
 import { enqueue } from './queue';
@@ -176,6 +177,21 @@ export async function run(options: RunOptions): Promise<RunResult> {
       // Buraya yalnızca git süreci hiç başlatılamazsa düşüyoruz; komutun
       // başarısız olması normal yoldan `exitCode` ile geliyor.
       const detail = error instanceof Error ? error.message : String(error);
+
+      /*
+       * Süreç başlatılamamasının en yaygın sebebi bozuk kurulum değil, depo
+       * klasörünün yokluğu: git'in `cwd`'si bulunmayınca süreç hiç başlamıyor
+       * ve ENOENT ile düşüyor.
+       *
+       * Ayrım burada yapılıyor çünkü tek bir mesaj ikisini birden karşılayınca
+       * yanlış yeri gösteriyor. Bir kullanıcının günlüğünde binlerce "kurulum
+       * bozulmuş olabilir" satırı birikmişti; kurulum sağlamdı, klasörü
+       * silinmiş bir depoya otomatik pull çalışıyordu.
+       *
+       * Kontrol yalnızca hata yolunda yapılıyor: her komuttan önce diske
+       * bakmak, sorunun nadirliğine göre gereksiz iş olurdu.
+       */
+      const klasorYok = !fs.existsSync(repoPath);
       emitAppEvent({
         type: 'git:command',
         entry: {
@@ -188,24 +204,16 @@ export async function run(options: RunOptions): Promise<RunResult> {
           at: new Date().toISOString(),
         },
       });
-      /*
-       * Asıl sebep günlüğe de yazılıyor.
-       *
-       * Kullanıcıya gösterilen mesaj ("kurulum bozulmuş olabilir") teşhis için
-       * yetersiz: git'in neden başlatılamadığını söylemiyor. Sebep şimdiye
-       * kadar yalnızca uygulama içindeki komut günlüğüne düşüyordu, dosyaya
-       * değil — bir kullanıcının gönderdiği günlükten sorunu anlamak
-       * imkânsızdı. Çalıştırılmaya çalışılan yol da yazılıyor: mimari
-       * uyuşmazlığı, eksik dosya ve karantina engeli birbirinden ancak böyle
-       * ayrılıyor.
-       */
-      log('error', 'Git süreci başlatılamadı', {
+      log('error', klasorYok ? 'Depo klasörü bulunamadı' : 'Git süreci başlatılamadı', {
         detail,
         komut: printable,
+        depoYolu: repoPath,
         gitYolu: process.env.LOCAL_GIT_DIRECTORY ?? '(dugite varsayılanı)',
       });
       throw new GitCommandError(
-        'Git çalıştırılamadı. Uygulama kurulumu bozulmuş olabilir.',
+        klasorYok
+          ? `Depo klasörü bulunamadı: ${repoPath}`
+          : 'Git çalıştırılamadı. Uygulama kurulumu bozulmuş olabilir.',
         detail,
       );
     }

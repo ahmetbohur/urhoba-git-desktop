@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { pull } from '../git/remote';
 import { emitAppEvent } from './events';
 import * as store from './store';
@@ -31,6 +32,24 @@ async function runOnce(repoId: string): Promise<PullResult> {
   if (!repo) {
     return { outcome: 'error', message: 'Depo bulunamadı.', commitsPulled: 0 };
   }
+
+  /*
+   * Klasörü olmayan depoda pull denenmiyor.
+   *
+   * Denendiğinde git'in `cwd`'si bulunmadığı için süreç hiç başlamıyor ve
+   * zamanlayıcı her tetiklendiğinde aynı hata yeniden üretiliyordu: bir
+   * kullanıcının günlüğünde günler boyunca binlerce satır birikmişti.
+   * Kullanıcı klasörü geri koyarsa bir sonraki tetiklemede kendiliğinden
+   * devam ediyor, o yüzden zamanlayıcı iptal edilmiyor.
+   */
+  if (!fs.existsSync(repo.path)) {
+    return {
+      outcome: 'skipped-missing-folder',
+      message: `Depo klasörü bulunamadı: ${repo.path}`,
+      commitsPulled: 0,
+    };
+  }
+
   const settings = store.getRepoSettings(repoId);
 
   const result = await pull(repoId, repo.path, {
