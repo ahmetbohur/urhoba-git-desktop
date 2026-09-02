@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { enqueue } from './queue';
 import { withLimit } from './limit';
 import { emitAppEvent } from '../services/events';
+import { log } from '../services/logger';
 import type { IpcErrorShape } from '@shared/ipc-channels';
 
 /**
@@ -186,6 +187,22 @@ export async function run(options: RunOptions): Promise<RunResult> {
           error: detail,
           at: new Date().toISOString(),
         },
+      });
+      /*
+       * Asıl sebep günlüğe de yazılıyor.
+       *
+       * Kullanıcıya gösterilen mesaj ("kurulum bozulmuş olabilir") teşhis için
+       * yetersiz: git'in neden başlatılamadığını söylemiyor. Sebep şimdiye
+       * kadar yalnızca uygulama içindeki komut günlüğüne düşüyordu, dosyaya
+       * değil — bir kullanıcının gönderdiği günlükten sorunu anlamak
+       * imkânsızdı. Çalıştırılmaya çalışılan yol da yazılıyor: mimari
+       * uyuşmazlığı, eksik dosya ve karantina engeli birbirinden ancak böyle
+       * ayrılıyor.
+       */
+      log('error', 'Git süreci başlatılamadı', {
+        detail,
+        komut: printable,
+        gitYolu: process.env.LOCAL_GIT_DIRECTORY ?? '(dugite varsayılanı)',
       });
       throw new GitCommandError(
         'Git çalıştırılamadı. Uygulama kurulumu bozulmuş olabilir.',
