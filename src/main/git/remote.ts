@@ -28,7 +28,7 @@ export async function getRemotes(repoId: string, repoPath: string): Promise<Remo
 
 export async function fetch(repoId: string, repoPath: string): Promise<FetchResult> {
   const before = await getStatus(repoId, repoPath);
-  await run({ repoId, repoPath, args: ['fetch', '--prune', '--all'] });
+  await run({ repoId, repoPath, args: ['fetch', '--prune', '--all'], pool: 'network' });
   const after = await getStatus(repoId, repoPath);
 
   return {
@@ -86,7 +86,7 @@ export async function pull(
     };
   }
 
-  await run({ repoId, repoPath, args: ['fetch', '--prune'], allowFailure: true });
+  await run({ repoId, repoPath, args: ['fetch', '--prune'], allowFailure: true, pool: 'network' });
   const afterFetch = await getStatus(repoId, repoPath);
 
   if (afterFetch.behind === 0) {
@@ -106,7 +106,7 @@ export async function pull(
   // varsayılan mesajla devam etsin.
   const args = ['pull', '--no-rebase', '--no-edit'];
   if (options.fastForwardOnly || !diverged) args.push('--ff-only');
-  const result = await run({ repoId, repoPath, args, allowFailure: true });
+  const result = await run({ repoId, repoPath, args, allowFailure: true, pool: 'network' });
 
   if (!result.ok) {
     const stderr = result.stderr.toLowerCase();
@@ -175,7 +175,7 @@ export async function push(
    */
   if (forceWithLease) args.push('--force-with-lease');
 
-  const result = await run({ repoId, repoPath, args, allowFailure: true });
+  const result = await run({ repoId, repoPath, args, allowFailure: true, pool: 'network' });
   if (!result.ok) {
     return { ok: false, message: result.stderr.split('\n')[0], upstreamSet: false };
   }

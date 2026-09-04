@@ -28,7 +28,7 @@ import * as activity from '../services/activity';
 import * as autopull from '../services/autopull';
 import * as repos from '../services/repos';
 import { scanForRepositories } from '../services/scan';
-import { collectDirtyCounts } from '../services/dirty';
+import { collectDirtyCount, collectDirtyCounts } from '../services/dirty';
 import * as ssh from '../services/ssh';
 import * as store from '../services/store';
 import { watchRepo } from '../services/watcher';
@@ -103,6 +103,7 @@ const handlers: Handlers = {
     return store.updateRepo(id, patch) ?? null;
   },
   'repo:dirty-counts': () => collectDirtyCounts(),
+  'repo:dirty-count': ({ repoId }) => collectDirtyCount(repoId),
   'repo:group-collapse': ({ name, collapsed }) => store.setGroupCollapsed(name, collapsed),
   'repo:collapsed-groups': () => store.getCollapsedGroups(),
   'repo:group-rename': ({ from, to }) => store.renameGroup(from, to),

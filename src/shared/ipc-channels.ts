@@ -21,6 +21,7 @@ export const IPC_CHANNELS = [
   'repo:reveal',
   'repo:update',
   'repo:dirty-counts',
+  'repo:dirty-count',
   'repo:group-collapse',
   'repo:collapsed-groups',
   'repo:group-rename',

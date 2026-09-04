@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { exec as execGit } from 'dugite';
 import { randomUUID } from 'node:crypto';
 import { enqueue } from './queue';
-import { withLimit } from './limit';
+import { withLimit, type Pool } from './limit';
 import { emitAppEvent } from '../services/events';
 import { log } from '../services/logger';
 import type { IpcErrorShape } from '@shared/ipc-channels';
@@ -124,6 +124,13 @@ interface RunOptions {
   skipQueue?: boolean;
   /** Sıfır olmayan çıkış kodunun beklendiği durumlar (örn. çakışan merge). */
   allowFailure?: boolean;
+  /**
+   * Hangi eşzamanlılık havuzunda koşacak.
+   *
+   * Ağ komutları (fetch, pull, push) saniyelerle ölçülüyor; yerel okumalarla
+   * aynı havuzu paylaştıklarında onları kendi hızlarına indiriyorlar.
+   */
+  pool?: Pool;
   /** İlerleme çıktısı üreten komutlar için stderr akışı. */
   onStderr?: (chunk: string) => void;
   /**
@@ -154,6 +161,7 @@ export async function run(options: RunOptions): Promise<RunResult> {
     allowFailure = false,
     onStderr,
     env: extraEnv,
+    pool = 'local',
   } = options;
 
   const execute = async (): Promise<RunResult> => {
@@ -163,15 +171,17 @@ export async function run(options: RunOptions): Promise<RunResult> {
     let result: { stdout: string; stderr: string; exitCode: number };
     try {
       // Eşzamanlı süreç sayısı burada sınırlanıyor; gerekçesi `limit.ts` içinde.
-      result = await withLimit(() =>
-        execGit(args, repoPath, {
-          env: childEnv(extraEnv),
-          processCallback: onStderr
-            ? (child: ChildProcess) => {
-                child.stderr?.on('data', (chunk: Buffer) => onStderr(chunk.toString('utf8')));
-              }
-            : undefined,
-        }),
+      result = await withLimit(
+        () =>
+          execGit(args, repoPath, {
+            env: childEnv(extraEnv),
+            processCallback: onStderr
+              ? (child: ChildProcess) => {
+                  child.stderr?.on('data', (chunk: Buffer) => onStderr(chunk.toString('utf8')));
+                }
+              : undefined,
+          }),
+        pool,
       );
     } catch (error) {
       // Buraya yalnızca git süreci hiç başlatılamazsa düşüyoruz; komutun

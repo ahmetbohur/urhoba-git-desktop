@@ -87,6 +87,7 @@ export const inputSchemas = {
     tags: z.array(z.string().min(1)).optional(),
   }),
   'repo:dirty-counts': z.undefined(),
+  'repo:dirty-count': z.object({ repoId: z.string().min(1) }),
   'repo:group-collapse': z.object({ name: z.string().min(1), collapsed: z.boolean() }),
   'repo:collapsed-groups': z.undefined(),
   'repo:group-rename': z.object({ from: z.string().min(1), to: z.string().min(1) }),
@@ -384,6 +385,7 @@ export interface IpcOutputs {
   'repo:reveal': void;
   'repo:update': Repo | null;
   'repo:dirty-counts': RepoDirtyCount[];
+  'repo:dirty-count': RepoDirtyCount;
   'repo:group-collapse': void;
   'repo:collapsed-groups': string[];
   'repo:group-rename': void;

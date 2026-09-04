@@ -31,7 +31,14 @@ export function TagDialog({
   const t = useT();
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
-  const { data: tags } = useTags(repoId);
+  /*
+   * Etiketler yalnızca pencere açıkken çekiliyor.
+   *
+   * Bileşen üst çubukta sürekli monte duruyor, dolayısıyla koşulsuz çağrı her
+   * depo açılışında bir `for-each-ref` çalıştırıyordu — kullanıcı pencereyi
+   * hiç açmasa bile.
+   */
+  const { data: tags } = useTags(open ? repoId : null);
   const client = useQueryClient();
   const invalidate = useInvalidateRepo();
   const toast = useUi((s) => s.toast);

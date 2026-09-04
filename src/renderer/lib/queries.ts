@@ -328,8 +328,33 @@ export function useInvalidateRepo() {
   const client = useQueryClient();
   return (repoId: string) => {
     void client.invalidateQueries({ queryKey: ['repo', repoId] });
-    void client.invalidateQueries({ queryKey: ['dirty-counts'] });
+    void refreshDirtyCount(client, repoId);
   };
+}
+
+/**
+ * Tek deponun sayacını tazeler ve önbellekteki listeye işler.
+ *
+ * Eskiden bütün liste geçersiz kılınıyordu: bir depo değiştiğinde elli dört
+ * `git status` çalışıyordu. Ölçüldüğünde tek başına ucuz görünüyor (paralelde
+ * yirmi bir milisaniye) ama ağ komutlarıyla aynı kuyruğa düştüğünde yüzlerce
+ * milisaniyeye çıkıyordu. Değişen tek depoysa taranacak da tek depo.
+ *
+ * Liste henüz yüklenmemişse hiçbir şey yapmıyor: ilk yükleme zaten tam
+ * taramayı çalıştırıyor.
+ */
+export async function refreshDirtyCount(
+  client: ReturnType<typeof useQueryClient>,
+  repoId: string,
+): Promise<void> {
+  if (!client.getQueryData(['dirty-counts'])) return;
+  const guncel = await invoke('repo:dirty-count', { repoId });
+  client.setQueryData<RepoDirtyCount[]>(['dirty-counts'], (onceki) => {
+    if (!onceki) return onceki;
+    const yeni = onceki.filter((entry) => entry.repoId !== repoId);
+    yeni.push(guncel);
+    return yeni;
+  });
 }
 
 export { useMutation, useQuery, useQueryClient };

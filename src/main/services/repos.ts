@@ -163,6 +163,7 @@ export async function cloneRepo(
     repoId: null,
     repoPath: parentDir,
     args: ['clone', '--progress', url, target],
+    pool: 'network',
     allowFailure: true,
     onStderr: (chunk) => {
       const update = parseCloneProgress(chunk);

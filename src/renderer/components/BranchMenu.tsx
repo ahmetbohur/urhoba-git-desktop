@@ -21,9 +21,16 @@ import type { Branch, Worktree } from '@shared/types';
 export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentBranch: string | null }) {
   const t = useT();
   const { data: branches } = useBranches(repoId);
+  const [open, setOpen] = useState(false);
+  /*
+   * Çalışma ağaçları yalnızca menü açıkken çekiliyor. Menü kapalıyken de
+   * çalışması, her depo açılışına bir `git worktree list` ekliyordu; bilgi
+   * ise ancak menü açıldığında görünüyor.
+   */
   const { data: worktrees } = useQuery<Worktree[]>({
     queryKey: ['worktrees', repoId],
     queryFn: () => invoke('git:worktrees', { repoId }),
+    enabled: open,
   });
 
   /*
@@ -40,7 +47,7 @@ export function BranchMenu({ repoId, currentBranch }: { repoId: string; currentB
   }, [worktrees]);
   const invalidate = useInvalidateRepo();
   const toast = useUi((s) => s.toast);
-  const [open, setOpen] = useState(false);
+
   const [filter, setFilter] = useState('');
   // Kirli dizin yüzünden engellenen geçiş: kullanıcıya saklayıp geçmeyi öneriyoruz.
   const [blocked, setBlocked] = useState<{ branch: string; paths: string[] } | null>(null);

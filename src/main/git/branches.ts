@@ -140,6 +140,7 @@ export async function renameBranch(
     repoId,
     repoPath,
     args: ['push', '--set-upstream', 'origin', to],
+    pool: 'network',
     allowFailure: true,
   });
   if (!pushed.ok) {
@@ -156,6 +157,7 @@ export async function renameBranch(
     repoId,
     repoPath,
     args: ['push', 'origin', '--delete', from],
+    pool: 'network',
     allowFailure: true,
   });
 

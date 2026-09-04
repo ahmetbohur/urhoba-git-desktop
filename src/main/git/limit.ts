@@ -14,30 +14,49 @@
  */
 
 /**
- * Sekiz eşzamanlı süreç.
+ * Ağ ve yerel işler ayrı havuzlarda.
  *
- * Git komutlarının çoğu milisaniyelerle ölçülüyor, dolayısıyla sıra beklemek
- * arayüzde hissedilmiyor. Sayı daha da düşürülürse ağ üzerinden çalışan
- * komutlar (fetch, pull) birbirini bekletmeye başlıyor; yükseltilirse sınırın
- * varlık sebebi ortadan kalkıyor.
+ * Tek havuzken ölçüldü: geçmiş sekmesine geçerken çalışan `git fetch` 1655 ms
+ * sürüyor ve slotları tuttuğu için arkasındaki yerel okumalar kuyrukta
+ * bekliyordu — tek başına 21 ms süren elli dört depoluk sayaç taraması
+ * fetch'in arkasında 446 ms'ye çıkıyordu. Yerel komutlar milisaniyelerle,
+ * ağ komutları saniyelerle ölçülüyor; ikisini aynı kuyruğa koymak hızlı olanı
+ * yavaş olanın hızına indiriyor.
+ *
+ * Toplam sınır yine bağlı (altı artı dört): havuzları ayırmak, sınırın
+ * varlık sebebi olan süreç patlamasını geri getirmiyor.
  */
-const LIMIT = 8;
+const LIMITS = {
+  local: 6,
+  network: 4,
+} as const;
 
-let active = 0;
-const bekleyenler: Array<() => void> = [];
+export type Pool = keyof typeof LIMITS;
 
-async function acquire(): Promise<void> {
-  if (active < LIMIT) {
-    active += 1;
-    return;
-  }
-  await new Promise<void>((resolve) => bekleyenler.push(resolve));
-  active += 1;
+interface State {
+  active: number;
+  waiting: Array<() => void>;
 }
 
-function release(): void {
-  active -= 1;
-  const next = bekleyenler.shift();
+const pools: Record<Pool, State> = {
+  local: { active: 0, waiting: [] },
+  network: { active: 0, waiting: [] },
+};
+
+async function acquire(pool: Pool): Promise<void> {
+  const state = pools[pool];
+  if (state.active < LIMITS[pool]) {
+    state.active += 1;
+    return;
+  }
+  await new Promise<void>((resolve) => state.waiting.push(resolve));
+  state.active += 1;
+}
+
+function release(pool: Pool): void {
+  const state = pools[pool];
+  state.active -= 1;
+  const next = state.waiting.shift();
   if (next) next();
 }
 
@@ -48,16 +67,20 @@ function release(): void {
  * bekleyen bir komut slot tutmuyor. Tersi olsaydı, slot tutan bir komut kendi
  * önündekini beklerken kilitlenme kurabilirdi.
  */
-export async function withLimit<T>(task: () => Promise<T>): Promise<T> {
-  await acquire();
+export async function withLimit<T>(task: () => Promise<T>, pool: Pool = 'local'): Promise<T> {
+  await acquire(pool);
   try {
     return await task();
   } finally {
-    release();
+    release(pool);
   }
 }
 
-/** Test için: o an çalışan ve bekleyen iş sayısı. */
-export function limitState(): { active: number; waiting: number; limit: number } {
-  return { active, waiting: bekleyenler.length, limit: LIMIT };
+/** Test için: havuz başına o an çalışan ve bekleyen iş sayısı. */
+export function limitState(pool: Pool = 'local'): {
+  active: number;
+  waiting: number;
+  limit: number;
+} {
+  return { active: pools[pool].active, waiting: pools[pool].waiting.length, limit: LIMITS[pool] };
 }

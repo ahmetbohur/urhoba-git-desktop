@@ -5,7 +5,13 @@ import { useT } from '../i18n';
 import { cn } from '../lib/cn';
 import { matchesShortcut, useCommands, type Command } from '../lib/commands';
 import { onAppEvent } from '../lib/ipc';
-import { useAutoPullRepoIds, useQueryClient, useRepos, useSettings } from '../lib/queries';
+import {
+  refreshDirtyCount,
+  useAutoPullRepoIds,
+  useQueryClient,
+  useRepos,
+  useSettings,
+} from '../lib/queries';
 import { useUi, type MainTab } from '../stores/ui';
 import { usePane } from '../lib/use-pane';
 import { ChangesView } from '../components/ChangesView';
@@ -97,8 +103,9 @@ function useAppEvents(onShowAbout: () => void): void {
             void client.invalidateQueries({ queryKey: ['repo', event.repoId] });
             // Dosya izleyicisinden gelen değişiklik kenar çubuğundaki sayacı
             // da etkiliyor; commit terminalden atıldığında rozet buradan
-            // güncelleniyor.
-            void client.invalidateQueries({ queryKey: ['dirty-counts'] });
+            // güncelleniyor. Yalnızca değişen deponun sayacı tazeleniyor:
+            // bütün listeyi taramak elli dört git süreci demekti.
+            void refreshDirtyCount(client, event.repoId);
             break;
           case 'git:command':
             // Tek tek değil, kısa bir pencerede biriktirilip topluca veriliyor.
@@ -109,9 +116,10 @@ function useAppEvents(onShowAbout: () => void): void {
             /*
              * Otomatik pull ekranda açık olmayan depolarda da çalışıyor ve
              * dosya izleyicisi yalnızca aktif depoyu izliyor; o depoların
-             * sayacı başka hiçbir yerden tazelenmiyor.
+             * sayacı başka hiçbir yerden tazelenmiyor. Yine de taranacak olan
+             * yalnızca pull'un çalıştığı depo.
              */
-            void client.invalidateQueries({ queryKey: ['dirty-counts'] });
+            void refreshDirtyCount(client, event.result.repoId);
             // Arka plan işi olduğu için yalnızca gerçekten bir şey olduğunda
             // bildirim çıkarıyoruz; "zaten güncel" sessizce geçiyor.
             if (event.result.commitsPulled > 0) {

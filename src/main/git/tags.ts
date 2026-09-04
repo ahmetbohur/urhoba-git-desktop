@@ -68,10 +68,10 @@ export async function deleteTag(
   await run({ repoId, repoPath, args: ['tag', '--delete', name] });
   if (remote) {
     // Uzak etiketi silmek ayrı bir işlem; yerelden silmek uzakta bir şey değiştirmez.
-    await run({ repoId, repoPath, args: ['push', 'origin', '--delete', name] });
+    await run({ repoId, repoPath, args: ['push', 'origin', '--delete', name], pool: 'network' });
   }
 }
 
 export async function pushTag(repoId: string, repoPath: string, name: string): Promise<void> {
-  await run({ repoId, repoPath, args: ['push', 'origin', name] });
+  await run({ repoId, repoPath, args: ['push', 'origin', name], pool: 'network' });
 }
