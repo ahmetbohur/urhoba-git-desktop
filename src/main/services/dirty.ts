@@ -1,4 +1,5 @@
 import { run } from '../git/client';
+import { UNPUSHED_FORMAT, parseUnpushed } from '../git/parse';
 import * as store from './store';
 import type { RepoDirtyCount } from '@shared/types';
 
@@ -23,23 +24,68 @@ import type { RepoDirtyCount } from '@shared/types';
  */
 export async function collectDirtyCount(repoId: string): Promise<RepoDirtyCount> {
   const repo = store.findRepo(repoId);
-  if (!repo) return { repoId, changes: null };
+  if (!repo) return { repoId, changes: null, unpushedCommits: null, unpushedBranches: 0 };
   return countFor(repo.id, repo.path);
 }
 
-/** Bir deponun kaydedilmemiş değişiklik sayısı; okunamıyorsa null. */
+/**
+ * Bir deponun kaydedilmemiş ve gönderilmemiş işi; okunamıyorsa null.
+ *
+ * İki komut birlikte çalışıyor: biri çalışma dizinini, diğeri dalların uzakla
+ * farkını okuyor. İkisi de salt okunur ve ölçüldüğünde elli yedi depoda
+ * toplamı elli milisaniyenin altında kalıyor.
+ */
 async function countFor(repoId: string, repoPath: string): Promise<RepoDirtyCount> {
-  const result = await run({
-    repoId,
-    repoPath,
-    args: ['status', '--porcelain', '-uno'],
-    skipQueue: true,
-    allowFailure: true,
-  });
-  if (!result.ok) return { repoId, changes: null };
+  try {
+    return await countUnsafe(repoId, repoPath);
+  } catch {
+    /*
+     * Tek deponun okunamaması bütün taramayı düşürmemeli.
+     *
+     * `allowFailure` sıfır olmayan çıkış kodunu karşılıyor ama süreç hiç
+     * başlamazsa (klasör silinmişse) hata fırlıyor ve `Promise.all` bütün
+     * listeyi reddediyordu: bir tane kayıp klasör, elli deponun rozetini
+     * birden sessizce yok ediyordu. Okunamayan depo `null` dönüyor, kalanlar
+     * sayılmaya devam ediyor.
+     */
+    return { repoId, changes: null, unpushedCommits: null, unpushedBranches: 0 };
+  }
+}
+
+async function countUnsafe(repoId: string, repoPath: string): Promise<RepoDirtyCount> {
+  const [durum, dallar] = await Promise.all([
+    run({
+      repoId,
+      repoPath,
+      args: ['status', '--porcelain', '-uno'],
+      skipQueue: true,
+      allowFailure: true,
+    }),
+    run({
+      repoId,
+      repoPath,
+      args: ['for-each-ref', `--format=${UNPUSHED_FORMAT}`, 'refs/heads'],
+      skipQueue: true,
+      allowFailure: true,
+    }),
+  ]);
+
+  const gonderilmemis = dallar.ok ? parseUnpushed(dallar.stdout) : null;
+
+  if (!durum.ok) {
+    return {
+      repoId,
+      changes: null,
+      unpushedCommits: gonderilmemis?.commits ?? null,
+      unpushedBranches: gonderilmemis?.branches ?? 0,
+    };
+  }
+
   return {
     repoId,
-    changes: result.stdout.split('\n').filter((line) => line.trim().length > 0).length,
+    changes: durum.stdout.split('\n').filter((line) => line.trim().length > 0).length,
+    unpushedCommits: gonderilmemis?.commits ?? null,
+    unpushedBranches: gonderilmemis?.branches ?? 0,
   };
 }
 

@@ -580,3 +580,70 @@ test('bölme genişliği sürüklenip kalıcı oluyor ve sıfırlanabiliyor', as
   await expect.poll(genislik).toBe(256);
   expect(sonra).not.toBe(256);
 });
+
+test('gönderilmemiş commit kenar çubuğunda görünüyor', async () => {
+  /*
+   * Kaydedilmiş ama uzağa gönderilmemiş iş, makine kaybolduğunda gerçekten
+   * kaybolacak olan iştir. Gösterge onu listede görünür kılıyor.
+   *
+   * Test ekrana bakıyor: sayaç IPC'si doğru hesaplasa bile gösterge
+   * bağlanmamışsa kullanıcı hiçbir şey görmez.
+   */
+  const { dir } = await addRepo('gonderilmemis');
+  const uzak = path.join(workspace, 'gonderilmemis-uzak.git');
+  git(['init', '--bare', uzak], workspace);
+  git(['remote', 'add', 'origin', uzak], dir);
+  git(['push', '-u', 'origin', 'main'], dir);
+
+  await page.reload();
+  const gosterge = page.locator('aside').getByLabel(/gonderilmemis: \d+ gönderilmemiş commit/);
+  // Her şey gönderilmişken gösterge olmamalı.
+  await expect(gosterge).toHaveCount(0);
+
+  // Yerel bir commit at, gönderme.
+  fs.writeFileSync(path.join(dir, 'yerel.txt'), 'gönderilmedi\n');
+  git(['add', '-A'], dir);
+  git(['commit', '-m', 'gönderilmemiş iş'], dir);
+
+  await page.reload();
+  await expect(gosterge.first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('aside').getByLabel('gonderilmemis: 1 gönderilmemiş commit')).toBeVisible();
+
+  // Gönderdikten sonra kaybolmalı.
+  git(['push'], dir);
+  await page.reload();
+  await expect(gosterge).toHaveCount(0, { timeout: 15_000 });
+});
+
+test('tamamen yerel depo gönderilmemiş diye işaretlenmiyor', async () => {
+  /*
+   * Uzağı hiç olmayan depo bilerek yerel tutuluyor olabilir. İşaretlemek
+   * kullanıcının elli deposunu birden uyarıya boğar ve gösterge anlamını
+   * yitirir — bu yüzden sessiz kalması davranışın bir parçası.
+   */
+  await addRepo('sadece-yerel');
+  await page.reload();
+  await expect(page.locator('aside').getByLabel(/sadece-yerel: .*gönderilmemiş/)).toHaveCount(0);
+});
+
+test('klasörü silinen depo diğerlerinin rozetini düşürmüyor', async () => {
+  /*
+   * Sayaç taraması bütün depoları tek `Promise.all` ile topluyor. Klasörü
+   * silinmiş bir depoda git süreci hiç başlamıyor ve hata fırlatıyordu; tek
+   * bir kayıp klasör bütün listenin rozetlerini birden sessizce yok
+   * ediyordu — hiçbir hata da görünmüyordu, rozetler yalnızca kayboluyordu.
+   */
+  const { dir } = await addRepo('rozet-hayatta');
+  const { dir: silinecek } = await addRepo('rozet-kayip');
+  fs.rmSync(silinecek, { recursive: true, force: true });
+
+  // İzlenen bir dosya değiştiriliyor: sayaç `-uno` ile çalıştığı için yeni
+  // dosya rozete yansımaz.
+  fs.writeFileSync(path.join(dir, 'okuma.txt'), 'değişti\n');
+  await page.reload();
+
+  // Kayıp depoya rağmen sağlam deponun rozeti görünmeli.
+  await expect(
+    page.locator('aside').getByLabel('rozet-hayatta: 1 kaydedilmemiş değişiklik').first(),
+  ).toBeVisible({ timeout: 15_000 });
+});

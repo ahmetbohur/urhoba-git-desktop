@@ -188,6 +188,20 @@ Simge görünmese bile uygulama kaybolmuyor: **tek örnek kilidi** var, uygulama
 yeniden açmak ikinci bir örnek başlatmak yerine var olan pencereyi geri
 getiriyor.
 
+### Gönderilmemiş iş göstergesi
+
+Kenar çubuğunda, uzağa gönderilmemiş commit'i olan depolar bir ok ve sayıyla
+işaretleniyor. Kaydedilmemiş değişiklik rozetinden ayrı duruyor, çünkü farklı
+bir şey söylüyor: biri "kaydetmedin", diğeri "kaydettin ama uzağa göndermedin".
+İkincisi makine kaybolduğunda gerçekten kaybolacak iş.
+
+Sayım açık dalla sınırlı değil, bütün yerel dallar toplanıyor: başka bir dalda
+bırakılmış iş de gönderilmemiştir ve asıl gözden kaçan odur.
+
+Uzağı hiç olmayan depolar işaretlenmiyor. Bilerek yerel tutulan depoları da
+uyarmak, göstergeyi anlamsızlaştırırdı; bir dal bile uzağı takip ediyorsa depo
+uzak kullanıyor demektir ve takip etmeyen dallar o zaman sayılıyor.
+
 ### Bölme genişlikleri
 
 Depo listesi, değişikliklerdeki dosya listesi ve geçmişteki commit listesi

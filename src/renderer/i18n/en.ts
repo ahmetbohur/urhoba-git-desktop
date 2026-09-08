@@ -885,6 +885,10 @@ export const en: Record<string, string> = {
 
   '{repo}: {count} kaydedilmemiş değişiklik': '{repo}: {count} uncommitted changes',
 
+  // Gönderilmemiş iş
+  '{repo}: {count} gönderilmemiş commit': '{repo}: {count} unpushed commits',
+  '{repo}: {count} dal hiç gönderilmemiş': '{repo}: {count} branches never pushed',
+
   // Yerleşim
   //
   // Bölüm adı "Görünüm" değil: o anahtar menüde "View" karşılığıyla zaten

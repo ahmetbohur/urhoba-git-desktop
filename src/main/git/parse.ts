@@ -345,6 +345,60 @@ function parseTrack(track: string): { ahead: number; behind: number } {
   return { ahead: ahead ? Number(ahead[1]) : 0, behind: behind ? Number(behind[1]) : 0 };
 }
 
+/**
+ * Kenar çubuğundaki "gönderilmemiş" göstergesi için dal özeti.
+ *
+ * `refs/heads` yeterli: uzaktaki dallar zaten gönderilmiş olanlar.
+ */
+export const UNPUSHED_FORMAT = ['%(upstream)', '%(upstream:track)'].join(US);
+
+/** Bir deponun uzağa gönderilmemiş işi. */
+export interface UnpushedSummary {
+  /** Upstream'i olan dallardaki gönderilmemiş commit toplamı. */
+  commits: number;
+  /** Uzakta karşılığı hiç olmayan yerel dal sayısı. */
+  branches: number;
+}
+
+/**
+ * `for-each-ref` çıktısından gönderilmemiş işi çıkarır.
+ *
+ * Upstream'i olmayan dallar yalnızca depoda en az bir dal uzağı takip
+ * ediyorsa sayılıyor. Ayrım şundan: hiçbir dalın upstream'i yoksa depo
+ * büyük olasılıkla bilerek yerel tutuluyor ve onu "gönderilmemiş" diye
+ * işaretlemek her yerel depoyu uyarıya boğardı. Bir dal bile uzağı takip
+ * ediyorsa depo uzak kullanıyor demektir; takip etmeyen dal gerçekten
+ * gönderilmemiş iştir.
+ */
+export function parseUnpushed(raw: string): UnpushedSummary {
+  let commits = 0;
+  let upstreamsuz = 0;
+  let upstreamliVar = false;
+
+  for (const line of raw.split('\n')) {
+    if (line.trim().length === 0) continue;
+    const [upstream, track] = line.split(US);
+
+    if (!upstream || upstream.length === 0) {
+      upstreamsuz += 1;
+      continue;
+    }
+    upstreamliVar = true;
+
+    /*
+     * `[gone]` upstream'i silinmiş dal demek: uzakta karşılığı kalmadığı için
+     * üzerindeki iş de gönderilmemiş sayılıyor.
+     */
+    if ((track ?? '').includes('gone')) {
+      upstreamsuz += 1;
+      continue;
+    }
+    commits += parseTrack(track ?? '').ahead;
+  }
+
+  return { commits, branches: upstreamliVar ? upstreamsuz : 0 };
+}
+
 export function parseRefLines(raw: string): BranchList {
   const list: BranchList = { current: null, local: [], remote: [] };
 

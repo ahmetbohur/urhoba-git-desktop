@@ -56,6 +56,15 @@ export interface RepoDirtyCount {
   repoId: string;
   /** Kaydedilmemiş değişiklik içeren dosya sayısı; okunamadıysa null. */
   changes: number | null;
+  /**
+   * Uzağa gönderilmemiş commit sayısı; okunamadıysa null.
+   *
+   * Bütün yerel dallar toplanıyor, yalnızca açık olan değil: başka bir dalda
+   * bırakılmış iş de gönderilmemiş iştir ve asıl gözden kaçan o.
+   */
+  unpushedCommits: number | null;
+  /** Uzakta karşılığı hiç olmayan yerel dal sayısı. */
+  unpushedBranches: number;
 }
 
 /** Klasör taramasında bulunan bir depo. */

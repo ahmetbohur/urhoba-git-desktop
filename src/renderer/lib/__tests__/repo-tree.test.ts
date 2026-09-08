@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSidebarRows, type SidebarRow } from '../repo-tree';
-import type { RepoEntry } from '@shared/types';
+import type { RepoDirtyCount, RepoEntry } from '@shared/types';
 
 function repo(name: string, extra: Partial<RepoEntry> = {}): RepoEntry {
   return {
@@ -12,6 +12,11 @@ function repo(name: string, extra: Partial<RepoEntry> = {}): RepoEntry {
     lastOpenedAt: '2026-01-01T00:00:00Z',
     ...extra,
   };
+}
+
+/** Sayaç nesnesi; testlerin ilgilenmediği alanlar varsayılanla dolduruluyor. */
+function sayac(repoId: string, changes: number | null): RepoDirtyCount {
+  return { repoId, changes, unpushedCommits: 0, unpushedBranches: 0 };
 }
 
 function build(repos: RepoEntry[], overrides: Partial<Parameters<typeof buildSidebarRows>[0]> = {}) {
@@ -107,7 +112,7 @@ describe('buildSidebarRows', () => {
   it('grup başlığında üyelerin değişiklik sayısını toplar', () => {
     const rows = build(
       [repo('a', { groupName: 'g' }), repo('b', { groupName: 'g' })],
-      { dirty: [{ repoId: 'a', changes: 3 }, { repoId: 'b', changes: 2 }] },
+      { dirty: [sayac('a', 3), sayac('b', 2)] },
     );
     const group = rows[0] as Extract<SidebarRow, { kind: 'group' }>;
     expect(group.changes).toBe(5);
@@ -115,7 +120,7 @@ describe('buildSidebarRows', () => {
 
   it('okunamayan depo rozeti bozmaz', () => {
     const rows = build([repo('a', { groupName: 'g' })], {
-      dirty: [{ repoId: 'a', changes: null }],
+      dirty: [sayac('a', null)],
     });
     expect((rows[0] as Extract<SidebarRow, { kind: 'group' }>).changes).toBe(0);
     expect((rows[1] as Extract<SidebarRow, { kind: 'repo' }>).changes).toBeNull();

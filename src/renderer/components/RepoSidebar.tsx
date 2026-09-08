@@ -7,6 +7,7 @@ import {
   CloudDownload,
   FolderGit2,
   FolderOpen,
+  ArrowUp,
   FolderSearch,
   FolderX,
   MoreVertical,
@@ -57,6 +58,7 @@ import type { RepoEntry } from '@shared/types';
 function RepoRow({
   repo,
   changes,
+  unpushed,
   indented,
   active,
   autoPullOn,
@@ -69,6 +71,8 @@ function RepoRow({
 }: {
   repo: RepoEntry;
   changes: number | null;
+  /** Uzağa gönderilmemiş iş: dallardaki commit toplamı ve hiç gönderilmemiş dal sayısı. */
+  unpushed: { commits: number; branches: number };
   indented: boolean;
   active: boolean;
   autoPullOn: boolean;
@@ -153,6 +157,39 @@ function RepoRow({
             Etiket olmadan ekran okuyucu çıplak bir sayı okuyor ve neyin sayısı
             olduğu anlaşılmıyor.
           */}
+          {/*
+            Gönderilmemiş iş göstergesi.
+
+            Değişiklik rozetinden ayrı duruyor çünkü farklı bir şey söylüyor:
+            biri "kaydetmedin", diğeri "kaydettin ama uzağa göndermedin".
+            İkincisi makine kaybolduğunda gerçekten kaybolacak iş, o yüzden
+            kendi göstergesini hak ediyor.
+
+            Sayı yalnızca gönderilmemiş commit varken yazılıyor; iş hiç
+            gönderilmemiş bir dalda duruyorsa kaç commit olduğunu saymak
+            depo başına ayrı bir git komutu gerektirirdi, ok tek başına
+            yeterince şey söylüyor.
+          */}
+          {!repo.missing && (unpushed.commits > 0 || unpushed.branches > 0) && (
+            <span
+              aria-label={
+                unpushed.commits > 0
+                  ? t('{repo}: {count} gönderilmemiş commit', {
+                      repo: repo.name,
+                      count: unpushed.commits,
+                    })
+                  : t('{repo}: {count} dal hiç gönderilmemiş', {
+                      repo: repo.name,
+                      count: unpushed.branches,
+                    })
+              }
+              className="flex shrink-0 items-center gap-0.5 rounded bg-accent-tint px-1 text-[10px] font-medium tabular-nums text-accent"
+            >
+              <ArrowUp className="size-2.5" />
+              {unpushed.commits > 0 ? unpushed.commits : ''}
+            </span>
+          )}
+
           {changes !== null && changes > 0 && !repo.missing && (
             <span
               aria-label={t('{repo}: {count} kaydedilmemiş değişiklik', {
@@ -704,6 +741,7 @@ function SidebarRowView({
     <RepoRow
       repo={row.repo}
       changes={row.changes}
+      unpushed={row.unpushed}
       indented={row.indented}
       active={row.repo.id === activeRepoId}
       autoPullOn={autoPullRepoIds.has(row.repo.id)}

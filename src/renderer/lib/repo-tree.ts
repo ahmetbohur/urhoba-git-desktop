@@ -12,7 +12,15 @@ import type { RepoDirtyCount, RepoEntry } from '@shared/types';
 export type SidebarRow =
   | { kind: 'section'; id: string; label: string }
   | { kind: 'group'; id: string; name: string; count: number; collapsed: boolean; changes: number }
-  | { kind: 'repo'; id: string; repo: RepoEntry; changes: number | null; indented: boolean };
+  | {
+      kind: 'repo';
+      id: string;
+      repo: RepoEntry;
+      changes: number | null;
+      /** Uzağa gönderilmemiş iş; gösterge buna bakıyor. */
+      unpushed: { commits: number; branches: number };
+      indented: boolean;
+    };
 
 export interface BuildOptions {
   repos: RepoEntry[];
@@ -36,6 +44,12 @@ export function buildSidebarRows(options: BuildOptions): SidebarRow[] {
   const needle = options.query.trim().toLocaleLowerCase('tr');
   const collapsed = new Set(options.collapsed);
   const changesById = new Map(options.dirty.map((entry) => [entry.repoId, entry.changes]));
+  const unpushedById = new Map(
+    options.dirty.map((entry) => [
+      entry.repoId,
+      { commits: entry.unpushedCommits ?? 0, branches: entry.unpushedBranches },
+    ]),
+  );
 
   const visible = options.repos.filter((repo) => {
     if (!matches(repo, needle)) return false;
@@ -47,12 +61,20 @@ export function buildSidebarRows(options: BuildOptions): SidebarRow[] {
 
   const rows: SidebarRow[] = [];
   const changesOf = (repo: RepoEntry) => changesById.get(repo.id) ?? null;
+  const unpushedOf = (repo: RepoEntry) => unpushedById.get(repo.id) ?? { commits: 0, branches: 0 };
 
   const pinned = visible.filter((repo) => repo.pinned);
   if (pinned.length > 0) {
     rows.push({ kind: 'section', id: 'pinned', label: 'Sabitlenenler' });
     for (const repo of sortRepos(pinned)) {
-      rows.push({ kind: 'repo', id: repo.id, repo, changes: changesOf(repo), indented: false });
+      rows.push({
+        kind: 'repo',
+        id: repo.id,
+        repo,
+        changes: changesOf(repo),
+        unpushed: unpushedOf(repo),
+        indented: false,
+      });
     }
   }
 
@@ -79,7 +101,14 @@ export function buildSidebarRows(options: BuildOptions): SidebarRow[] {
     if (name === UNGROUPED) {
       rows.push({ kind: 'section', id: 'ungrouped', label: 'Gruplanmamış' });
       for (const repo of members) {
-        rows.push({ kind: 'repo', id: repo.id, repo, changes: changesOf(repo), indented: false });
+        rows.push({
+          kind: 'repo',
+          id: repo.id,
+          repo,
+          changes: changesOf(repo),
+          unpushed: unpushedOf(repo),
+          indented: false,
+        });
       }
       continue;
     }
@@ -98,7 +127,14 @@ export function buildSidebarRows(options: BuildOptions): SidebarRow[] {
     });
     if (isCollapsed) continue;
     for (const repo of members) {
-      rows.push({ kind: 'repo', id: repo.id, repo, changes: changesOf(repo), indented: true });
+      rows.push({
+        kind: 'repo',
+        id: repo.id,
+        repo,
+        changes: changesOf(repo),
+        unpushed: unpushedOf(repo),
+        indented: true,
+      });
     }
   }
 
